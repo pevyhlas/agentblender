@@ -50,11 +50,39 @@ public sealed class UnixIdentityTests : IDisposable
         // "/" is root-owned everywhere; on macOS it is the sealed, read-only system volume,
         // where the chmod may fail with EROFS before EPERM and the owner uid decides.
         Assert.False(UnixIdentity.IsOwnedByCurrentUser("/"));
+    }
 
-        // A root-owned directory on a writable file system takes the EPERM path.
-        var tmp = OperatingSystem.IsMacOS() ? "/private/tmp" : "/tmp";
-        Assert.Equal(0u, UnixIdentity.OwnerOf(tmp));
-        Assert.False(UnixIdentity.IsOwnedByCurrentUser(tmp));
+    [RootOwnedTmpFact]
+    public void RootOwnedDirectoryOnAWritableFileSystemIsNotOwned()
+    {
+        // The EPERM path: the chmod proof itself is refused.
+        Assert.False(UnixIdentity.IsOwnedByCurrentUser(RootOwnedTmpFactAttribute.Tmp));
+    }
+
+    [ReadOnlyImageFact]
+    public void OwnFileOnAReadOnlyFileSystemIsOwned()
+    {
+        // The EROFS path: the chmod proves nothing, so the owner uid decides. hdiutil attaches
+        // a read-only image as an unprivileged user; its files show as owned by that user.
+        var source = Path.Combine(_root, "image-source");
+        Directory.CreateDirectory(source);
+        File.WriteAllText(Path.Combine(source, "mine"), "x");
+        var image = Path.Combine(_root, "ro.dmg");
+        var mount = Path.Combine(_root, "mnt");
+        Hdiutil("create", "-quiet", "-srcfolder", source, "-format", "UDRO", image);
+        Hdiutil("attach", "-quiet", "-readonly", "-nobrowse", "-mountpoint", mount, image);
+        try
+        {
+            var file = Path.Combine(mount, "mine");
+            var refused = Assert.Throws<IOException>(() => File.SetUnixFileMode(file, File.GetUnixFileMode(file)));
+            Assert.Equal(30, refused.HResult); // EROFS, so the proof below takes the fallback
+            Assert.Equal(UnixIdentity.EffectiveUserId, UnixIdentity.OwnerOf(file));
+            Assert.True(UnixIdentity.IsOwnedByCurrentUser(file));
+        }
+        finally
+        {
+            Hdiutil("detach", "-quiet", "-force", mount);
+        }
     }
 
     [Fact]
@@ -168,6 +196,20 @@ public sealed class UnixIdentityTests : IDisposable
         Assert.True(chmod.ExitCode == 0, $"chmod +a failed: {error}");
     }
 
+    private static void Hdiutil(params string[] arguments)
+    {
+        var start = new ProcessStartInfo(ReadOnlyImageFactAttribute.HdiutilPath) { RedirectStandardError = true };
+        foreach (var argument in arguments)
+        {
+            start.ArgumentList.Add(argument);
+        }
+
+        using var hdiutil = Process.Start(start)!;
+        var error = hdiutil.StandardError.ReadToEnd();
+        hdiutil.WaitForExit();
+        Assert.True(hdiutil.ExitCode == 0, $"hdiutil {arguments[0]} failed: {error}");
+    }
+
     public void Dispose()
     {
         try
@@ -177,6 +219,39 @@ public sealed class UnixIdentityTests : IDisposable
         }
         catch (IOException)
         {
+        }
+    }
+}
+
+/// <summary>Runs when the temp root (<c>/tmp</c>, <c>/private/tmp</c> on macOS) is root-owned and the test is not root.</summary>
+[System.Runtime.Versioning.UnsupportedOSPlatform("windows")]
+public sealed class RootOwnedTmpFactAttribute : FactAttribute
+{
+    public static string Tmp => OperatingSystem.IsMacOS() ? "/private/tmp" : "/tmp";
+
+    public RootOwnedTmpFactAttribute()
+    {
+        if (UnixIdentity.EffectiveUserId == 0)
+        {
+            Skip = "root passes every chmod proof";
+        }
+        else if (!Directory.Exists(Tmp) || new DirectoryInfo(Tmp).LinkTarget is not null || UnixIdentity.OwnerOf(Tmp) != 0)
+        {
+            Skip = $"{Tmp} is not a root-owned directory on this host";
+        }
+    }
+}
+
+/// <summary>Runs on macOS, where <c>hdiutil</c> attaches a read-only image without privileges.</summary>
+public sealed class ReadOnlyImageFactAttribute : FactAttribute
+{
+    public const string HdiutilPath = "/usr/bin/hdiutil";
+
+    public ReadOnlyImageFactAttribute()
+    {
+        if (!OperatingSystem.IsMacOS() || !File.Exists(HdiutilPath))
+        {
+            Skip = "needs macOS hdiutil to attach a read-only image (no unprivileged read-only mount on Linux)";
         }
     }
 }

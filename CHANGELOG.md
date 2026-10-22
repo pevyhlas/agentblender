@@ -19,20 +19,21 @@ qualification is still open.
 
 Project: CI runs on fresh GitHub-hosted runners for every pull request and every push to
 main, read-only, without secrets and with every action pinned by commit SHA
-(`scripts/check-ci-policy.sh` checks this); the real-Blender lane is advisory until it becomes
-a required check, and the real-Blender tests that need a GPU run by hand on GPU hardware. The tool package declares the MIT license and the project URL and carries the
+(`scripts/check-ci-policy.sh` checks this); the real-Blender lane stays advisory; after it stays
+green on main, the maintainer decides whether it becomes a required check, and the real-Blender tests that need a GPU run by hand on GPU hardware. The tool package declares the MIT license and the project URL and carries the
 notices of the third-party assemblies it bundles. A contributing guide, security policy, code
 of conduct and issue and pull-request templates describe how to take part.
 
 ### Fixed since the initial public source
 
 - A worker spawn prewarms EEVEE with one sample instead of the scene's default 64; the other
-  samples warmed nothing and cost about 17 seconds per spawn on a GPU-less host.
+  samples warmed nothing and cost about 17 seconds per spawn on a GPU-less host. The prewarm
+  restores the render settings it overrides even when its render fails.
 - The ownership proof for the configuration, token file and runtime directory no longer fails
   on a read-only file system (such as the sealed macOS system volume): it reads the owner uid
   there instead.
 - CI: `scripts/release-bundle.sh` passes shellcheck; the test steps have their own timeouts,
-  abort and name a test that runs over 5 minutes and print their log on every outcome.
+  abort and name a test that runs over 10 minutes and print their log on every outcome.
 
 ### Upgrading
 

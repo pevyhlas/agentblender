@@ -197,9 +197,9 @@ rendering 64 EEVEE samples per spawn. `ci.yml` still marks it advisory (`continu
 a red result there does not block a merge.
 
 1. **Manual OptiX qualification, advisory hosted lane** (Recommended): run the OptiX
-   qualification before a release that touches the GPU path; now that the Blender lane has run
-   green on a hosted runner, drop `continue-on-error` and make it a required check once it
-   stays green on main.
+   qualification before a release that touches the GPU path; the Blender lane has run green on
+   a hosted runner, and after it stays green on main the maintainer decides whether to
+   drop `continue-on-error` and make it a required check.
 2. **Hardware CI**: a GPU runner, which C-09 rules out for a public repository today.
 
 **If no answer**: option 1.

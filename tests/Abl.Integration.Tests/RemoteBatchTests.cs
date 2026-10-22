@@ -140,6 +140,7 @@ public class RemoteBatchTests(BlenderFixture fixture)
             mesh = bpy.data.meshes.new("Variant")
             bm = bmesh.new(); bmesh.ops.create_cube(bm, size=size); bm.to_mesh(mesh); bm.free()
             bpy.context.scene.collection.objects.link(bpy.data.objects.new("Variant", mesh))
+            bpy.context.scene.eevee.taa_render_samples = 1  # one sample: the assertions check outputs, not quality
             """, new JsonObject { ["size"] = 1 }, ct);
         fixture.Trajectories.Freeze(session.Id, name, null, null);
         await fixture.Sessions.CloseAsync(session.Id);
