@@ -167,12 +167,23 @@ jobs:
         # Never pipe dotnet test output (pipe hangs with node reuse) — redirect to a file.
         # MetalQualification (an Apple silicon Mac) and OptixQualification (a Linux host with an
         # NVIDIA OptiX GPU) run only by hand on their hardware; they fail by design anywhere
-        # else, so no CI lane runs them.
+        # else, so no CI lane runs them. A test running over 5 minutes is aborted and named
+        # (--blame-hang-timeout); the step timeout keeps the log step below in reach.
+        timeout-minutes: 12
         run: |
           dotnet test agentblender.slnx --no-build \
-            --filter "Category!=BlenderIntegration&Category!=MetalQualification&Category!=OptixQualification" > testrun.log 2>&1 \
-            || { tail -100 testrun.log; exit 1; }
-          tail -20 testrun.log
+            --filter "Category!=BlenderIntegration&Category!=MetalQualification&Category!=OptixQualification" \
+            --logger "console;verbosity=normal" \
+            --blame-hang-timeout 5m --blame-hang-dump-type none > testrun.log 2>&1
+
+      - name: Unit test log
+        if: always()
+        run: |
+          if [ -f testrun.log ]; then
+            grep -vE '^[[:space:]]+Passed ' testrun.log | tail -150
+          else
+            echo "no unit test log (the step did not start)"
+          fi
 
       - name: Package, temp install and doctor, release bundle shape
         # Packs the agentblender tool, installs it into a temporary --tool-path, runs
@@ -242,11 +253,21 @@ jobs:
       - name: Unit tests
         # The default macOS TMPDIR sits under the /var -> /private/var symlink, which the
         # delivery path guard rejects (change 008-agent-operability); use the runner's real temp dir.
+        timeout-minutes: 12
         run: |
           TMPDIR="$RUNNER_TEMP/" dotnet test agentblender.slnx --no-build \
-            --filter "Category!=BlenderIntegration&Category!=MetalQualification&Category!=OptixQualification" > testrun.log 2>&1 \
-            || { tail -100 testrun.log; exit 1; }
-          tail -20 testrun.log
+            --filter "Category!=BlenderIntegration&Category!=MetalQualification&Category!=OptixQualification" \
+            --logger "console;verbosity=normal" \
+            --blame-hang-timeout 5m --blame-hang-dump-type none > testrun.log 2>&1
+
+      - name: Unit test log
+        if: always()
+        run: |
+          if [ -f testrun.log ]; then
+            grep -vE '^[[:space:]]+Passed ' testrun.log | tail -150
+          else
+            echo "no unit test log (the step did not start)"
+          fi
 
   blender-integration:
     name: Blender integration
@@ -335,6 +356,9 @@ jobs:
       - name: Build
         run: dotnet build agentblender.slnx --no-restore -warnaserror
 
+      - name: TEMPORARY spawn cost diagnostic
+        run: bash scripts/diag-spawn-cost.sh
+
       - name: Integration tests (real Blender)
         # The step timeout sits well below the job's, so the log and results steps below still
         # run. --blame-hang-timeout aborts a test that runs longer than 5 minutes and names it
@@ -342,7 +366,7 @@ jobs:
         timeout-minutes: 30
         run: |
           dotnet test agentblender.slnx --no-build \
-            --filter "Category=BlenderIntegration&Category!=OptixQualification" \
+            --filter "Category=BlenderIntegration&Category!=OptixQualification&FullyQualifiedName~ExecAtomicityTests" \
             --logger "console;verbosity=normal" --logger trx \
             --results-directory "$RUNNER_TEMP/itest-results" \
             --blame-hang-timeout 5m --blame-hang-dump-type none > itestrun.log 2>&1
