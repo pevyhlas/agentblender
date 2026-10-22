@@ -251,7 +251,7 @@ jobs:
   blender-integration:
     name: Blender integration
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     # GitHub-hosted runners have no GPU: workers report gpu.backend "none", so cycles_gpu is
     # refused with gpu_unavailable (never a silent CPU render). The tests that need a GPU
     # backend carry OptixQualification and run only by hand on a GPU host (C-09); this lane
@@ -336,16 +336,34 @@ jobs:
         run: dotnet build agentblender.slnx --no-restore -warnaserror
 
       - name: Integration tests (real Blender)
+        # The step timeout sits well below the job's, so the log and results steps below still
+        # run. --blame-hang-timeout aborts a test that runs longer than 5 minutes and names it
+        # in the blame sequence file; the console logger lists every test with its duration.
+        timeout-minutes: 30
         run: |
           dotnet test agentblender.slnx --no-build \
-            --filter "Category=BlenderIntegration&Category!=OptixQualification" > itestrun.log 2>&1 \
-            || { tail -150 itestrun.log; exit 1; }
-          tail -20 itestrun.log
+            --filter "Category=BlenderIntegration&Category!=OptixQualification" \
+            --logger "console;verbosity=normal" --logger trx \
+            --results-directory "$RUNNER_TEMP/itest-results" \
+            --blame-hang-timeout 5m --blame-hang-dump-type none > itestrun.log 2>&1
 
-      - name: Upload integration test log
-        if: failure()
+      - name: Integration test log
+        if: always()
+        run: |
+          if [ -f itestrun.log ]; then
+            grep -E '^[[:space:]]+(Passed|Failed|Skipped) ' itestrun.log || true
+            tail -200 itestrun.log
+          else
+            echo "no integration test log (the step did not start)"
+          fi
+
+      - name: Upload integration test results
+        if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: integration-test-log
-          path: itestrun.log
+          name: integration-test-results
+          path: |
+            itestrun.log
+            ${{ runner.temp }}/itest-results
+          if-no-files-found: ignore
           retention-days: 7

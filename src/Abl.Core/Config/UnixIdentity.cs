@@ -44,7 +44,10 @@ public static partial class UnixIdentity
 
     /// <summary>
     /// True when the current user owns <paramref name="path"/> (proved by an idempotent
-    /// <c>chmod</c> to its current mode). False when the chmod is refused (EPERM).
+    /// <c>chmod</c> to its current mode). False when the chmod is refused (EPERM). On a
+    /// read-only file system (EROFS, such as the sealed macOS system volume, where the kernel
+    /// may report it before EPERM) the chmod proves nothing either way, so the owner uid is
+    /// read instead.
     /// </summary>
     /// <exception cref="ArgumentException">The final component is a symlink.</exception>
     public static bool IsOwnedByCurrentUser(string path)
@@ -63,6 +66,10 @@ public static partial class UnixIdentity
         catch (UnauthorizedAccessException)
         {
             return false;
+        }
+        catch (IOException ex) when (ex.HResult == ERoFs)
+        {
+            return OwnerOf(path) == EffectiveUserId;
         }
     }
 
@@ -185,6 +192,7 @@ public static partial class UnixIdentity
     private const int RegularFileType = 0x8000;
     private const int AtFdCwd = -100;
     private const int ENoEnt = 2;
+    private const int ERoFs = 30; // the same on Linux and macOS; .NET puts the raw errno in HResult
     private const int AclTypeExtended = 0x100;
     private const int AclFirstEntry = 0;
     private const int AclNextEntry = -1;
