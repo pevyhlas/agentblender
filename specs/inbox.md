@@ -191,13 +191,15 @@ on Metal, qualification open.
 
 Hosted runners have no GPU (C-09), so the real-Blender tests that need a GPU backend carry
 `OptixQualification` and run by hand ([operations](architecture/operations.md), Hardware
-qualification). The hosted Blender lane (EEVEE on Mesa's software EGL drivers) has not yet run
-green on a GitHub-hosted runner, so `ci.yml` marks it advisory (`continue-on-error`) until it
-does; a red result there does not block a merge.
+qualification). The hosted Blender lane (EEVEE on Mesa's software EGL drivers) first ran green
+on a GitHub-hosted runner on 2026-10-22, in a pull-request run, once the worker prewarm stopped
+rendering 64 EEVEE samples per spawn. `ci.yml` still marks it advisory (`continue-on-error`), so
+a red result there does not block a merge.
 
 1. **Manual OptiX qualification, advisory hosted lane** (Recommended): run the OptiX
-   qualification before a release that touches the GPU path; after the first green hosted run
-   of the Blender lane, drop `continue-on-error` and make it a required check.
+   qualification before a release that touches the GPU path; now that the Blender lane has run
+   green on a hosted runner, drop `continue-on-error` and make it a required check once it
+   stays green on main.
 2. **Hardware CI**: a GPU runner, which C-09 rules out for a public repository today.
 
 **If no answer**: option 1.

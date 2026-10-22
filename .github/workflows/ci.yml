@@ -272,14 +272,15 @@ jobs:
   blender-integration:
     name: Blender integration
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 35
     # GitHub-hosted runners have no GPU: workers report gpu.backend "none", so cycles_gpu is
     # refused with gpu_unavailable (never a silent CPU render). The tests that need a GPU
     # backend carry OptixQualification and run only by hand on a GPU host (C-09); this lane
     # covers everything else with real Blender, EEVEE on Mesa's software renderer included.
-    # TODO(specs/inbox.md "Hosted Blender lane and OptiX coverage"): this lane has not yet run
-    # green on a GitHub-hosted runner, so it is advisory (non-required) until its first green
-    # hosted run; then drop continue-on-error and make it a required check.
+    # TODO(specs/inbox.md "Hosted Blender lane and OptiX coverage"): this lane first ran green
+    # on a GitHub-hosted runner in a pull-request run (about 16 minutes of tests on software
+    # rendering). It stays advisory (non-required) until the owner makes it a required check;
+    # then drop continue-on-error.
     continue-on-error: true
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -360,7 +361,7 @@ jobs:
         # The step timeout sits well below the job's, so the log and results steps below still
         # run. --blame-hang-timeout aborts a test that runs longer than 5 minutes and names it
         # in the blame sequence file; the console logger lists every test with its duration.
-        timeout-minutes: 30
+        timeout-minutes: 25
         run: |
           dotnet test agentblender.slnx --no-build \
             --filter "Category=BlenderIntegration&Category!=OptixQualification" \

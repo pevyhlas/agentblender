@@ -15,9 +15,12 @@
   and a package, temp-install and doctor check; an advisory macOS arm64 unit lane; and a
   real-Blender integration lane on the official build, SHA-256 checked and downloaded at test
   time. The integration lane has no GPU: EEVEE runs on Mesa's software EGL drivers, checked by a
-  smoke render in the install step, and the lane excludes `OptixQualification`. It is advisory
-  (`continue-on-error`) until its first green hosted run ([inbox](../inbox.md), Hosted Blender
-  lane and OptiX coverage).
+  smoke render in the install step, and the lane excludes `OptixQualification`. It has run
+  green on a hosted runner (about 16 minutes of tests) and stays advisory (`continue-on-error`)
+  until the owner makes it required ([inbox](../inbox.md), Hosted Blender lane and OptiX
+  coverage). The test steps have their own timeouts below the job's, abort and name a test
+  that runs over 5 minutes (`--blame-hang-timeout`) and print the test log on every outcome;
+  the integration lane also uploads its log and TRX results.
 - **Hardware qualification** (C-09): no CI lane has a GPU. `OptixQualification` (the
   real-Blender cases that need a GPU backend, OptiX device evidence included) runs by hand on a
   Linux host with an NVIDIA OptiX GPU, and `MetalQualification` on an Apple silicon Mac, with
