@@ -72,10 +72,11 @@ pull request and every push to main: a validate job (whitespace, the CI policy, 
 the GPL boundary, no Blender binaries, the worker checks and the Product-Kit gates), build and
 unit tests on exactly the reference SDK with the vulnerable-package check and a package and
 install smoke test, a real-Blender integration lane on the official Blender 5.2.1 Linux build
-(SHA-256 checked), and an advisory macOS arm64 unit lane. The real-Blender lane is advisory
-too until its first green run on a GitHub-hosted runner (it renders EEVEE on Mesa's software
-drivers, which no hosted run has proved yet); if it fails on your pull request, say so in the
-pull request and run the integration lane locally. Pull-request runs get a read-only token and
+(SHA-256 checked), and an advisory macOS arm64 unit lane. The real-Blender lane renders EEVEE
+on Mesa's software drivers and is advisory too until it becomes a required check; if it fails on
+your pull request, say so in the pull request and run the integration lane locally. The test
+steps print their log on every outcome and abort and name a test that runs over 5 minutes; the
+integration lane uploads its log and TRX results as the `integration-test-results` artifact. Pull-request runs get a read-only token and
 no secrets, and a run from a first-time contributor waits for the maintainer's approval. Every
 required job must pass before a merge.
 

@@ -46,7 +46,15 @@ public sealed class UnixIdentityTests : IDisposable
     public void RootOwnedPathIsNotOwned()
     {
         if (UnixIdentity.EffectiveUserId == 0) return; // root passes every chmod proof
+
+        // "/" is root-owned everywhere; on macOS it is the sealed, read-only system volume,
+        // where the chmod may fail with EROFS before EPERM and the owner uid decides.
         Assert.False(UnixIdentity.IsOwnedByCurrentUser("/"));
+
+        // A root-owned directory on a writable file system takes the EPERM path.
+        var tmp = OperatingSystem.IsMacOS() ? "/private/tmp" : "/tmp";
+        Assert.Equal(0u, UnixIdentity.OwnerOf(tmp));
+        Assert.False(UnixIdentity.IsOwnedByCurrentUser(tmp));
     }
 
     [Fact]

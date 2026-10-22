@@ -130,7 +130,9 @@ NUGET_PACKAGES="$WORK/nuget" dotnet tool install "$PACKAGE_ID" --tool-path "$TOO
 
 # The shim needs only the runtime: DOTNET_ROOT is where Microsoft.NETCore.App lives.
 DOTNET_DIR="$(dotnet --list-runtimes | sed -n 's|^Microsoft\.NETCore\.App 10\.[^ ]* \[\(.*\)/shared/Microsoft\.NETCore\.App\]$|\1|p' | tail -n 1)"
-[ -n "$DOTNET_DIR" ] && [ -x "$DOTNET_DIR/dotnet" ] || die "no .NET 10 runtime found by dotnet --list-runtimes"
+if [ -z "$DOTNET_DIR" ] || [ ! -x "$DOTNET_DIR/dotnet" ]; then
+    die "no .NET 10 runtime found by dotnet --list-runtimes"
+fi
 # Isolation (plan M10): the doctor run owns its port and runtime dir. Defaults would use 7811
 # (bind, or a /healthz probe of whatever daemon holds it) and, on macOS where the temporary
 # home's state-dir socket path is too long, the shared /tmp/abl-<uid>. ABL_RUNTIME_DIR names
