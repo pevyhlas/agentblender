@@ -1,0 +1,351 @@
+name: CI
+
+# Public CI (C-09): fresh GitHub-hosted runners for every pull request, forks included, and
+# every push to main, with a read-only token and no secrets. Every action is pinned by full
+# commit SHA with a version comment; scripts/check-ci-policy.sh enforces these rules.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# PRs share one group per PR number and supersede older runs. Every other event
+# (push to main, workflow_dispatch) gets a unique group via run_id, so a main push is
+# never cancelled or replaced as a pending run by a later push.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  MSBUILDDISABLENODEREUSE: "1"
+  # Blender is an external, user-installed GPL program. CI downloads the official
+  # blender.org build at test time; it is never committed or redistributed.
+  BLENDER_VERSION: "5.2.1"
+  BLENDER_ARCHIVE: blender-5.2.1-linux-x64.tar.xz
+  BLENDER_URL: https://download.blender.org/release/Blender5.2/blender-5.2.1-linux-x64.tar.xz
+  BLENDER_SHA256: a31f524fa99a527d3d52b7f5aaa68c34e1a19d5a1c9473f79c5cc610fd5b10e9
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Whitespace check
+        run: git diff --check 4b825dc642cb6eb9a060e54bf8d69288fbee4904 HEAD
+
+      - name: CI policy (hosted runners, pinned actions, read-only)
+        run: |
+          bash scripts/check-ci-policy.sh
+          bash scripts/test-check-ci-policy.sh
+
+      - name: Constitution has no unfilled placeholders
+        run: |
+          if grep -nE '\[(PROJECT_NAME|RATIFICATION_DATE|LAST_AMENDED_DATE|One-line description)\]' .prdkit/memory/constitution.md; then
+            echo "::error::constitution.md contains template placeholders"
+            exit 1
+          fi
+
+      - name: Shellcheck repo scripts
+        run: |
+          # Kit-owned scripts (.prdkit/scripts, a local .product-kit checkout) are skipped; this checks only
+          # scripts this repo authors. shellcheck is preinstalled on ubuntu-24.04.
+          mapfile -t files < <(find . -path ./.prdkit -prune -o -path ./.product-kit -prune -o -path ./.git -prune -o -name '*.sh' -print)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "no repo-authored shell scripts yet"
+            exit 0
+          fi
+          shellcheck "${files[@]}"
+
+      - name: GPL boundary — bpy imports only under worker/
+        run: |
+          # Non-negotiable GPL boundary (C-02): the host never imports Blender code.
+          # Full bpy module family (a trailing _ defeats \b, so bpy_extras/gpu_extras are
+          # listed explicitly); the exemption is the TOP-LEVEL worker/ only — a nested
+          # directory that happens to be named worker is NOT exempt.
+          if grep -rn --include='*.py' \
+               -E '^[[:space:]]*(import|from)[[:space:]]+(bpy|bmesh|mathutils|gpu|bgl|blf|aud|idprop|freestyle|bl_math|bpy_extras|gpu_extras|bl_ui|bl_operators)([[:space:]._,]|$)' \
+               --exclude-dir=.git --exclude-dir=.prdkit --exclude-dir=.product-kit . \
+             | grep -v '^\./worker/'; then
+            echo "::error::bpy/Blender import found outside worker/"
+            exit 1
+          fi
+
+      - name: No Blender binaries committed
+        run: |
+          # Blender is never redistributed (D-10): no Blender archives or binaries in the tree.
+          if git ls-files | grep -nE '(^|/)blender(\.exe)?$|blender-[0-9.]+-(linux|windows|macos)'; then
+            echo "::error::Blender binaries/archives must not be committed"
+            exit 1
+          fi
+
+      - name: Worker scripts compile
+        run: python3 -m py_compile worker/*.py
+
+      - name: Worker blob storage and integrity regressions
+        run: python3 tests/test_blob_transfers.py
+
+      - name: Worker Cycles device detection and selection (fakes)
+        run: python3 tests/test_cycles_devices.py
+
+      - name: Claude telemetry launch environment
+        run: bash scripts/test-claude-with-telemetry.sh
+
+      - name: Product-Kit adoption gate
+        # Manifest-driven: verifies the vendored .prdkit/ install against its manifest and
+        # adoption-manifest-sha256; the kit is vendored, not a submodule.
+        run: bash .prdkit/scripts/bash/check-adoption.sh
+
+      - name: Product-Kit doctor
+        # Fails on malformed/duplicate IDs, malformed records, install drift and agent
+        # definition/tier-map findings; spec advisories stay non-failing (no --strict).
+        run: bash .prdkit/scripts/bash/doctor.sh
+
+  build-test:
+    name: Build & unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Select the reference SDK
+        # global.json rolls forward to later 10.0 feature bands for contributors; CI
+        # builds with exactly the reference, so a later band on the runner can neither
+        # fail CI nor quietly become the reference. The checkout is ephemeral, so the
+        # rewrite never reaches a commit.
+        run: |
+          ref="$(jq -r '.sdk.version' global.json)"
+          printf '{"sdk":{"version":"%s","rollForward":"disable"}}\n' "$ref" > global.json
+          echo "ABL_REFERENCE_SDK=$ref" >> "$GITHUB_ENV"
+
+      - name: Install the reference .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Assert the reference SDK
+        run: |
+          sdk="$(dotnet --version)"
+          if [ "$sdk" != "$ABL_REFERENCE_SDK" ]; then
+            echo "::error::dotnet selects SDK $sdk, not the reference $ABL_REFERENCE_SDK"
+            exit 1
+          fi
+          echo "SDK $sdk (reference)"
+
+      - name: Restore (locked)
+        run: dotnet restore agentblender.slnx --locked-mode
+
+      - name: Vulnerable package check
+        run: |
+          dotnet list agentblender.slnx package --vulnerable --include-transitive > vuln.log 2>&1 \
+            || { cat vuln.log; exit 1; }
+          cat vuln.log
+          if grep -qE '^[[:space:]]*>' vuln.log; then
+            echo "::error::vulnerable NuGet packages found"
+            exit 1
+          fi
+
+      - name: Build
+        run: dotnet build agentblender.slnx --no-restore -warnaserror
+
+      - name: Unit tests
+        # Never pipe dotnet test output (pipe hangs with node reuse) — redirect to a file.
+        # MetalQualification (an Apple silicon Mac) and OptixQualification (a Linux host with an
+        # NVIDIA OptiX GPU) run only by hand on their hardware; they fail by design anywhere
+        # else, so no CI lane runs them.
+        run: |
+          dotnet test agentblender.slnx --no-build \
+            --filter "Category!=BlenderIntegration&Category!=MetalQualification&Category!=OptixQualification" > testrun.log 2>&1 \
+            || { tail -100 testrun.log; exit 1; }
+          tail -20 testrun.log
+
+      - name: Package, temp install and doctor, release bundle shape
+        # Packs the agentblender tool, installs it into a temporary --tool-path, runs
+        # `abl doctor --quick --json` in an empty environment (worker.files must pass
+        # against the packaged manifest) and writes SHA256SUMS and provenance.json (with
+        # the reference SDK). Nothing is uploaded, tagged or published.
+        run: |
+          bash scripts/release-bundle.sh --out "$RUNNER_TEMP/abl-release-bundle"
+          cat "$RUNNER_TEMP/abl-release-bundle/SHA256SUMS" "$RUNNER_TEMP/abl-release-bundle/provenance.json"
+          rm -rf "$RUNNER_TEMP/abl-release-bundle"
+
+      - name: Upload test log
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: unit-test-log
+          path: testrun.log
+          retention-days: 7
+
+  build-test-macos:
+    name: Build & unit tests (macOS arm64, advisory)
+    # Pinned arm64 image (not macos-latest) so a silent image roll cannot change results.
+    runs-on: macos-15
+    timeout-minutes: 20
+    # TODO(change 008-agent-operability; R-12, planned): macOS arm64 is not yet a qualified
+    # platform. This lane is advisory (non-required) until the macOS qualification in
+    # change 008-agent-operability lands; then drop continue-on-error and make it required.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Select the reference SDK
+        # global.json rolls forward to later 10.0 feature bands for contributors; CI
+        # builds with exactly the reference, so a later band on the runner can neither
+        # fail CI nor quietly become the reference. The checkout is ephemeral, so the
+        # rewrite never reaches a commit.
+        run: |
+          ref="$(jq -r '.sdk.version' global.json)"
+          printf '{"sdk":{"version":"%s","rollForward":"disable"}}\n' "$ref" > global.json
+          echo "ABL_REFERENCE_SDK=$ref" >> "$GITHUB_ENV"
+
+      - name: Install the reference .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Assert the reference SDK
+        run: |
+          sdk="$(dotnet --version)"
+          if [ "$sdk" != "$ABL_REFERENCE_SDK" ]; then
+            echo "::error::dotnet selects SDK $sdk, not the reference $ABL_REFERENCE_SDK"
+            exit 1
+          fi
+          echo "SDK $sdk (reference)"
+
+      - name: Restore (locked)
+        run: dotnet restore agentblender.slnx --locked-mode
+
+      - name: Build
+        run: dotnet build agentblender.slnx --no-restore -warnaserror
+
+      - name: Unit tests
+        # The default macOS TMPDIR sits under the /var -> /private/var symlink, which the
+        # delivery path guard rejects (change 008-agent-operability); use the runner's real temp dir.
+        run: |
+          TMPDIR="$RUNNER_TEMP/" dotnet test agentblender.slnx --no-build \
+            --filter "Category!=BlenderIntegration&Category!=MetalQualification&Category!=OptixQualification" > testrun.log 2>&1 \
+            || { tail -100 testrun.log; exit 1; }
+          tail -20 testrun.log
+
+  blender-integration:
+    name: Blender integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # GitHub-hosted runners have no GPU: workers report gpu.backend "none", so cycles_gpu is
+    # refused with gpu_unavailable (never a silent CPU render). The tests that need a GPU
+    # backend carry OptixQualification and run only by hand on a GPU host (C-09); this lane
+    # covers everything else with real Blender, EEVEE on Mesa's software renderer included.
+    # TODO(specs/inbox.md "Hosted Blender lane and OptiX coverage"): this lane has not yet run
+    # green on a GitHub-hosted runner, so it is advisory (non-required) until its first green
+    # hosted run; then drop continue-on-error and make it a required check.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Select the reference SDK
+        # global.json rolls forward to later 10.0 feature bands for contributors; CI
+        # builds with exactly the reference, so a later band on the runner can neither
+        # fail CI nor quietly become the reference. The checkout is ephemeral, so the
+        # rewrite never reaches a commit.
+        run: |
+          ref="$(jq -r '.sdk.version' global.json)"
+          printf '{"sdk":{"version":"%s","rollForward":"disable"}}\n' "$ref" > global.json
+          echo "ABL_REFERENCE_SDK=$ref" >> "$GITHUB_ENV"
+
+      - name: Install the reference .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Assert the reference SDK
+        run: |
+          sdk="$(dotnet --version)"
+          if [ "$sdk" != "$ABL_REFERENCE_SDK" ]; then
+            echo "::error::dotnet selects SDK $sdk, not the reference $ABL_REFERENCE_SDK"
+            exit 1
+          fi
+          echo "SDK $sdk (reference)"
+
+      - name: Cache Blender download
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ~/.cache/abl-blender
+          key: blender-${{ env.BLENDER_VERSION }}-linux-x64-${{ env.BLENDER_SHA256 }}
+
+      - name: Install Blender (official blender.org build, SHA-256 pinned)
+        # Every worker spawn pre-warms with a 64 px EEVEE render, and EEVEE needs a GPU
+        # context even in --background. Workers get no DISPLAY (their environment is
+        # allowlisted), so the context comes from headless EGL: the Mesa EGL vendor and the
+        # llvmpipe (OpenGL) and lavapipe (Vulkan) software drivers provide it on a GPU-less
+        # runner. The smoke render below fails this step, not every test, when it cannot.
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 libgl1 libegl1 \
+            libegl-mesa0 libgl1-mesa-dri libglx-mesa0 mesa-vulkan-drivers
+          mkdir -p ~/.cache/abl-blender
+          archive="$HOME/.cache/abl-blender/$BLENDER_ARCHIVE"
+          if [ ! -f "$archive" ]; then
+            curl -fsSL --retry 3 -o "$archive" "$BLENDER_URL"
+          fi
+          echo "$BLENDER_SHA256  $archive" | sha256sum -c -
+          tar -xJf "$archive" -C "$RUNNER_TEMP"
+          blender="$RUNNER_TEMP/blender-$BLENDER_VERSION-linux-x64/blender"
+          "$blender" --background --factory-startup --version
+          smoke="$RUNNER_TEMP/eevee-smoke.png"
+          env -u DISPLAY -u WAYLAND_DISPLAY "$blender" --background --factory-startup --python-exit-code 1 \
+            --python-expr "import bpy, sys; s = bpy.context.scene; s.render.engine = 'BLENDER_EEVEE'; s.render.resolution_x = s.render.resolution_y = 8; s.render.resolution_percentage = 100; s.render.filepath = sys.argv[-1]; bpy.ops.render.render(write_still=True)" \
+            -- "$smoke"
+          if [ ! -s "$smoke" ]; then
+            echo "::error::Blender could not render EEVEE headless on this runner (no GPU context)"
+            exit 1
+          fi
+          rm -f "$smoke"
+          echo "ABL_BLENDER=$blender" >> "$GITHUB_ENV"
+
+      - name: Restore (locked)
+        run: dotnet restore agentblender.slnx --locked-mode
+
+      - name: Build
+        run: dotnet build agentblender.slnx --no-restore -warnaserror
+
+      - name: Integration tests (real Blender)
+        run: |
+          dotnet test agentblender.slnx --no-build \
+            --filter "Category=BlenderIntegration&Category!=OptixQualification" > itestrun.log 2>&1 \
+            || { tail -150 itestrun.log; exit 1; }
+          tail -20 itestrun.log
+
+      - name: Upload integration test log
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: integration-test-log
+          path: itestrun.log
+          retention-days: 7

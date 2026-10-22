@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <!-- 008 FR-007: a library hosted by `abl daemon run`; there is no Abl.Daemon executable. -->
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Abl.Core/Abl.Core.csproj" />
+    <InternalsVisibleTo Include="Abl.Core.Tests" />
+  </ItemGroup>
+</Project>

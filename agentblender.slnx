@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Abl.Core/Abl.Core.csproj" />
+    <Project Path="src/Abl.Daemon/Abl.Daemon.csproj" />
+    <Project Path="src/Abl.Cli/Abl.Cli.csproj" />
+    <Project Path="src/Abl.Launcher/Abl.Launcher.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Abl.Core.Tests/Abl.Core.Tests.csproj" />
+    <Project Path="tests/Abl.Integration.Tests/Abl.Integration.Tests.csproj" />
+  </Folder>
+</Solution>

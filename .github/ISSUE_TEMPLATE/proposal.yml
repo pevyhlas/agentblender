@@ -1,0 +1,36 @@
+name: Proposal
+description: Suggest a change to AgentBlender, starting from the problem it solves
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Open a proposal before a pull request for anything beyond a small fix, so the problem
+        and the smallest useful change are agreed first. 2D authoring (vector, pixel art, icon
+        kits) belongs to AgentGraphicDesign, not here.
+  - type: textarea
+    id: problem
+    attributes:
+      label: User, situation and desired outcome
+      description: Who runs into this (an agent, an operator, a consumer project), when, and what they need to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and current workaround
+      description: What happened on a real run, and what you do today instead.
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: Smallest useful change
+      description: The narrowest change that would help. Name the ops, CLI commands, worker scripts or formats it touches, if you know.
+    validations:
+      required: true
+  - type: textarea
+    id: evaluation
+    attributes:
+      label: How would we know it helped?
+      description: A test, a measurable result, or what you would observe on a real run.

@@ -1,0 +1,84 @@
+name: Bug report
+description: The daemon, CLI, MCP server, worker or a script did not do what the docs say
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        AgentBlender is experimental and has one maintainer, so replies are best effort.
+        Report security vulnerabilities privately as SECURITY.md describes, never here.
+        Include only shareable excerpts: no secrets, tokens, private paths, host names,
+        private-network addresses or private scene data.
+  - type: input
+    id: version
+    attributes:
+      label: AgentBlender version
+      description: The output of `abl --version`, or the commit you built from.
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: OS and architecture
+      description: For example Ubuntu 24.04 x64 or macOS 15 on Apple silicon.
+    validations:
+      required: true
+  - type: input
+    id: dotnet
+    attributes:
+      label: .NET SDK
+      description: The output of `dotnet --version` in the checkout, or the runtime that runs the installed tool.
+      placeholder: 10.0.112
+    validations:
+      required: true
+  - type: input
+    id: blender
+    attributes:
+      label: Blender version and GPU
+      description: For example Blender 5.2.1, Cycles on CPU, or Metal on Apple silicon. Write "n/a" if Blender was not involved.
+    validations:
+      required: true
+  - type: input
+    id: harness
+    attributes:
+      label: Agent harness and surface
+      description: For example Claude Code over MCP, OpenCode, or the `abl` CLI by hand, with the model if it matters.
+    validations:
+      required: true
+  - type: textarea
+    id: intent
+    attributes:
+      label: What were you trying to do?
+      description: The outcome you wanted and, for an agent run, the request you gave it.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest sequence that shows the problem, from a fresh store if you can. Name the ops or commands in order.
+      placeholder: |
+        1. abl setup
+        2. abl daemon start
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output
+      description: Error envelopes, `abl doctor --quick --json` or daemon log lines, as text. Redact paths and addresses.
+      render: text

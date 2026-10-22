@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>abl</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- 008 FR-014: one RID-agnostic .NET tool package; `dotnet tool install` creates the `abl` shim locally. -->
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>abl</ToolCommandName>
+    <PackageId>agentblender</PackageId>
+    <Title>AgentBlender</Title>
+    <Description>Agent-native 3D asset pipeline on Blender: the abl CLI, which also hosts the loopback MCP + REST daemon and ships its Blender worker scripts. Needs the ASP.NET Core 10 runtime and a separately installed Blender 5.2 LTS.</Description>
+    <Authors>AgentBlender contributors</Authors>
+    <Copyright>Copyright (c) 2026 FT Plus</Copyright>
+    <PackageTags>blender;mcp;agents;3d;rendering</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/pevyhlas/agentblender</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/pevyhlas/agentblender</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+  <ItemGroup>
+    <!--
+      The package redistributes Apache-2.0 and MIT assemblies (ModelContextProtocol*,
+      OpenTelemetry*, Microsoft.Extensions.AI.Abstractions), so it carries their notices:
+      LICENSE and THIRD-PARTY-NOTICES.md at the package root, the license texts under licenses/.
+      scripts/release-bundle.sh refuses a package without them.
+    -->
+    <None Include="../../LICENSE;../../THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="" Visible="false" />
+    <None Include="../../licenses/*.txt" Pack="true" PackagePath="licenses" Visible="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Abl.Core.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Abl.Core/Abl.Core.csproj" />
+    <!-- 008 FR-007: `abl daemon run` hosts the daemon library in-process. -->
+    <ProjectReference Include="../Abl.Daemon/Abl.Daemon.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- worker/ ships next to the binaries, so the installed daemon is self-contained; the tool package carries it in its publish output (tools/), not as NuGet content. -->
+    <Content Include="../../worker/**" Exclude="../../worker/**/__pycache__/**;../../worker/**/*.pyc" LinkBase="worker" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Pack="false" />
+  </ItemGroup>
+
+  <!--
+    008 FR-014/AC-32: the package manifest of worker/. One `<sha256>  <module>` line per
+    worker/*.py (the sha256sum format), written next to abl.dll and packed with it. Doctor's
+    worker.files compares the worker/ it resolves against it (Abl.Core WorkerManifest).
+  -->
+  <Target Name="AblWorkerManifest" BeforeTargets="AssignTargetPaths">
+    <ItemGroup>
+      <_AblWorkerModule Include="../../worker/*.py" />
+    </ItemGroup>
+    <GetFileHash Files="@(_AblWorkerModule)" Algorithm="SHA256" HashEncoding="hex">
+      <Output TaskParameter="Items" ItemName="_AblWorkerModuleHash" />
+    </GetFileHash>
+    <WriteLinesToFile File="$(IntermediateOutputPath)worker-manifest.sha256"
+                      Lines="@(_AblWorkerModuleHash->'%(FileHash)  %(Filename)%(Extension)')"
+                      Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Content Include="$(IntermediateOutputPath)worker-manifest.sha256" Link="worker-manifest.sha256"
+               CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Pack="false" />
+      <FileWrites Include="$(IntermediateOutputPath)worker-manifest.sha256" />
+    </ItemGroup>
+  </Target>
+
+  <!-- 008 L10: a Debug build also searches parent directories for worker/ (AblDefaults); never pack one. -->
+  <Target Name="AblRefuseDevPack" BeforeTargets="GenerateNuspec" Condition="'$(Configuration)' != 'Release'">
+    <Error Text="agentblender packs only a Release build (dotnet pack -c Release): a $(Configuration) build searches parent directories for worker/." />
+  </Target>
+</Project>

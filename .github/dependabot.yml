@@ -1,0 +1,16 @@
+version: 2
+updates:
+  # Keeps the SHA-pinned GitHub Actions current; Dependabot rewrites the pin and the
+  # version comment together. Each bump arrives as a normal PR through full CI.
+  # NuGet is left out: restore runs with --locked-mode and Dependabot does not document
+  # packages.lock.json support, so the maintainer updates packages and lock files together.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci

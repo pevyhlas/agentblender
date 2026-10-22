@@ -1,0 +1,34 @@
+# Product-Kit feature worktrees
+.worktrees/
+
+# .NET
+bin/
+obj/
+*.user
+TestResults/
+
+# Python (worker scripts)
+__pycache__/
+*.pyc
+
+# Blender
+*.blend1
+*.blend2
+
+# Local run state (checkpoint store, renders, job journal) — never committed
+var/
+out/
+
+# Logs / scratch
+*.log
+.prdkit/ledger/
+
+.prdkit/cache/
+# Local Product-Kit source checkout, only for kit upgrades (the kit is vendored in .prdkit/)
+.product-kit/
+
+# Packed tool packages and release bundles (scripts/install-local.sh, release-bundle.sh)
+artifacts/
+
+# Personal Claude Code settings (for example the optional telemetry profile)
+.claude/settings.local.json
