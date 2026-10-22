@@ -127,15 +127,20 @@ def op_warm(req):
     if req.get("prewarm_render", True):
         scene = bpy.context.scene
         saved = (scene.render.engine, scene.render.resolution_x, scene.render.resolution_y,
-                 scene.render.resolution_percentage, scene.render.filepath)
+                 scene.render.resolution_percentage, scene.render.filepath,
+                 scene.eevee.taa_render_samples)
         scene.render.engine = ENGINES["eevee"]
         scene.render.resolution_x = 64
         scene.render.resolution_y = 64
         scene.render.resolution_percentage = 100
         scene.render.filepath = os.path.join(tempfile.gettempdir(), f"abl-prewarm-{os.getpid()}.png")
+        # One sample compiles and binds the same shaders as the default 64; the other 63
+        # only repeat the pipeline, which costs seconds on a software renderer (llvmpipe).
+        scene.eevee.taa_render_samples = 1
         bpy.ops.render.render(write_still=True)
         (scene.render.engine, scene.render.resolution_x, scene.render.resolution_y,
-         scene.render.resolution_percentage, scene.render.filepath) = saved
+         scene.render.resolution_percentage, scene.render.filepath,
+         scene.eevee.taa_render_samples) = saved
     journal.reset()
     return {"warmed_ms": round((time.monotonic() - started) * 1000, 1)}
 

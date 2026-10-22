@@ -356,9 +356,6 @@ jobs:
       - name: Build
         run: dotnet build agentblender.slnx --no-restore -warnaserror
 
-      - name: TEMPORARY spawn cost diagnostic
-        run: bash scripts/diag-spawn-cost.sh
-
       - name: Integration tests (real Blender)
         # The step timeout sits well below the job's, so the log and results steps below still
         # run. --blame-hang-timeout aborts a test that runs longer than 5 minutes and names it
@@ -366,7 +363,7 @@ jobs:
         timeout-minutes: 30
         run: |
           dotnet test agentblender.slnx --no-build \
-            --filter "Category=BlenderIntegration&Category!=OptixQualification&FullyQualifiedName~ExecAtomicityTests" \
+            --filter "Category=BlenderIntegration&Category!=OptixQualification" \
             --logger "console;verbosity=normal" --logger trx \
             --results-directory "$RUNNER_TEMP/itest-results" \
             --blame-hang-timeout 5m --blame-hang-dump-type none > itestrun.log 2>&1
