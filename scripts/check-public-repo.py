@@ -83,7 +83,7 @@ def self_test():
 
 def integration_test():
     with tempfile.TemporaryDirectory(prefix="public-repo-test-") as temporary:
-        root = Path(temporary) / "repo"
+        root = (Path(temporary) / "repo").resolve()
         root.mkdir()
         subprocess.run(["git", "init", "-q", str(root)], check=True)
 

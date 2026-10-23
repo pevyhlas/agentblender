@@ -41,9 +41,9 @@ platform expansion. Add only bounded regression protection, not a claim of compl
 - [x] Inspect public remote, green CI, rulesets, PRs and releases.
 - [x] Polish README and preserve advanced reference and incoming anchors.
 - [x] Upgrade kit/notices and SDK patch.
-- [ ] Finish public-data audit and repeatable regression protection.
+- [x] Finish bounded public-text/history audit and repeatable regression protection.
 - [ ] Verify, independently review and integrate through exact-head hosted CI.
-- [ ] Recheck stale PRs and report release blockers separately.
+- [x] Recheck stale PRs (none open) and report release blockers separately.
 
 ## Checks
 
@@ -54,27 +54,39 @@ not the policy. Verify links/examples, adoption/doctor, legal notices and hosted
 
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
-| A1 | J-06 | documentation links/examples and independent read | 0 | NOT_RUN |
-| A2 | C-01 | adoption, doctor and licence review | 0 | NOT_RUN |
-| A3 | C-04, C-09 | public audit, regression and workflow checks | 0 | NOT_RUN |
-| A4 | D-16 | locked restore, build/unit/package and exact-head CI | 0 | NOT_RUN |
+| A1 | J-06 | documentation links and unchanged boundary test; independent code/ops read | 2 | PASS locally |
+| A2 | C-01 | adoption, doctor (existing advisories) and licence review | 1 | PASS |
+| A3 | C-04, C-09 | bounded public audit, guard self-tests/scan and CI-policy mutants | 1 | PASS within stated limits |
+| A4 | D-16 | locked restore, build/unit/package and exact-head CI | 3 | LOCAL PASS; hosted CI BLOCKED |
 
 ## State
 
-**Step**: build
+**Step**: verify
 **Waiting on**: repository write access for the automation credential (push 403); then exact-head CI.
-**Next**: verify the corrected README boundary section and extended guard tests, then re-review.
+**Next**: review the final canonical-temp-path fix and inbox handover; publish once access is restored.
 **Authority**: constitution permits commits, branch push/PR and green-reviewed merge;
 release/tag and deployments stay owner-gated. No history rewrite or remote branch deletion.
 **Branch**: 010-public-readiness; base a93b45807a5ca866efdfa3adde9968926ad30503.
 **Delivery**: LOCAL_ONLY; remote main is the base above; no remote feature branch or PR exists.
 **Attempts**: initial local unit run failed (long temporary path, uncommitted SDK pin and README
 boundary assertion); short-temp run isolated the README and umask-sensitive fixture failures.
-Next run uses the committed pin, restored boundary guidance, short temp and umask 022. Logs retained.
+The committed-pin, restored-guidance, short-temp/umask-022 run passes: 692 core and 103
+non-Blender integration tests, with one read-only-filesystem core skip. Build has zero warnings
+and errors. Isolated package/install/doctor and missing-worker-negative checks pass at c882d40.
+The final developer-guard fixture canonicalizes its temporary root (review medium, fixed in
+fix round 2); normal and symlinked-temp self-tests pass. Raw failed attempts stay in cache.
+**Evidence**: `.prdkit/cache/evidence/010-public-readiness/` holds restore/build/unit/package
+logs, the bounded six-commit/366-blob public scan, upstream proof and all review transcripts.
+Public Product-Kit v1.1.1's complete upstream local suite passes all 28 test files; its exact
+source also has green hosted Linux and macOS CI. This verifies kit adoption, not our hosted CI.
+No real-Blender, Metal/OptiX or live desktop qualification was run for this maintenance.
 **Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-code · FAIL · 0 critical, 1 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/code-review.jsonl
 **Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/security-review.jsonl
 **Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/ops-review.jsonl
 **Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-license · FAIL · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/license-review.jsonl (upstream access only)
 **Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-license · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/license-review-resolved.jsonl
+**Review**: round 2 · 7b9b262d5323ac8eb775db49348fcc3ce3457491..c882d404c0b41c7151472c88b60050199d339586 · eng-code · PASS · 0 critical, 0 high, 1 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/code-review-round-2.jsonl
+**Review**: round 2 · 7b9b262d5323ac8eb775db49348fcc3ce3457491..c882d404c0b41c7151472c88b60050199d339586 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/security-review-round-2.jsonl
+**Review**: round 2 · 7b9b262d5323ac8eb775db49348fcc3ce3457491..c882d404c0b41c7151472c88b60050199d339586 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/ops-review-round-2.jsonl
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
