@@ -129,6 +129,7 @@ public class EndToEndTests
                     mesh = bpy.data.meshes.new("Hero")
                     bm = bmesh.new(); bmesh.ops.create_cube(bm, size=size); bm.to_mesh(mesh); bm.free()
                     bpy.context.scene.collection.objects.link(bpy.data.objects.new("Hero", mesh))
+                    bpy.context.scene.eevee.taa_render_samples = 1  # one sample: the assertions check outputs, not quality
                     """,
                 ["parameters"] = new Dictionary<string, object?> { ["size"] = 2 },
             }, ct);

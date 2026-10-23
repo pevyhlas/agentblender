@@ -48,7 +48,8 @@ public class WorkerProtocolTests(BlenderFixture fixture)
                 "state", new JsonObject { ["mode"] = "full" }, OpTimeout, ct);
             Assert.True(state["state"]!["objects"]!.AsObject().ContainsKey("ProtoCube"));
 
-            // render + contact sheet land on disk
+            // render + contact sheet land on disk; no samples, so this render keeps the product
+            // default EEVEE sample count (the batch and journey tests render one sample)
             var png = Path.Combine(fixture.Root, "proto.png");
             await worker.RequestAsync("render", new JsonObject
             {
