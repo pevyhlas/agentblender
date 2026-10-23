@@ -63,7 +63,8 @@ not the policy. Verify links/examples, adoption/doctor, legal notices and hosted
 
 **Step**: verify
 **Waiting on**: repository write access for the automation credential (push 403); then exact-head CI.
-**Next**: review the final canonical-temp-path fix and inbox handover; publish once access is restored.
+**Next**: restore the app's repository write access, push this branch, open a PR, and run required
+exact-head hosted CI. Do not merge or publish a release while those gates remain blocked.
 **Authority**: constitution permits commits, branch push/PR and green-reviewed merge;
 release/tag and deployments stay owner-gated. No history rewrite or remote branch deletion.
 **Branch**: 010-public-readiness; base a93b45807a5ca866efdfa3adde9968926ad30503.
@@ -88,5 +89,6 @@ No real-Blender, Metal/OptiX or live desktop qualification was run for this main
 **Review**: round 2 · 7b9b262d5323ac8eb775db49348fcc3ce3457491..c882d404c0b41c7151472c88b60050199d339586 · eng-code · PASS · 0 critical, 0 high, 1 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/code-review-round-2.jsonl
 **Review**: round 2 · 7b9b262d5323ac8eb775db49348fcc3ce3457491..c882d404c0b41c7151472c88b60050199d339586 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/security-review-round-2.jsonl
 **Review**: round 2 · 7b9b262d5323ac8eb775db49348fcc3ce3457491..c882d404c0b41c7151472c88b60050199d339586 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/ops-review-round-2.jsonl
+**Review**: round 3 · c882d404c0b41c7151472c88b60050199d339586..fe1bf121e4ba2928e8c799b7c9e5b67cb853f234 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/code-review-round-3.jsonl
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
