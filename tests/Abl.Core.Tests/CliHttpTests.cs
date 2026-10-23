@@ -42,7 +42,7 @@ public class CliHttpTests
         using var indefinite = CliHttp.Create("http://localhost:7811", null, new HangingHandler());
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => indefinite.GetAsync("/healthz", cancelled.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => indefinite.GetAsync("/healthz", cancelled.Token)).WaitAsync(TimeSpan.FromSeconds(30));
     }
 
     [Theory]

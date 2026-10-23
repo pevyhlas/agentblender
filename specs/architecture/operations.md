@@ -24,11 +24,14 @@
 - **Signals** (audit, 2026-10-23): every `kill` goes through `UnixIdentity.Signal`, which
   refuses 0, -1 and a real signal to the caller's own process group; .NET's
   `Process.Kill(entireProcessTree: true)` (worker, launcher, discovery and service probes)
-  stops and kills only the started process and its descendants, pid by pid. Group signals reach only a
-  group the code verified: the starting daemon's own group after it failed to start, the
-  recorded group of a daemon that leads it, never one the caller runs in (`stop` refuses with
-  `daemon.workers`). `setsid` runs only in `daemon run --detached`. Two macOS CI runs that lost
-  their runner were not reproduced: 10 traced local and 10 watched hosted iterations without
+  stops and kills only the started process and its descendants, pid by pid. Two group
+  signals exist: the recorded group of a daemon that leads it (the record's group must equal
+  its pid), and the group of a daemon child that failed to start, which exists only if that
+  child called `setsid` (a forked pid never matches an active group). Neither is ever the
+  caller's group: `stop` refuses (`daemon.workers`) in the daemon's group, as the daemon or
+  under its process tree; the tree check passes silently when the process table cannot be
+  read. `setsid` runs only in `daemon run --detached`. Two macOS CI runs that lost their
+  runner were not reproduced: 10 traced local and 10 watched hosted iterations without
   `setsid` showed no signal to the runner's group. The macOS unit lane keeps `setsid` as
   defence in depth.
 - **Hardware qualification** (C-09): no CI lane has a GPU. `OptixQualification` (the

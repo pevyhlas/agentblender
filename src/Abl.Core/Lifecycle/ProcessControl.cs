@@ -16,6 +16,7 @@ public interface IProcessControl
     /// in group <c>-pid</c> when it is negative.
     /// </summary>
     /// <returns>False when no such process or group exists.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">0 or -1, or a real signal to the caller's own process group.</exception>
     /// <exception cref="IOException">Any other failure (for example <c>EPERM</c>).</exception>
     bool Signal(int pid, int signal);
 

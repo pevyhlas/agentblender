@@ -173,6 +173,27 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         var error = JsonNode.Parse(stdout)!["error"]!;
         Assert.Equal("daemon.workers", error["check"]!.GetValue<string>());
         Assert.Contains($"under daemon pid {DaemonPid}", error["message"]!.GetValue<string>());
+        var body = JsonNode.Parse(stdout)!;
+        Assert.False(body["stopped"]!.GetValue<bool>());
+        Assert.Equal(DaemonPid, body["pid"]!.GetValue<int>());
+        Assert.True(body["forced"]!.GetValue<bool>());
+        Assert.Empty(_events);
+        Assert.True(processes.Alive);
+    }
+
+    [Fact]
+    public async Task StopRunAsTheDaemonItselfSignalsNothing()
+    {
+        var processes = new FakeProcesses(_events) { CallerPid = DaemonPid };
+        var services = new FakeServices(_events, processes) { RunsDaemon = false };
+        var (code, stdout, _) = await RunAsync(core => core.StopAsync(json: true, force: false), processes, services);
+
+        Assert.Equal(1, code);
+        var body = JsonNode.Parse(stdout)!;
+        Assert.Equal("daemon.workers", body["error"]!["check"]!.GetValue<string>());
+        Assert.Contains($"as daemon pid {DaemonPid} itself", body["error"]!["message"]!.GetValue<string>());
+        Assert.False(body["stopped"]!.GetValue<bool>());
+        Assert.False(body["forced"]!.GetValue<bool>());
         Assert.Empty(_events);
         Assert.True(processes.Alive);
     }

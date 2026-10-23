@@ -206,7 +206,8 @@ service again and shows launchd's output file, or names the `journalctl --user` 
 that output never reaches the store log.
 `stop --force` boots the service out before it kills the daemon, so no restart policy
 brings it back. `stop` refuses (`daemon.workers`) and signals nothing when it runs inside the
-daemon: in its process group or under its process tree, as a script a worker runs would. On Linux, `--enable-at-login` enables the unit; without linger
+daemon: in its process group or under its process tree, as a script a worker runs would.
+On Linux, `--enable-at-login` enables the unit; without linger
 (`loginctl enable-linger`) a user unit stops at logout. On macOS the plist stays in the
 state dir and is loaded by `abl daemon start` (into `gui/<uid>`, else `user/<uid>`);
 `--enable-at-login` puts it in `~/Library/LaunchAgents`, which launchd loads at login.

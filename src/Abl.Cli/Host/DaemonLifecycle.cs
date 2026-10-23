@@ -735,10 +735,22 @@ public sealed class DaemonLifecycle(LifecycleHost host)
         // first, and with the group whatever else shares it.
         if (CallerInside(state, group, workers) is { } inside)
         {
-            return Fail(json, new ConfigException(
+            var refused = new ConfigException(
                 "daemon.workers",
                 $"this command runs {inside}, so stopping the daemon would signal this command too; nothing was signalled",
-                "run `abl daemon stop` from outside the daemon, for example from a shell, not from a script the daemon runs"));
+                "run `abl daemon stop` from outside the daemon, for example from a shell, not from a script the daemon runs");
+            if (json)
+            {
+                var body = ErrorJson(refused);
+                body["stopped"] = false;
+                body["pid"] = state.Pid;
+                body["forced"] = force;
+                body["service"] = service;
+                Out.WriteLine(body.ToJsonString());
+            }
+
+            HostVerbs.WriteError(Err, refused);
+            return 1;
         }
 
         // AC-20 is checked, never assumed (2a round-3): by the group when the daemon has one,

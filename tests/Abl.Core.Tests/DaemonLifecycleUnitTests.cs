@@ -484,12 +484,14 @@ public sealed class DaemonLifecycleUnitTests : IDisposable
         Assert.Throws<ArgumentOutOfRangeException>(() => UnixIdentity.Signal(0, 0));
         Assert.Throws<ArgumentOutOfRangeException>(() => UnixIdentity.Signal(-1, 0));
 
-        // The caller's own group is never signalled; signal 0 (existence) still answers.
+        // The caller's own group is never signalled; signal 0 (existence) still answers. The
+        // probe is SIGWINCH (28 on Linux and macOS, ignored by default): the guard does not
+        // depend on the signal, and a regressed guard must not stop or kill this test's group,
+        // which on CI is the runner's.
+        const int sigWinch = 28;
         var own = UnixIdentity.ProcessGroup;
         Assert.True(UnixIdentity.GroupExists(own));
-        Assert.Throws<ArgumentOutOfRangeException>(() => UnixIdentity.Signal(-own, UnixIdentity.SigStop));
-        Assert.Throws<ArgumentOutOfRangeException>(() => UnixIdentity.Signal(-own, UnixIdentity.SigTerm));
-        Assert.Throws<ArgumentOutOfRangeException>(() => UnixIdentity.Signal(-own, UnixIdentity.SigKill));
+        Assert.Throws<ArgumentOutOfRangeException>(() => UnixIdentity.Signal(-own, sigWinch));
     }
 
     [Fact]
