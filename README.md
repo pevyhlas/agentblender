@@ -32,10 +32,15 @@ with provenance.
 | Portable delivery | Export replay bundles and verified still generations into your project. |
 | Opt-in telemetry | No collection by default; send operational signals to your own collector. |
 
-**Use it for:** product renders, game props, material and lighting studies, camera exploration,
-and parameterized asset families. For logos, typography, layouts and pixel art, use the
-companion [Agent Graphic Design](https://github.com/pevyhlas/agentgraphicdesign).
-Motion rendering and family delivery are not implemented.
+## AgentBlender or AgentGraphicDesign?
+
+Use AgentBlender when form, light, material or camera matter: product renders, game props,
+lighting studies and parameter sweeps (`batch_run`, judged in one contact sheet).
+Finished stills leave through `delivery_export` for AgentGraphicDesign (`agd`) as raster input.
+Use the companion [AgentGraphicDesign](https://github.com/pevyhlas/agentgraphicdesign) for
+vector logos and marks, wordmarks, pixel art, and icon and platform kits. Motion rendering
+and family delivery are not implemented. The [agent guide](docs/agent-guide.md) explains the
+working loop, handoff and why the browser-based MCP Inspector is rejected by design.
 
 ## Quick start
 

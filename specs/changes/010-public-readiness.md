@@ -62,10 +62,19 @@ not the policy. Verify links/examples, adoption/doctor, legal notices and hosted
 ## State
 
 **Step**: build
-**Waiting on**: nothing
-**Next**: finish hygiene checks, verify and review.
+**Waiting on**: repository write access for the automation credential (push 403); then exact-head CI.
+**Next**: verify the corrected README boundary section and extended guard tests, then re-review.
 **Authority**: constitution permits commits, branch push/PR and green-reviewed merge;
 release/tag and deployments stay owner-gated. No history rewrite or remote branch deletion.
 **Branch**: 010-public-readiness; base a93b45807a5ca866efdfa3adde9968926ad30503.
+**Delivery**: LOCAL_ONLY; remote main is the base above; no remote feature branch or PR exists.
+**Attempts**: initial local unit run failed (long temporary path, uncommitted SDK pin and README
+boundary assertion); short-temp run isolated the README and umask-sensitive fixture failures.
+Next run uses the committed pin, restored boundary guidance, short temp and umask 022. Logs retained.
+**Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-code · FAIL · 0 critical, 1 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/code-review.jsonl
+**Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/security-review.jsonl
+**Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/ops-review.jsonl
+**Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-license · FAIL · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/license-review.jsonl (upstream access only)
+**Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-license · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/license-review-resolved.jsonl
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->

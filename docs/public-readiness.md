@@ -17,7 +17,9 @@ are separate claims.
 
 The baseline main run passed all four lanes:
 [GitHub Actions](https://github.com/pevyhlas/agentblender/actions/runs/39886672614).
-That run precedes this maintenance; the maintenance PR carries its own exact-head evidence.
+That run precedes this maintenance and does not qualify it. Maintenance exact-head CI is
+**pending**: the current GitHub App credential cannot push to this repository (403). No PR
+or release is claimed; restore repository access, publish the branch and run required CI.
 
 ## Before a public packaged release
 

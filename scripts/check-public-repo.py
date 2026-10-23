@@ -8,6 +8,7 @@ path, line and rule (never the matching value). Binary artwork needs manual revi
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -76,7 +77,59 @@ def self_test():
         assert GENERATED.search(name), name
     for name in [".env.example", "LICENSE", "docs/worker-protocol.md", "worker/worker.py"]:
         assert not GENERATED.search(name), name
-    print("PASS: public-repository guard self-tests")
+    integration_test()
+    print("PASS: public-repository guard text, file, link and isolated-Git regression tests")
+
+
+def integration_test():
+    with tempfile.TemporaryDirectory(prefix="public-repo-test-") as temporary:
+        root = Path(temporary) / "repo"
+        root.mkdir()
+        subprocess.run(["git", "init", "-q", str(root)], check=True)
+
+        def git_add():
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+
+        def run_guard():
+            return subprocess.run([sys.executable, str(Path(__file__).resolve())], cwd=root, capture_output=True, text=True)
+
+        def snapshot():
+            return {str(p.relative_to(root)): (str(p.readlink()) if p.is_symlink() else p.read_bytes())
+                    for p in root.rglob("*") if ".git" not in p.relative_to(root).parts and (p.is_symlink() or p.is_file())}
+
+        (root / ".gitignore").write_text("ignored.txt\n.env\n", encoding="utf-8")
+        (root / "page name.md").write_text("# Present heading\n", encoding="utf-8")
+        readme = root / "README.md"
+        readme.write_text("[good](page%20name.md#present%2Dheading)\n", encoding="utf-8")
+        git_add()
+        before = snapshot()
+        assert run_guard().returncode == 0
+        assert snapshot() == before
+        links = "[missing](absent.md)\n[escape](../outside.md)\n[heading](page%20name.md#missing)\n"
+        assert link_findings(root, readme, links) == [(1, "broken-local-link"), (2, "broken-local-link"), (3, "broken-heading-link")]
+
+        canary = "ghp_" + "a" * 36
+        (root / "credential.txt").write_text(canary, encoding="utf-8")
+        (root / "private.log").write_text("synthetic diagnostic", encoding="utf-8")
+        (root / "binary.bin").write_bytes(b"\0" + canary.encode())
+        (root / "invalid.bin").write_bytes(b"\xff\xfe")
+        (root / "gone.txt").write_text("removed after staging", encoding="utf-8")
+        outside = Path(temporary) / "outside.txt"
+        outside.write_text(canary, encoding="utf-8")
+        (root / "link.txt").symlink_to(outside)
+        (root / "ignored.txt").write_text(canary, encoding="utf-8")
+        (root / ".env").write_text(canary, encoding="utf-8")
+        git_add()
+        (root / "gone.txt").unlink()
+        before = snapshot()
+        result = run_guard()
+        assert result.returncode == 1
+        assert set(result.stdout.splitlines()) == {
+            "credential.txt:1: github-token", "private.log:0: generated-or-sensitive-file",
+            "link.txt:0: tracked-symlink-needs-review", "gone.txt:0: unreadable-tracked-file",
+        }
+        assert canary not in result.stdout + result.stderr
+        assert snapshot() == before
 
 
 def main():
@@ -96,7 +149,11 @@ def main():
         if path.is_symlink():
             findings.append((name, 0, "tracked-symlink-needs-review"))
             continue
-        data = path.read_bytes()  # read failures fail the gate, not a silent skip
+        try:
+            data = path.read_bytes()
+        except OSError:
+            findings.append((name, 0, "unreadable-tracked-file"))
+            continue
         if b"\0" in data:
             continue
         try:
