@@ -65,17 +65,28 @@ public static partial class UnixIdentity
         }
     }
 
+    /// <summary>This process's process group (<c>getpgrp()</c>).</summary>
+    public static int ProcessGroup => getpgrp();
+
     /// <summary>
     /// Sends <paramref name="signal"/> to process <paramref name="pid"/>, or to every process in
     /// group <c>-pid</c> when <paramref name="pid"/> is negative. Signal 0 only checks existence.
+    /// A real signal to this process's own group is refused: it would reach the caller and
+    /// everything that shares its group (a shell job, an agent harness, a CI runner).
     /// </summary>
     /// <returns>False when no such process or group exists (<c>ESRCH</c>).</returns>
+    /// <exception cref="ArgumentOutOfRangeException">0 or -1, or a real signal to this process's own group.</exception>
     /// <exception cref="IOException">Any other failure (for example <c>EPERM</c>).</exception>
     public static bool Signal(int pid, int signal)
     {
         if (pid is 0 or -1)
         {
             throw new ArgumentOutOfRangeException(nameof(pid), pid, "0 and -1 address more than one process group");
+        }
+
+        if (signal != 0 && pid < 0 && -pid == ProcessGroup)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pid), pid, "the caller's own process group is never signalled");
         }
 
         if (kill(pid, signal) == 0)
@@ -103,6 +114,9 @@ public static partial class UnixIdentity
 
     [LibraryImport(Libc, SetLastError = true)]
     private static partial int setsid();
+
+    [LibraryImport(Libc)]
+    private static partial int getpgrp();
 
     [LibraryImport(Libc, SetLastError = true)]
     private static partial int kill(int pid, int sig);

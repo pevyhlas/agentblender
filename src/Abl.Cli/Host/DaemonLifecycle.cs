@@ -730,6 +730,17 @@ public sealed class DaemonLifecycle(LifecycleHost host)
         var before = Processes.Snapshot();
         var workers = before.DescendantsOf(state.Pid);
 
+        // Nothing is signalled from inside the daemon (a script one of its workers runs, for
+        // one): the group kill, the tree kill or the workers' disposal would end this command
+        // first, and with the group whatever else shares it.
+        if (CallerInside(state, group, workers) is { } inside)
+        {
+            return Fail(json, new ConfigException(
+                "daemon.workers",
+                $"this command runs {inside}, so stopping the daemon would signal this command too; nothing was signalled",
+                "run `abl daemon stop` from outside the daemon, for example from a shell, not from a script the daemon runs"));
+        }
+
         // AC-20 is checked, never assumed (2a round-3): by the group when the daemon has one,
         // else by the process table. Success is reported only once the check passed.
         var unverified = before.UncheckedFor(group);
@@ -1198,6 +1209,13 @@ public sealed class DaemonLifecycle(LifecycleHost host)
 
         return (new Located(store, runtimeDir, NamesLockHolder(state) ? Liveness.Unresponsive : Liveness.Unconfirmed, state, null), null);
     }
+
+    /// <summary>Where this process sits inside the daemon (its group, its pid or under it), or null when outside.</summary>
+    private string? CallerInside(DaemonState state, int? group, IReadOnlyList<ProcessTree.Row> workers) =>
+        group is { } g && g == Processes.CallerGroup ? $"in process group {g}, daemon pid {state.Pid}'s own"
+        : state.Pid == Processes.CallerPid ? $"as daemon pid {state.Pid} itself"
+        : workers.Any(w => w.Pid == Processes.CallerPid) ? $"under daemon pid {state.Pid}"
+        : null;
 
     /// <summary>A record whose pid can be signalled: a real pid, and a group that is null or the pid itself.</summary>
     private static bool IsUsable(DaemonState state) =>

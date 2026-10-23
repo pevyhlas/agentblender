@@ -159,6 +159,42 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task StopFromUnderTheDaemonSignalsNothing()
+    {
+        // A script one of the daemon's workers runs: stop would end itself before the daemon.
+        var table = new ProcessTree.Table(
+            [new(DaemonPid + 1, DaemonPid, "blender --background"), new(Environment.ProcessId, DaemonPid + 1, "abl daemon stop --force")],
+            null);
+        var processes = new FakeProcesses(_events) { Table = table };
+        var services = new FakeServices(_events, processes) { RunsDaemon = false };
+        var (code, stdout, _) = await RunAsync(core => core.StopAsync(json: true, force: true), processes, services);
+
+        Assert.Equal(1, code);
+        var error = JsonNode.Parse(stdout)!["error"]!;
+        Assert.Equal("daemon.workers", error["check"]!.GetValue<string>());
+        Assert.Contains($"under daemon pid {DaemonPid}", error["message"]!.GetValue<string>());
+        Assert.Empty(_events);
+        Assert.True(processes.Alive);
+    }
+
+    [Fact]
+    public async Task StopFromTheDaemonsOwnGroupSignalsNothing()
+    {
+        // The record's group is the daemon's own (setsid), and this command runs in it.
+        new DaemonState(DaemonPid, _port, DaemonPaths.UrlFor(_port), "0.1.0", StartedAt, "sha256:x", null, DaemonPid).Write(Store);
+        var processes = new FakeProcesses(_events) { CallerGroup = DaemonPid };
+        var services = new FakeServices(_events, processes) { RunsDaemon = false };
+        var (code, stdout, _) = await RunAsync(core => core.StopAsync(json: true, force: true), processes, services);
+
+        Assert.Equal(1, code);
+        var error = JsonNode.Parse(stdout)!["error"]!;
+        Assert.Equal("daemon.workers", error["check"]!.GetValue<string>());
+        Assert.Contains($"in process group {DaemonPid}", error["message"]!.GetValue<string>());
+        Assert.Empty(_events);
+        Assert.True(processes.Alive);
+    }
+
+    [Fact]
     public async Task AProcessPathDaemonIsSignalledAndTheServiceIsLeftAlone()
     {
         // An installed service that does not run this daemon (another pid) is not this stop's business.
@@ -704,6 +740,10 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         public DateTimeOffset? StartTime(int pid) => pid == DaemonPid ? StartedAt.AddSeconds(-1) : null;
 
         public ProcessTree.Table Snapshot() => Table;
+
+        public int CallerPid { get; init; } = Environment.ProcessId;
+
+        public int CallerGroup { get; init; } = Environment.ProcessId;
     }
 
     /// <summary>An installed service that runs the daemon (or another pid) and records each call.</summary>

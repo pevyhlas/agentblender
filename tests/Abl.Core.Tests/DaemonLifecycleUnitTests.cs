@@ -483,6 +483,13 @@ public sealed class DaemonLifecycleUnitTests : IDisposable
         Assert.False(UnixIdentity.GroupExists(int.MaxValue));
         Assert.Throws<ArgumentOutOfRangeException>(() => UnixIdentity.Signal(0, 0));
         Assert.Throws<ArgumentOutOfRangeException>(() => UnixIdentity.Signal(-1, 0));
+
+        // The caller's own group is never signalled; signal 0 (existence) still answers.
+        var own = UnixIdentity.ProcessGroup;
+        Assert.True(UnixIdentity.GroupExists(own));
+        Assert.Throws<ArgumentOutOfRangeException>(() => UnixIdentity.Signal(-own, UnixIdentity.SigStop));
+        Assert.Throws<ArgumentOutOfRangeException>(() => UnixIdentity.Signal(-own, UnixIdentity.SigTerm));
+        Assert.Throws<ArgumentOutOfRangeException>(() => UnixIdentity.Signal(-own, UnixIdentity.SigKill));
     }
 
     [Fact]
