@@ -253,9 +253,12 @@ jobs:
       - name: Unit tests
         # The default macOS TMPDIR sits under the /var -> /private/var symlink, which the
         # delivery path guard rejects (change 008-agent-operability); use the runner's real temp dir.
+        # The tests run in their own session (setsid), so a test that signals its process group
+        # can never stop or kill the runner, which would lose the log and the step timeout.
         timeout-minutes: 15
         run: |
-          TMPDIR="$RUNNER_TEMP/" dotnet test agentblender.slnx --no-build \
+          TMPDIR="$RUNNER_TEMP/" python3 -c 'import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' \
+            dotnet test agentblender.slnx --no-build \
             --filter "Category!=BlenderIntegration&Category!=MetalQualification&Category!=OptixQualification" \
             --logger "console;verbosity=normal" \
             --blame-hang-timeout 10m --blame-hang-dump-type none > testrun.log 2>&1
