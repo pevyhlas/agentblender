@@ -32,3 +32,4 @@ artifacts/
 
 # Personal Claude Code settings (for example the optional telemetry profile)
 .claude/settings.local.json
+.prdkit/retrospective/

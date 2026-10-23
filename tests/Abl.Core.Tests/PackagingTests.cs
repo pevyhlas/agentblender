@@ -215,7 +215,7 @@ public sealed class PackagingTests : IDisposable
         // committed file in a git checkout, and from the working file otherwise.
         var sdk = JsonNode.Parse(CommittedGlobalJson())!["sdk"]!;
 
-        Assert.Equal("10.0.112", sdk["version"]!.GetValue<string>());
+        Assert.Equal("10.0.113", sdk["version"]!.GetValue<string>());
         Assert.Equal("latestFeature", sdk["rollForward"]!.GetValue<string>());
         Assert.False(sdk["allowPrerelease"]!.GetValue<bool>());
     }

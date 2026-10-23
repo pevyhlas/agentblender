@@ -38,7 +38,12 @@ release.
 
 ## Build and validate
 
-You need the .NET SDK named in `global.json` (10.0.112; a later 10.0 feature band also builds)
+The public-hygiene regression check uses Python 3.9+ (developer/CI only):
+`python3 scripts/check-public-repo.py --self-test` then `python3 scripts/check-public-repo.py`.
+It scans tracked working text and entry-page links; review other PII, binary assets, history
+and public workflow artifacts separately. It never prints matched credential/path values.
+
+You need the .NET SDK named in `global.json` (10.0.113; a later 10.0 feature band also builds)
 and Python 3 for the worker checks. The integration lane also needs Blender 5.2.1 LTS: set
 `ABL_BLENDER` to the binary or put `blender` on `PATH`.
 

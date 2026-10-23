@@ -26,6 +26,14 @@ of conduct and issue and pull-request templates describe how to take part.
 
 ### Fixed since the initial public source
 
+- Public onboarding now has a concise README, a complete usage reference and an explicit
+  release-readiness checklist. Reference SDK: 10.0.113 (was 10.0.112); install the new patch
+  before building a reference release bundle. No package version or storage-format change.
+- Product-Kit is upgraded to public 1.1.1, including installer/helper fixes, manifest integrity,
+  the retrospective ignore rule and full upstream/Spec Kit MIT notices.
+- CI rejects common credential signatures, non-example home paths and tracked runtime/secret
+  files, and checks public-entry documentation links. This redacting regression guard is not
+  a comprehensive secret/PII audit; independent review remains required.
 - A worker spawn prewarms EEVEE with one sample instead of the scene's default 64; the other
   samples warmed nothing and cost about 17 seconds per spawn on a GPU-less host. The prewarm
   restores the render settings it overrides even when its render fails.
@@ -43,4 +51,4 @@ of conduct and issue and pull-request templates describe how to take part.
 ### Upgrading
 
 This is the first public version, so there is nothing to upgrade from. Build and install from
-source as the README describes (Build from source, Run it).
+source as the README quick start and REFERENCE.md describe.

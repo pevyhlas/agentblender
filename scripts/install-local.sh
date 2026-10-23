@@ -2,7 +2,7 @@
 # Installs `abl` from this source checkout as the .NET tool `agentblender` (008 FR-014):
 # packs src/Abl.Cli (Release) into artifacts/packages and installs that package, so the
 # installed abl runs exactly what a released package would (worker/ from the package, never
-# from this checkout). Needs a .NET 10 SDK (10.0.112 or later, see global.json); running abl
+# from this checkout). Needs a .NET 10 SDK (10.0.113 or later, see global.json); running abl
 # needs the ASP.NET Core 10 runtime, which the SDK includes.
 #
 # Replacing an install deletes the package directory a running daemon still reads (its

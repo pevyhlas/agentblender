@@ -36,15 +36,19 @@ Remove a finished change's isolated worktree, or clear stale registrations.
 
 Options:
   --json        Output in JSON format
-  --force       Remove even when the worktree has uncommitted or unintegrated
-                work (git worktree remove --force). Discards that work.
+  --force       Remove even when the worktree has uncommitted or untracked
+                changes (git worktree remove --force). Discards those changes.
   --prune       Only clear stale ("prunable") worktree registrations left behind
                 when a worktree directory was deleted without this helper.
   --help, -h    Show this help message
 
 Run from the MAIN checkout, not from inside the worktree being removed.
-A worktree is removed non-forced by default, so uncommitted or unintegrated
-work is preserved and the removal is refused until it is dealt with.
+A worktree is removed non-forced by default: uncommitted or untracked changes
+refuse the removal until they are committed, stashed or discarded. Committed
+work is not checked for integration; it stays on the change's branch, which
+is never deleted. Ignored files go with the worktree, except evidence,
+retrospectives, usage-enrichment inputs and ledger events, which are first
+copied to this checkout.
 
 Examples:
   cleanup-change.sh 007-user-auth      # remove that change's worktree
@@ -196,7 +200,7 @@ if [ "$ROOT_TOP" = "$MATCH_TOP" ]; then
 fi
 
 refuse_dirty() { # git's reason
-    msg="Refusing to remove $MATCH_PATH: it has uncommitted or unintegrated work. Integrate or commit it first, or pass --force to discard it."
+    msg="Refusing to remove $MATCH_PATH: it has uncommitted or untracked changes, or git refused the removal. Commit, stash or discard them first, or pass --force to discard them."
     if $JSON_MODE; then
         emit_json refused remove "$msg"
     else
@@ -210,14 +214,15 @@ if [ "$FORCE" = false ] && [ -n "$(git -C "$MATCH_PATH" status --porcelain --unt
     refuse_dirty "uncommitted or untracked files in the worktree (git status)"
 fi
 
-# Review packages, check outputs, retrospectives and the ledger spool live in the worktree's
-# gitignored .prdkit/cache/ and .prdkit/ledger/, which `git worktree remove` deletes without
-# counting them as dirty. Copy every evidence and retrospective file into this checkout's cache
-# and verify it first; a copy that fails or would overwrite a different file refuses the removal.
+# Review packages, check outputs, retrospectives, usage-enrichment inputs and the ledger spool live
+# in the worktree's gitignored .prdkit/cache/, .prdkit/retrospective/ and .prdkit/ledger/, which
+# `git worktree remove` deletes without counting them as dirty. Copy every evidence, retrospective
+# and enrichment file into this checkout's .prdkit/ and verify it first; a copy that fails or
+# would overwrite a different file refuses the removal.
 # The worktree's ledger events are appended to this checkout's spool, skipping lines it has.
 PRESERVED=0; EVENTS=0; CONFLICT=""
-preserve() { # path relative to .prdkit/cache/ (a directory or a file)
-    local src="$MATCH_PATH/.prdkit/cache/$1" dest="$ROOT/.prdkit/cache/$1" file rel
+preserve() { # path relative to .prdkit/ (a directory or a file)
+    local src="$MATCH_PATH/.prdkit/$1" dest="$ROOT/.prdkit/$1" file rel
     [ -e "$src" ] || return 0
     while IFS= read -r -d '' file; do
         rel="${file#"$src"}"
@@ -242,7 +247,8 @@ merge_events() {
     printf '%s\n' "$new" >> "$dest" || return 1
     EVENTS="$(printf '%s\n' "$new" | wc -l | tr -d ' ')"
 }
-if ! preserve evidence || ! preserve retrospectives || ! merge_events; then
+if ! preserve cache/evidence || ! preserve cache/retrospectives || ! preserve retrospective ||
+    ! merge_events; then
     msg="Refusing to remove $MATCH_PATH: could not preserve its evidence at $CONFLICT (a different file is already there, or the copy failed). Resolve it, then rerun."
     if $JSON_MODE; then emit_json refused remove "$msg"; else >&2 echo "[prdkit] $msg"; fi
     exit 1
@@ -254,11 +260,12 @@ if [ "$FORCE" = true ]; then REMOVE_ARGS=(--force "$MATCH_PATH"); fi
 if RM_ERR="$(git -C "$ROOT" worktree remove "${REMOVE_ARGS[@]}" 2>&1 >/dev/null)"; then
     git -C "$ROOT" worktree prune >/dev/null 2>&1 || true
     msg="Removed worktree for '$TARGET': $MATCH_PATH"
-    [ "$PRESERVED" -eq 0 ] || msg="$msg; preserved $PRESERVED evidence file(s) in $ROOT/.prdkit/cache/"
+    [ "$PRESERVED" -eq 0 ] || msg="$msg; preserved $PRESERVED evidence file(s) in $ROOT/.prdkit/"
     [ "$EVENTS" -eq 0 ] || msg="$msg; appended $EVENTS ledger event(s) to $ROOT/.prdkit/ledger/events.jsonl"
     if $JSON_MODE; then emit_json ok remove "$msg" "$MATCH_PATH"; else echo "[prdkit] $msg"; fi
     exit 0
 fi
 
-# Non-forced removal refused: almost always uncommitted or unintegrated work.
+# Non-forced removal refused by git after a clean status: for example a locked worktree or one
+# with initialized submodules. git's reason is reported.
 refuse_dirty "$RM_ERR"

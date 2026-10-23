@@ -10,7 +10,8 @@
 
 Events emitted with `.prdkit/scripts/bash/ledger-emit.sh <event>` are appended to
 `.prdkit/ledger/events.jsonl`. `backend: command` also pipes each event to one executable,
-repository-contained path without arguments; adapters own credentials and network access.
+repository-contained path without arguments, never a symlink; adapters own credentials and
+network access.
 `.prdkit/scripts/bash/ledger-spool-adapter.sh` mirrors events into a per-host spool that
 survives worktree deletion. `events` filters delivery; `mode: strict` returns adapter failure to
 the caller; `operator: git` adds the Git identity. Events are diagnostics, never approval.

@@ -15,7 +15,7 @@ any op/semantic drift (FR-009). Daemon binds 127.0.0.1 only in 001 (FR-013).
 | `session_close` | session | the closed session id |
 | `scene_state` | session, mode=delta | delta by default; full on request; terse text form |
 | `scene_inspect` | session, typed request (objects/camera/landmarks and optional fact sections) | bounded structured transforms, camera/projections and declared raw facts; no head/journal/delta advance; [contract](scene-inspection.md) |
-| `scene_exec` | session, script (Python source; the CLI reads it from `--script FILE`), params? (JSON object, the script's global `params`, `{}` when omitted) | state delta + duration; auto-checkpoint hash. The script runs inside Blender (`import bpy` works); on an exception the scene is restored to the pre-call head (`exec_failed`); past the exec timeout the worker is killed (`timeout`) and the error carries `lastCheckpoint`. Example and contract: [README, Op scripts](../README.md#run-it) |
+| `scene_exec` | session, script (Python source; the CLI reads it from `--script FILE`), params? (JSON object, the script's global `params`, `{}` when omitted) | state delta + duration; auto-checkpoint hash. The script runs inside Blender (`import bpy` works); on an exception the scene is restored to the pre-call head (`exec_failed`); past the exec timeout the worker is killed (`timeout`) and the error carries `lastCheckpoint`. Example and contract: [Reference, Op scripts](../REFERENCE.md#run-it) |
 | `scene_preview` | session, size=512, engine=eevee | ONE downscaled image (≤512 default, FR-004) + path |
 | `checkpoint_save` | session, tags? | hash (explicit save = tagged tree node) |
 | `checkpoint_list` | session? | terse tree: hash-prefix, parent, session, age, tags (ONE renderer serves MCP and CLI) |

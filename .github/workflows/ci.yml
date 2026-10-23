@@ -49,6 +49,11 @@ jobs:
           bash scripts/check-ci-policy.sh
           bash scripts/test-check-ci-policy.sh
 
+      - name: Public repository hygiene and documentation links
+        run: |
+          python3 scripts/check-public-repo.py --self-test
+          python3 scripts/check-public-repo.py
+
       - name: Constitution has no unfilled placeholders
         run: |
           if grep -nE '\[(PROJECT_NAME|RATIFICATION_DATE|LAST_AMENDED_DATE|One-line description)\]' .prdkit/memory/constitution.md; then

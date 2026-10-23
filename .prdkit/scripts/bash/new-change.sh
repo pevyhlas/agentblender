@@ -184,6 +184,60 @@ number_owner() { # zero-padded number; prints the claiming source
     return 1
 }
 
+# Automatic numbering reads the claims, then creates one. Concurrent runs, in this checkout or
+# in linked worktrees of the same repository, serialize on one lock in the Git common directory
+# (the project's .prdkit/ without Git), held from computing the number until the change's branch
+# and record exist, so each run sees the claims made before it. The lock is a file the shell
+# creates exclusively (noclobber opens it with O_EXCL), naming the holder's PID and host; mkdir
+# is not used because some coreutils (uutils) report success when another run created the
+# directory first. A lock whose holder is gone (a dead PID on this host, or no owner after a
+# minute) is removed by one reaper at a time, which re-checks it first. PRDKIT_NUMBER_LOCK_WAIT
+# bounds the wait in seconds (default 120).
+NUMBER_LOCK=""
+HOST_NAME="$(uname -n)"
+create_exclusive() { ( set -C; printf '%s %s\n' "$$" "$HOST_NAME" > "$1" ) 2>/dev/null; }
+release_number_lock() { [ -z "$NUMBER_LOCK" ] || rm -f "$NUMBER_LOCK"; NUMBER_LOCK=""; }
+number_lock_stale() { # lock file -> 0 when its holder is gone
+    local owner pid
+    owner="$(cat "$1" 2>/dev/null)" || owner=""
+    if [ -z "$owner" ]; then
+        [ -n "$(find "$1" -maxdepth 0 -mmin +1 2>/dev/null)" ]
+        return
+    fi
+    pid="${owner%% *}"
+    [ "${owner#* }" = "$HOST_NAME" ] && ! ps -p "$pid" >/dev/null 2>&1
+}
+acquire_number_lock() {
+    local base lock waited=0 limit="${PRDKIT_NUMBER_LOCK_WAIT:-120}"
+    if [ "$HAS_GIT" = true ]; then
+        base="$(CDPATH="" cd "$(git rev-parse --git-common-dir)" && pwd -P)"
+    elif [ -d "$REPO_ROOT/.prdkit" ]; then
+        base="$REPO_ROOT/.prdkit"
+    else
+        base="$REPO_ROOT"
+    fi
+    lock="$base/prdkit-change-number.lock"
+    while ! create_exclusive "$lock"; do
+        if number_lock_stale "$lock" && create_exclusive "$lock.reap"; then
+            if number_lock_stale "$lock"; then
+                rm -f "$lock"
+                echo "[prdkit] Notice: removed a stale change-number lock left by an ended run: $lock" >&2
+            fi
+            rm -f "$lock.reap"
+            continue
+        fi
+        if [ "$waited" -ge "$limit" ]; then
+            echo "[prdkit] Error: another run has held the change-number lock for over ${limit}s: $lock (holder: $(cat "$lock" 2>/dev/null || echo unknown)). If no new-change.sh run is in progress, remove it and retry." >&2
+            exit 1
+        fi
+        sleep 1
+        waited=$((waited + 1))
+    done
+    NUMBER_LOCK="$lock"
+    trap release_number_lock EXIT
+    trap 'exit 1' INT TERM HUP
+}
+
 if [ -n "$SHORT_NAME" ]; then SLUG="$(slugify "$SHORT_NAME")"; else SLUG="$(generate_slug "$INTENT")"; fi
 SLUG="$(printf '%s' "$SLUG" | cut -c1-60 | sed 's/-$//')"
 if [ -z "$SLUG" ]; then echo "Error: could not derive a short name; pass --short-name" >&2; exit 1; fi
@@ -204,6 +258,7 @@ if [ -z "$CHANGE_NUMBER" ]; then
             echo "[prdkit] Warning: shallow clone: 0.x feature folders removed from main are not in its history, so their numbers are not reserved; fetch the full history or pass --number." >&2
         fi
     fi
+    acquire_number_lock
     CHANGE_NUMBER="$(next_number)"; AUTO_NUMBER=true
 fi
 NUM="$(printf '%03d' "$((10#$CHANGE_NUMBER))")"
@@ -316,6 +371,8 @@ if [ -f "$TEMPLATE" ]; then
 else
     printf '# Change: %s\n\n**Opened**: %s\n' "$INTENT" "$TODAY" > "$CHANGE_FILE"
 fi
+# The branch and record now claim the number; the next run may compute its own.
+release_number_lock
 
 # A new worktree starts from committed HEAD: owner context still uncommitted under specs/ in this
 # checkout (a fresh inbox line, a spec edit) is not in it. Name it so the agent carries it over.
@@ -329,6 +386,29 @@ if [ "${#UNCARRIED[@]}" -gt 0 ]; then
     echo "[prdkit] Warning: uncommitted spec context in $REPO_ROOT is not in the new worktree, which starts from committed HEAD:" >&2
     for entry in "${UNCARRIED[@]}"; do echo "[prdkit]   $entry" >&2; done
     echo "[prdkit] Record what this change needs inside the worktree." >&2
+fi
+
+# Symlinked commands (init.sh --symlink) point into the kit checkout, which a new worktree lacks
+# until its submodule is initialized there. Say so instead of handing over a worktree whose
+# slash commands silently fail to load; never fetch anything here.
+if [ "$CREATED_WORKTREE" = true ]; then
+    DANGLING=0; KIT_DIR=""
+    for link in "$WORKTREE_PATH"/.claude/commands/prdkit*.md "$WORKTREE_PATH"/.opencode/commands/prdkit*.md; do
+        { [ -L "$link" ] && [ ! -e "$link" ]; } || continue
+        DANGLING=$((DANGLING + 1))
+        if [ -z "$KIT_DIR" ]; then
+            case "$(readlink "$link")" in
+                ../../*/commands/*) KIT_DIR="$(readlink "$link")"; KIT_DIR="${KIT_DIR#../../}"; KIT_DIR="${KIT_DIR%/commands/*}" ;;
+            esac
+        fi
+    done
+    if [ "$DANGLING" -gt 0 ]; then
+        echo "[prdkit] Warning: $DANGLING slash-command link(s) in the new worktree do not resolve${KIT_DIR:+: they point into $KIT_DIR, which is not checked out there}." >&2
+        if [ -n "$KIT_DIR" ] && [ "$(git -C "$WORKTREE_PATH" ls-files -s -- "$KIT_DIR" 2>/dev/null | cut -d' ' -f1)" = 160000 ]; then
+            echo "[prdkit]   Fix: git -C $WORKTREE_PATH submodule update --init $KIT_DIR" >&2
+        fi
+        echo "[prdkit]   Or install command copies, which work in every checkout: bash ${KIT_DIR:-<kit>}/scripts/init.sh --upgrade --copy (in $REPO_ROOT, then commit)." >&2
+    fi
 fi
 
 if $JSON_MODE; then
