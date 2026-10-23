@@ -250,6 +250,13 @@ jobs:
       - name: Build
         run: dotnet build agentblender.slnx --no-restore -warnaserror
 
+      - name: TEMPORARY process group diagnostic
+        run: |
+          echo "step shell pid $$"; ps -o pid=,ppid=,pgid=,sess=,stat=,command= -p $$
+          ps -A -o pid=,ppid=,pgid=,sess=,tpgid=,stat=,command= | grep -iE 'runner|run\.sh|run-helper|launchd$|bash|[R]unner' | grep -v grep | cut -c1-200
+          pid=$$
+          while [ "$pid" -gt 1 ]; do ps -o pid=,ppid=,pgid=,sess=,stat=,command= -p "$pid" | cut -c1-200; pid=$(ps -o ppid= -p "$pid" | tr -d ' '); done
+
       - name: Unit tests
         # The default macOS TMPDIR sits under the /var -> /private/var symlink, which the
         # delivery path guard rejects (change 008-agent-operability); use the runner's real temp dir.
