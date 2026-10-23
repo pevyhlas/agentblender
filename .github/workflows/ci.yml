@@ -207,7 +207,7 @@ jobs:
     name: Build & unit tests (macOS arm64, advisory)
     # Pinned arm64 image (not macos-latest) so a silent image roll cannot change results.
     runs-on: macos-15
-    timeout-minutes: 20
+    timeout-minutes: 40
     # TODO(change 008-agent-operability; R-12, planned): macOS arm64 is not yet a qualified
     # platform. This lane is advisory (non-required) until the macOS qualification in
     # change 008-agent-operability lands; then drop continue-on-error and make it required.
@@ -250,12 +250,32 @@ jobs:
       - name: Build
         run: dotnet build agentblender.slnx --no-restore -warnaserror
 
-      - name: TEMPORARY process group diagnostic
+      - name: TEMPORARY unit tests in the runner's group, watched
         run: |
-          echo "step shell pid $$"; ps -o pid=,ppid=,pgid=,sess=,stat=,command= -p $$
-          ps -A -o pid=,ppid=,pgid=,sess=,tpgid=,stat=,command= | grep -iE 'runner|run\.sh|run-helper|launchd$|bash|[R]unner' | grep -v grep | cut -c1-200
-          pid=$$
-          while [ "$pid" -gt 1 ]; do ps -o pid=,ppid=,pgid=,sess=,stat=,command= -p "$pid" | cut -c1-200; pid=$(ps -o ppid= -p "$pid" | tr -d ' '); done
+          worker=$(ps -o ppid= -p $$ | tr -d ' ')
+          group=$(ps -o pgid= -p $$ | tr -d ' ')
+          python3 scripts/diag-group-watch.py watcher "$RUNNER_TEMP/watch.log" "$worker" "$group" "$$" &
+          python3 scripts/diag-group-watch.py canary "$RUNNER_TEMP/watch.log" &
+          for i in 1 2 3 4 5; do
+            echo "== iteration $i $(date -u +%T)" >> "$RUNNER_TEMP/watch.log"
+            TMPDIR="$RUNNER_TEMP/" dotnet test agentblender.slnx --no-build \
+              --filter "Category!=BlenderIntegration&Category!=MetalQualification&Category!=OptixQualification" \
+              --logger "console;verbosity=normal" --logger "trx;LogFileName=it$i.trx" --results-directory "$RUNNER_TEMP/diag-results" \
+              --blame-hang-timeout 10m --blame-hang-dump-type none > "$RUNNER_TEMP/testrun$i.log" 2>&1 || echo "iteration $i failed" >> "$RUNNER_TEMP/watch.log"
+          done
+          cat "$RUNNER_TEMP/watch.log"
+
+      - name: TEMPORARY upload diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: macos-group-watch
+          path: |
+            ${{ runner.temp }}/watch.log
+            ${{ runner.temp }}/testrun*.log
+            ${{ runner.temp }}/diag-results
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Unit tests
         # The default macOS TMPDIR sits under the /var -> /private/var symlink, which the
