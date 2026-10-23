@@ -43,7 +43,14 @@ mutant() {
   printf 'PASS: %s is rejected\n' "$1"
 }
 
-pin='actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0'
+# The pinned checkout line is read from ci.yml, so a Dependabot bump does not break the mutants.
+pin="$(grep -oE 'actions/checkout@[0-9a-f]{40} # v[0-9][0-9A-Za-z.+-]*' "$root/.github/workflows/ci.yml" | head -n 1)"
+if [ -z "$pin" ]; then
+  printf '%s\n' 'FAIL: no SHA-pinned actions/checkout line in ci.yml' >&2
+  exit 1
+fi
+sha="${pin#actions/checkout@}"; sha="${sha%% *}"
+ver="${pin##* # }"
 mutant self-hosted-label 'not a pinned GitHub-hosted image' \
   'runs-on: ubuntu-24.04' 'runs-on: [self-hosted, Linux, X64]'
 mutant floating-image 'not a pinned GitHub-hosted image' \
@@ -51,11 +58,11 @@ mutant floating-image 'not a pinned GitHub-hosted image' \
 mutant pull-request-target 'pull_request_target is not allowed' \
   'workflow_dispatch:' 'workflow_dispatch:\n  pull_request_target:'
 mutant tag-instead-of-sha 'not pinned by a full commit SHA' \
-  "$pin" 'actions/checkout@v5.1.0'
+  "$pin" "actions/checkout@$ver"
 mutant missing-version-comment 'not pinned by a full commit SHA' \
-  "$pin" 'actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09'
+  "$pin" "actions/checkout@$sha"
 mutant short-sha 'not pinned by a full commit SHA' \
-  "$pin" 'actions/checkout@fbc6f39 # v5.1.0'
+  "$pin" "actions/checkout@$(printf '%s' "$sha" | cut -c1-7) # $ver"
 mutant write-permission 'write permission is not allowed' \
   'contents: read' 'contents: write'
 mutant no-top-permissions 'no top-level permissions block' \
