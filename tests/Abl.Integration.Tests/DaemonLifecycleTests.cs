@@ -606,6 +606,42 @@ public sealed partial class DaemonLifecycleTests : IAsyncLifetime
     }
 
     [Fact(Timeout = 60_000)]
+    public async Task StopForceNeverSignalsTheProcessGroupItRunsIn()
+    {
+        // A daemon's workers, and anything their scripts start, share the daemon's group: a
+        // `stop --force` run from there must not signal its own group (it would kill itself and
+        // whatever shares that group, an agent harness included). The record names a live
+        // group leader, and the CLI joins that group before it runs.
+        Directory.CreateDirectory(Store, Private);
+        using var held = StoreLock.TryAcquire(Store, TimeSpan.Zero);
+        Assert.NotNull(held);
+        var leaderStart = new ProcessStartInfo("perl");
+        foreach (var arg in new[] { "-e", "setpgrp(0, 0) or die; exec 'sleep', '60' or die", })
+        {
+            leaderStart.ArgumentList.Add(arg);
+        }
+
+        using var leader = Process.Start(leaderStart)!;
+        try
+        {
+            Assert.True(await WaitUntilAsync(() => Processes().Any(p => p.Pid == leader.Id && p.Pgid == leader.Id), TimeSpan.FromSeconds(10)));
+            new DaemonState(leader.Id, _port, $"http://127.0.0.1:{_port}", "0.0.0", DateTimeOffset.UtcNow.AddSeconds(1), "-", null, leader.Id)
+                .Write(Store);
+
+            var (code, stdout, stderr) = await RunInGroupAsync(leader.Id, ["daemon", "stop", "--force", "--json"]);
+            Assert.False(leader.HasExited, $"stop --force signalled the group it runs in (exit {code}): {stderr}");
+            Assert.Equal(1, code);
+            var error = JsonNode.Parse(stdout)!["error"]!;
+            Assert.Equal("daemon.workers", error["check"]!.GetValue<string>());
+            Assert.Contains($"process group {leader.Id}", error["message"]!.GetValue<string>());
+        }
+        finally
+        {
+            leader.Kill();
+        }
+    }
+
+    [Fact(Timeout = 60_000)]
     public async Task NoDaemonVerbTrustsTheLockOrRecordInAStoreOthersCanWrite()
     {
         // Round-2 eng-security LOW-1: in a group- or other-writable store another account could
@@ -1113,6 +1149,26 @@ public sealed partial class DaemonLifecycleTests : IAsyncLifetime
         var errors = await stderr.WaitAsync(TimeSpan.FromSeconds(1));
         await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(1));
         return (process.ExitCode, output, errors, process.Id);
+    }
+
+    /// <summary>Runs the CLI as a member of the existing process group <paramref name="group"/>, reading both pipes to EOF.</summary>
+    private async Task<(int Code, string Stdout, string Stderr)> RunInGroupAsync(int group, string[] args)
+    {
+        var start = Prepare(args);
+        var inner = start.ArgumentList.ToList();
+        start.FileName = "perl";
+        start.ArgumentList.Clear();
+        var script = "my $g = shift @ARGV; setpgrp(0, $g) or die \"setpgrp: $!\"; exec @ARGV or die \"exec: $!\"";
+        foreach (var arg in new[] { "-e", script, group.ToString(CultureInfo.InvariantCulture), "dotnet" }.Concat(inner))
+        {
+            start.ArgumentList.Add(arg);
+        }
+
+        using var process = Process.Start(start)!;
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        var stderr = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(90));
+        return (process.ExitCode, await stdout, await stderr);
     }
 
     private async Task<JsonNode> HealthAsync()

@@ -21,6 +21,19 @@
   ([inbox](../inbox.md), Hosted Blender lane and OptiX coverage). The test steps have their own timeouts below the job's, abort and name a test
   that runs over 10 minutes (`--blame-hang-timeout`) and print the test log on every outcome;
   the integration lane also uploads its log and TRX results.
+- **Signals** (audit, 2026-10-23): every `kill` goes through `UnixIdentity.Signal`, which
+  refuses 0, -1 and a real signal to the caller's own process group; .NET's
+  `Process.Kill(entireProcessTree: true)` (worker, launcher, discovery and service probes)
+  stops and kills only the started process and its descendants, pid by pid. Two group
+  signals exist: the recorded group of a daemon that leads it (the record's group must equal
+  its pid), and the group of a daemon child that failed to start, which exists only if that
+  child called `setsid` (a forked pid never matches an active group). Neither is ever the
+  caller's group: `stop` refuses (`daemon.workers`) in the daemon's group, as the daemon or
+  under its process tree; the tree check passes silently when the process table cannot be
+  read. `setsid` runs only in `daemon run --detached`. Two macOS CI runs that lost their
+  runner were not reproduced: 10 traced local and 10 watched hosted iterations without
+  `setsid` showed no signal to the runner's group. The macOS unit lane keeps `setsid` as
+  defence in depth.
 - **Hardware qualification** (C-09): no CI lane has a GPU. `OptixQualification` (the
   real-Blender cases that need a GPU backend, OptiX device evidence included) runs by hand on a
   Linux host with an NVIDIA OptiX GPU, and `MetalQualification` on an Apple silicon Mac, with

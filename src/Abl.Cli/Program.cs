@@ -72,8 +72,10 @@ if (args.Length >= 2 && args[0] == "daemon" && (OperatingSystem.IsWindows() || A
         return await Abl.Cli.Host.DaemonVerbs.RunAsync(args[1], args[2..]);
     }
     catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or IOException
-        or InvalidOperationException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        or InvalidOperationException or UnauthorizedAccessException or System.ComponentModel.Win32Exception
+        or ArgumentOutOfRangeException)
     {
+        // ArgumentOutOfRangeException: the signal primitive refused the caller's own group.
         Console.Error.WriteLine($"abl: daemon {args[1]} failed: {ex.Message}");
         return 1;
     }

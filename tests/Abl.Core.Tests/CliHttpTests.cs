@@ -15,6 +15,16 @@ public class CliHttpTests
         }
     }
 
+    /// <summary>Answers only by being cancelled, so a deadline is the one way out however loaded the host is.</summary>
+    private sealed class HangingHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            await Task.Delay(Timeout.Infinite, ct);
+            throw new InvalidOperationException("unreachable");
+        }
+    }
+
     [Fact]
     public async Task DefaultHasNoImplicitDeadlineAndServesTheResponse()
     {
@@ -27,12 +37,12 @@ public class CliHttpTests
     [Fact]
     public async Task ExplicitDeadlineAndCallerCancellationAreHonored()
     {
-        using var timed = CliHttp.Create("http://localhost:7811", "0.02", new DelayedHandler());
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => timed.GetAsync("/healthz"));
-        using var indefinite = CliHttp.Create("http://localhost:7811", null, new DelayedHandler());
+        using var timed = CliHttp.Create("http://localhost:7811", "0.02", new HangingHandler());
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => timed.GetAsync("/healthz")).WaitAsync(TimeSpan.FromSeconds(30));
+        using var indefinite = CliHttp.Create("http://localhost:7811", null, new HangingHandler());
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => indefinite.GetAsync("/healthz", cancelled.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => indefinite.GetAsync("/healthz", cancelled.Token)).WaitAsync(TimeSpan.FromSeconds(30));
     }
 
     [Theory]

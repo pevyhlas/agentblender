@@ -16,6 +16,7 @@ public interface IProcessControl
     /// in group <c>-pid</c> when it is negative.
     /// </summary>
     /// <returns>False when no such process or group exists.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">0 or -1, or a real signal to the caller's own process group.</exception>
     /// <exception cref="IOException">Any other failure (for example <c>EPERM</c>).</exception>
     bool Signal(int pid, int signal);
 
@@ -30,6 +31,12 @@ public interface IProcessControl
 
     /// <summary>The host's process table, or <see cref="ProcessTree.Table.Unknown"/> with the reason.</summary>
     ProcessTree.Table Snapshot();
+
+    /// <summary>This process's pid: a verb never signals the process tree it runs in.</summary>
+    int CallerPid { get; }
+
+    /// <summary>This process's process group: a verb never signals the group it runs in.</summary>
+    int CallerGroup { get; }
 }
 
 /// <summary>The real host: <c>kill(2)</c>, the runtime's process start time and <see cref="ProcessTree"/>.</summary>
@@ -63,4 +70,8 @@ public sealed class UnixProcessControl : IProcessControl
     }
 
     public ProcessTree.Table Snapshot() => ProcessTree.Snapshot();
+
+    public int CallerPid => Environment.ProcessId;
+
+    public int CallerGroup => UnixIdentity.ProcessGroup;
 }

@@ -32,6 +32,11 @@ of conduct and issue and pull-request templates describe how to take part.
 - The ownership proof for the configuration, token file and runtime directory no longer fails
   on a read-only file system (such as the sealed macOS system volume): it reads the owner uid
   there instead.
+- `abl daemon stop` no longer signals the process group or process tree it runs in. Run from
+  inside the daemon (a script one of its workers starts), `stop --force` used to kill its own
+  process group, itself and anything sharing that group included; it now refuses with
+  `daemon.workers` and signals nothing. The signal primitive also refuses a real signal to the
+  caller's own process group.
 - CI: `scripts/release-bundle.sh` passes shellcheck; the test steps have their own timeouts,
   abort and name a test that runs over 10 minutes and print their log on every outcome.
 
