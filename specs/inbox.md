@@ -222,7 +222,7 @@ hashes AB was qualified against.
 
 ### Public baseline security and packaging findings
 
-*2026-10-23 · agent · open*
+*2026-10-23 · agent · folded: 011-public-hardening*
 
 Independent review of the public baseline found three pre-existing issues; the documentation/
 CI maintenance does not fix or waive them. No credentials or accidental private identifiers
@@ -245,6 +245,14 @@ were identified by that bounded text review.
 change the network/security policy. Baseline and maintenance reviews stay separate.
 
 ## Your direction
+
+### Public projects, fixes and logos
+
+*2026-10-24 · owner · folded: 011-public-hardening*
+
+> so both repos are now public and the app should have access to it to merge PRs - I have added both - so lets work on the public repos now - also here is what we need to do - 1. make sure we have very succint and to the point readme for both - also that public product kit is adopted - see product kit readme for inspiration it is quite to the point (not that much but not bad) - next we should identify any issues in both AGD and AB and then fix them, next proceed with roadmap - next we want to generate logos for AGD and AB via their respective workflows - please proceed with all of that
+
+Answers the baseline-hardening scope; roadmap and original artwork follow the existing gates.
 
 ### Delivery lanes beyond the first
 

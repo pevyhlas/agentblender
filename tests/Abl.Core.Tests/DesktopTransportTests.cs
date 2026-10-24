@@ -79,6 +79,63 @@ public class DesktopTransportTests
         Assert.Equal(7812, endpoint.Port);
     }
 
+    [Theory]
+    [InlineData("8.8.8.8")]
+    [InlineData("192.0.2.10")]
+    [InlineData("172.32.0.1")]
+    [InlineData("224.0.0.1")]
+    [InlineData("0.0.0.0")]
+    [InlineData("::")]
+    [InlineData("2001:4860:4860::8888")]
+    [InlineData("::ffff:8.8.8.8")]
+    [InlineData("::ffff:0.0.0.0")]
+    public void PublicAddressIsRejectedByParsingAndDirectStart(string address)
+    {
+        Assert.Throws<ArgumentException>(() => LauncherOptions.ResolveBind($"[{address}]:7812"));
+        var host = new LauncherHost(new LauncherOptions
+        {
+            BindEndpoint = new(IPAddress.Parse(address), 0), Token = "synthetic",
+            BlenderPath = "not-started", WorkerDir = "not-started",
+        }, NullLogger<LauncherHost>.Instance);
+        Assert.Throws<ArgumentException>(host.Start);
+    }
+
+    [Theory]
+    [InlineData("10.0.0.1")]
+    [InlineData("172.16.0.1")]
+    [InlineData("172.31.255.254")]
+    [InlineData("192.168.0.1")]
+    [InlineData("127.0.0.1")]
+    [InlineData("::1")]
+    [InlineData("fd00::1")]
+    [InlineData("::ffff:192.168.0.1")]
+    public void BindGuardAcceptsPrivateRanges(string address) =>
+        Assert.Equal(IPAddress.Parse(address), LauncherOptions.ResolveBind($"[{address}]:7812").Address);
+
+    [Fact]
+    public void DesktopWorkerDropsCredentialsAndKeepsPlatformBasics()
+    {
+        var variables = new Dictionary<string, string?>
+        {
+            ["HOME"] = "/home/user", ["Path"] = "synthetic-path", ["SYSTEMROOT"] = "synthetic-root",
+            ["USERPROFILE"] = "synthetic-profile", ["TEMP"] = "synthetic-temp", ["LC_ALL"] = "C",
+            ["ABL_DESKTOP_TOKEN"] = "canary", ["AWS_SECRET_ACCESS_KEY"] = "canary",
+            ["OPENAI_API_KEY"] = "canary", ["PYTHONPATH"] = "canary", ["PythonHome"] = "canary",
+            ["LD_PRELOAD"] = "canary", ["DOTNET_STARTUP_HOOKS"] = "canary",
+        };
+        Abl.Core.Config.ChildEnvironment.Restrict(variables, LauncherHost.AllowsWorkerVariable);
+        Assert.Equal(new[] { "HOME", "LC_ALL", "Path", "SYSTEMROOT", "TEMP", "USERPROFILE" }, variables.Keys.Order(StringComparer.Ordinal));
+        var start = LauncherHost.WorkerStartInfo(new LauncherOptions
+        {
+            BindEndpoint = new(IPAddress.Loopback, 0), Token = "synthetic",
+            BlenderPath = "blender", WorkerDir = "worker",
+        }, 12345);
+        Assert.All(start.Environment.Keys, name => Assert.True(LauncherHost.AllowsWorkerVariable(name)));
+        Assert.Contains("--background", start.ArgumentList);
+        Assert.Contains("--factory-startup", start.ArgumentList);
+        Assert.DoesNotContain("synthetic", start.ArgumentList);
+    }
+
     [Fact]
     public async Task ProbeIsFalseWhenUnconfigured()
     {

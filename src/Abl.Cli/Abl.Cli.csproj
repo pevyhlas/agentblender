@@ -40,10 +40,7 @@
     <!-- 008 FR-007: `abl daemon run` hosts the daemon library in-process. -->
     <ProjectReference Include="../Abl.Daemon/Abl.Daemon.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <!-- worker/ ships next to the binaries, so the installed daemon is self-contained; the tool package carries it in its publish output (tools/), not as NuGet content. -->
-    <Content Include="../../worker/**" Exclude="../../worker/**/__pycache__/**;../../worker/**/*.pyc" LinkBase="worker" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Pack="false" />
-  </ItemGroup>
+  <Import Project="../WorkerContent.props" />
 
   <!--
     008 FR-014/AC-32: the package manifest of worker/. One `<sha256>  <module>` line per
@@ -52,7 +49,7 @@
   -->
   <Target Name="AblWorkerManifest" BeforeTargets="AssignTargetPaths">
     <ItemGroup>
-      <_AblWorkerModule Include="../../worker/*.py" />
+      <_AblWorkerModule Include="@(AblWorkerModule)" />
     </ItemGroup>
     <GetFileHash Files="@(_AblWorkerModule)" Algorithm="SHA256" HashEncoding="hex">
       <Output TaskParameter="Items" ItemName="_AblWorkerModuleHash" />

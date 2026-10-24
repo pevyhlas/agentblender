@@ -30,8 +30,8 @@ public sealed class LauncherOptions
 
     /// <summary>
     /// Turn a <c>host:port</c> bind string into an endpoint, REFUSING any wildcard/all-
-    /// interfaces address. The desktop operator supplies a concrete private-network address (e.g.
-    /// <c>192.0.2.10:7812</c>); <c>0.0.0.0</c>, <c>::</c>, <c>*</c> and <c>+</c> are rejected
+    /// interfaces or public address. The desktop operator supplies a concrete private-network address
+    /// (RFC1918 or IPv6 ULA), or loopback; <c>0.0.0.0</c>, <c>::</c>, <c>*</c> and <c>+</c> are rejected
     /// so the launcher can never be exposed on a public interface (FR-003, SC-003).
     /// </summary>
     public static IPEndPoint ResolveBind(string bind)
@@ -57,12 +57,23 @@ public sealed class LauncherOptions
                   a => a.AddressFamily is AddressFamily.InterNetwork or AddressFamily.InterNetworkV6)
               ?? throw new ArgumentException($"bind host '{host}' did not resolve to an IP", nameof(bind));
 
-        if (IPAddress.Any.Equals(address) || IPAddress.IPv6Any.Equals(address))
-        {
-            throw new ArgumentException(
-                $"refusing all-interfaces bind '{host}' — bind a specific private-network address (FR-003)", nameof(bind));
-        }
-
+        ValidateBindAddress(address);
         return new IPEndPoint(address, port);
+    }
+
+    /// <summary>Also enforced at Start so directly constructed options cannot bypass C-03.</summary>
+    public static void ValidateBindAddress(IPAddress address)
+    {
+        var normalized = address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;
+        var bytes = normalized.GetAddressBytes();
+        var allowed = IPAddress.IsLoopback(normalized)
+            || (normalized.AddressFamily == AddressFamily.InterNetwork
+                && (bytes[0] == 10 || (bytes[0] == 172 && bytes[1] is >= 16 and <= 31)
+                    || (bytes[0] == 192 && bytes[1] == 168)))
+            || (normalized.AddressFamily == AddressFamily.InterNetworkV6 && (bytes[0] & 0xfe) == 0xfc);
+        if (!allowed)
+        {
+            throw new ArgumentException("launcher bind must be loopback, RFC1918 or IPv6 ULA (C-03)", nameof(address));
+        }
     }
 }

@@ -196,6 +196,7 @@ jobs:
         # against the packaged manifest) and writes SHA256SUMS and provenance.json (with
         # the reference SDK). Nothing is uploaded, tagged or published.
         run: |
+          bash scripts/test-worker-package-inputs.sh
           bash scripts/release-bundle.sh --out "$RUNNER_TEMP/abl-release-bundle"
           cat "$RUNNER_TEMP/abl-release-bundle/SHA256SUMS" "$RUNNER_TEMP/abl-release-bundle/provenance.json"
           rm -rf "$RUNNER_TEMP/abl-release-bundle"

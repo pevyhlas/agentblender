@@ -23,8 +23,8 @@ Blender stays warm between edits; checkpoints let agents branch and replay their
 ## AgentBlender or AgentGraphicDesign?
 
 Use AgentBlender when form, light, material or camera matter: product renders, props and
-parameter sweeps (`batch_run`). Use [AgentGraphicDesign](https://github.com/pevyhlas/agentgraphicdesign)
-(`agd`) for logos and marks, wordmarks, pixel art, and icon and platform kits.
+parameter sweeps (`batch_run`). Use AgentGraphicDesign (`agd`) for vector logos and marks,
+wordmarks, pixel art, and icon and platform kits ([repository](https://github.com/pevyhlas/agentgraphicdesign)).
 `delivery_export` hands stills to AGD. The [agent guide](docs/agent-guide.md) covers the loop
 and why the browser-based MCP Inspector is rejected by design.
 
