@@ -109,8 +109,36 @@ public class DesktopTransportTests
     [InlineData("::1")]
     [InlineData("fd00::1")]
     [InlineData("::ffff:192.168.0.1")]
-    public void BindGuardAcceptsPrivateRanges(string address) =>
-        Assert.Equal(IPAddress.Parse(address), LauncherOptions.ResolveBind($"[{address}]:7812").Address);
+    public void BindGuardAcceptsPrivateRanges(string address)
+    {
+        var expected = IPAddress.Parse(address);
+        if (expected.IsIPv4MappedToIPv6) expected = expected.MapToIPv4();
+        Assert.Equal(expected, LauncherOptions.ResolveBind($"[{address}]:7812").Address);
+    }
+
+    [Fact]
+    public async Task MappedLoopbackBindsAndAcceptsAnIpv4Connection()
+    {
+        var host = new LauncherHost(new LauncherOptions
+        {
+            BindEndpoint = new(IPAddress.Parse("::ffff:127.0.0.1"), 0), Token = "synthetic",
+            BlenderPath = "not-started", WorkerDir = "not-started",
+        }, NullLogger<LauncherHost>.Instance);
+        host.Start();
+        using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var running = host.RunAsync(stop.Token);
+        try
+        {
+            Assert.Equal(IPAddress.Loopback, host.BoundEndpoint.Address);
+            using var client = new TcpClient(AddressFamily.InterNetwork);
+            await client.ConnectAsync(host.BoundEndpoint.Address, host.BoundEndpoint.Port, stop.Token);
+        }
+        finally
+        {
+            await stop.CancelAsync();
+            await running;
+        }
+    }
 
     [Fact]
     public void DesktopWorkerDropsCredentialsAndKeepsPlatformBasics()
