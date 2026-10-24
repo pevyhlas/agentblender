@@ -174,71 +174,141 @@ TODAY="$(date +%Y-%m-%d)"
 # Aggregate the ledger. One awk pass filters to this feature, dedupes on
 # event_id (last wins), and emits metric lines ("M\tkey\tvalue") plus one
 # review row per review.recorded ("R\tround\tscope\tagent\tverdict\tC\tM\tm").
+# Each line is scanned as JSON, so every field comes from its own scope: event, event_id,
+# ts and feature.id from the envelope, everything else from payload. Key order, nested
+# objects and text inside strings cannot shadow a field. A line that stops parsing keeps
+# the members read before the error, so a truncated last line degrades as before. The program
+# runs under LC_ALL=C: positions, cuts and regexes all count bytes, on every awk.
 # ===========================================================================
 AGG=""
 if [ -f "$SPOOL" ]; then
-    AGG="$(awk -v fid="$FEATURE_ID" '
-    function jstr(key, str,   s) {
-        if (match(str, "\"" key "\"[[:space:]]*:[[:space:]]*\"")) {
-            s = substr(str, RSTART + RLENGTH)
-            sub(/".*/, "", s)
-            return s
-        }
-        return ""
+    AGG="$(LC_ALL=C awk -v fid="$FEATURE_ID" '
+    BEGIN {
+        S = SUBSEP                       # paths: S "event", S "payload" S "findings" S "high"
+        PL = S "payload" S; FD = PL "findings" S; CH = PL "changes" S
     }
-    function jnum(key, str,   s) {
-        if (match(str, "\"" key "\"[[:space:]]*:[[:space:]]*-?[0-9]+")) {
-            s = substr(str, RSTART, RLENGTH)
-            sub(/.*:[[:space:]]*/, "", s)
-            return s
-        }
-        return ""
+    function ws() { while (pos <= len && index(" \t\r\n", substr(doc, pos, 1))) pos++ }
+    function hexval(h,   n, i) {
+        n = 0
+        for (i = 1; i <= 4; i++) n = n * 16 + (index("0123456789abcdef0123456789ABCDEF", substr(h, i, 1)) - 1) % 16
+        return n
     }
-    function feature_id(line,   obj) {
-        if (match(line, /"feature"[[:space:]]*:[[:space:]]*\{[^}]*\}/)) {
-            obj = substr(line, RSTART, RLENGTH)
-            return jstr("id", obj)
+    # The string at pos: sets tok to its text and returns 1. ASCII escapes are decoded and
+    # control characters become spaces, so a report row stays one line; other \u escapes
+    # are kept as written.
+    function string_tok(   out, rest, c, h, n) {
+        pos++; out = ""
+        while (pos <= len) {
+            rest = substr(doc, pos)
+            if (match(rest, /^[^"\\]+/)) { out = out substr(rest, 1, RLENGTH); pos += RLENGTH; continue }
+            c = substr(doc, pos, 1)
+            if (c == "\"") { pos++; tok = out; return 1 }
+            c = substr(doc, pos + 1, 1); pos += 2
+            if (c == "u") {
+                h = substr(doc, pos, 4)
+                if (h !~ /^[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]$/) return 0
+                pos += 4; n = hexval(h)
+                if (n < 32) out = out " "
+                else if (n < 127) out = out sprintf("%c", n)
+                else out = out "\\u" h
+            } else if (c == "\"" || c == "\\" || c == "/") out = out c
+            else if (c != "" && index("bfnrt", c)) out = out " "
+            else return 0
         }
-        return ""
+        return 0
     }
-    function process(line,   ev, v, c, mj, mn, rnd, scope, ag, vv, p, conv, rest, obj, tsk, tov) {
+    # The first occurrence of a path wins, as the first textual match did before.
+    function put(path, kind, v) { if (!(path in K)) { K[path] = kind; V[path] = v } }
+    function value(path, depth,   c, rest) {
+        if (depth > 64) return 0
+        ws(); c = substr(doc, pos, 1)
+        if (c == "{") { put(path, "o", ""); return object_scan(path, depth + 1) }
+        if (c == "[") { put(path, "a", ""); return array_scan(path, depth + 1) }
+        if (c == "\"") { if (!string_tok()) return 0; put(path, "s", tok); return 1 }
+        rest = substr(doc, pos)
+        if (match(rest, /^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/)) {
+            put(path, "n", substr(rest, 1, RLENGTH)); pos += RLENGTH; return 1
+        }
+        if (substr(rest, 1, 4) == "true" || substr(rest, 1, 4) == "null") {
+            put(path, "l", substr(rest, 1, 4)); pos += 4; return 1
+        }
+        if (substr(rest, 1, 5) == "false") { put(path, "l", "false"); pos += 5; return 1 }
+        return 0
+    }
+    function object_scan(path, depth,   key, c) {
+        pos++; ws()
+        if (substr(doc, pos, 1) == "}") { pos++; return 1 }
+        while (pos <= len) {
+            if (substr(doc, pos, 1) != "\"" || !string_tok()) return 0
+            key = tok; ws()
+            if (substr(doc, pos, 1) != ":") return 0
+            pos++
+            if (!value(path S key, depth)) return 0
+            ws(); c = substr(doc, pos, 1); pos++
+            if (c == "}") return 1
+            if (c != ",") return 0
+            ws()
+        }
+        return 0
+    }
+    function array_scan(path, depth,   i, c) {
+        pos++; ws()
+        if (substr(doc, pos, 1) == "]") { pos++; return 1 }
+        for (i = 1; pos <= len; i++) {
+            if (!value(path S i, depth)) return 0
+            ws(); c = substr(doc, pos, 1); pos++
+            if (c == "]") return 1
+            if (c != ",") return 0
+        }
+        return 0
+    }
+    function scan(line) {
+        split("", K); split("", V)
+        doc = line; len = length(line); pos = 1
+        ws()
+        if (substr(doc, pos, 1) == "{") object_scan("", 1)
+    }
+    function str(path) { return ((path in K) && K[path] == "s") ? V[path] : "" }
+    function num(path) {                 # the integer part of a number; "" for any other type
+        if (!((path in K) && K[path] == "n")) return ""
+        match(V[path], /^-?[0-9]+/)  # awk-bytes-ok: a number token is ASCII, and this program runs under LC_ALL=C
+        return substr(V[path], 1, RLENGTH)
+    }
+    function process(   ev, v, c, h, m, l, rnd, scope, ag, vv, p, conv, i, tsk, tov) {
         kept++
-        ev = jstr("event", line)
+        ev = str(S "event")
         if (ev == "feature.created") {
-            created_ts = jstr("ts", line)
-            title = jstr("title", line)
+            created_ts = str(S "ts")
+            title = str(PL "title")
         } else if (ev == "feature.merged") {
-            merged_ts = jstr("ts", line)
-            duration_days = jnum("duration_days", line)
-            tasks_total = jnum("tasks_total", line)
+            merged_ts = str(S "ts")
+            duration_days = num(PL "duration_days")
+            tasks_total = num(PL "tasks_total")
         } else if (ev == "task.state_changed") {
-            rest = line
-            while (match(rest, /\{[^{}]*\}/)) {
-                obj = substr(rest, RSTART, RLENGTH)
-                rest = substr(rest, RSTART + RLENGTH)
-                tsk = jstr("task", obj)
-                tov = jstr("to", obj)
+            for (i = 1; ((CH i) in K); i++) {
+                tsk = str(CH i S "task")
+                tov = str(CH i S "to")
                 if (tsk != "" && (tov == "[x]" || tov == "x")) {
                     if (!(tsk in completed)) { completed[tsk] = 1; ncompleted++ }
                 }
             }
         } else if (ev == "review.recorded") {
-            if (jnum("major", line) != "" || jnum("minor", line) != "") {
+            if (num(FD "major") != "" || num(FD "minor") != "" || num(PL "major") != "" || num(PL "minor") != "") {
                 print "U\tpre-redesign finding severity names"; return
             }
             rounds++
-            v = jstr("verdict", line)
+            v = str(PL "verdict")
             if (v == "PASS") pass++
             else if (v == "FAIL") fail++
             else if (v == "WAIVED") waived++
-            c  = jnum("critical", line); c  = (c  == "" ? 0 : c)
-            h = jnum("high", line); h = (h == "" ? 0 : h)
-            m = jnum("medium", line); m = (m == "" ? 0 : m)
-            l = jnum("low", line); l = (l == "" ? 0 : l)
+            c = num(FD "critical"); c = (c == "" ? 0 : c)
+            h = num(FD "high"); h = (h == "" ? 0 : h)
+            m = num(FD "medium"); m = (m == "" ? 0 : m)
+            l = num(FD "low"); l = (l == "" ? 0 : l)
             tc += c; th += h; tm += m; tl += l
-            rnd   = jnum("round", line); rnd   = (rnd   == "" ? "-" : rnd)
-            scope = jstr("scope", line); scope = (scope == "" ? "-" : scope)
-            ag    = jstr("agent", line); ag    = (ag    == "" ? "-" : ag)
+            rnd   = num(PL "round"); rnd   = (rnd   == "" ? "-" : rnd)
+            scope = str(PL "scope"); scope = (scope == "" ? "-" : scope)
+            ag    = str(PL "agent"); ag    = (ag    == "" ? "-" : ag)
             vv = (v == "" ? "-" : v)
             print "R\t" rnd "\t" scope "\t" ag "\t" vv "\t" c "\t" h "\t" m "\t" l
             if (!(ag in agseen)) { agseen[ag] = 1; agorder[++nag] = ag }
@@ -249,8 +319,8 @@ if [ -f "$SPOOL" ]; then
             agc[ag] += c; agh[ag] += h; agm[ag] += m; agl[ag] += l
         } else if (ev == "exploration.converged") {
             explor++
-            p = jnum("passes", line); if (p != "") exppasses += p
-            conv = jstr("convergence", line)
+            p = num(PL "passes"); if (p != "") exppasses += p
+            conv = str(PL "convergence")
             if (conv == "HIGH") ch++
             else if (conv == "MEDIUM") cm++
             else if (conv == "LOW") cl++
@@ -263,16 +333,21 @@ if [ -f "$SPOOL" ]; then
     { raw[NR] = $0 }
     END {
         for (i = 1; i <= NR; i++) {
-            if (feature_id(raw[i]) != fid) continue
+            # A change id is letters, digits and hyphens, so a line holding it neither as text
+            # nor behind a \u escape belongs to another change: skip the scan.
+            if (!index(raw[i], fid) && !index(raw[i], "\\u")) continue
+            scan(raw[i])
+            if (str(S "feature" S "id") != fid) continue
             keepf[i] = 1
-            id = jstr("event_id", raw[i])
+            id = str(S "event_id")
             eidof[i] = id
             if (id != "") lastpos[id] = i
         }
         for (i = 1; i <= NR; i++) {
             if (!keepf[i]) continue
             if (eidof[i] != "" && lastpos[eidof[i]] != i) continue
-            process(raw[i])
+            scan(raw[i])
+            process()
         }
         print "M\tevents_total\t"       (kept + 0)
         print "M\tcreated_ts\t"         created_ts

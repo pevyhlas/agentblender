@@ -141,8 +141,9 @@ case "$BACKEND" in
         # keep that from becoming arbitrary command execution on whoever next
         # runs a workflow command, the adapter must be ONE path (no arguments,
         # no shell syntax) from a conservative character set, resolving to an
-        # executable regular file inside this repository. An adapter that
-        # needs arguments wraps them in a script.
+        # executable regular file inside this repository, not a symlink (-f and -x follow
+        # a link, and only the parent directory is resolved below). An adapter that needs
+        # arguments wraps them in a script.
         case "$COMMAND" in
             *[!A-Za-z0-9_./-]*)
                 echo "Error: adapter command must be a single path of [A-Za-z0-9_./-] (no arguments or shell syntax): '$COMMAND'" >&2
@@ -158,6 +159,10 @@ case "$BACKEND" in
             /*) ADAPTER="$COMMAND" ;;
             *)  ADAPTER="$REPO_ROOT/$COMMAND" ;;
         esac
+        if [ -L "$ADAPTER" ]; then
+            echo "Error: adapter command must not be a symlink; point command: at the executable file itself: $ADAPTER" >&2
+            exit 1
+        fi
         if [ ! -f "$ADAPTER" ] || [ ! -x "$ADAPTER" ]; then
             echo "Error: adapter command is not an executable file: $ADAPTER" >&2
             exit 1

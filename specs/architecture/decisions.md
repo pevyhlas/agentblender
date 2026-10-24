@@ -153,7 +153,7 @@ one long decision gets specs/decisions/D-NN.md. -->
   `blender.allowUnsupported`. One RID-agnostic .NET tool package `agentblender` (command `abl`,
   daemon inside, `worker/` and its manifest as content). The release bundle is the `.nupkg`,
   `SHA256SUMS` and `provenance.json`; tagging and publishing is owner-gated. SDK: `global.json`
-  rolls forward from the reference 10.0.112; CI builds with exactly the reference.
+  rolls forward from the reference 10.0.113; CI builds with exactly the reference.
 - **Alternatives**: env-only configuration (the observed failure);
   `Microsoft.Extensions.Configuration` (no per-key source, ambient files); self-contained
   per-platform archives (build matrix, signing and notarization; deferred); a container (N-07);

@@ -15,10 +15,11 @@
 #      `agent:<name>` rows; a specific harness beats `*`. Every override needs a Reason.
 #
 # The renderer owns only `model` (both harnesses), `variant` (OpenCode), `description` (copied
-# from the neutral definition when that is a single-line value; a block scalar stays
-# project-owned) and the prompt body. Every other frontmatter key of an existing projection
-# (tools, permissions, mode, colour, memory, generated-header comments) is project-owned
-# native metadata and is preserved, as are leading generated-marker comment lines in the body.
+# from the neutral definition when that is a single-line value; a block scalar is copied whole
+# into a new projection, then stays project-owned) and the prompt body. Every other frontmatter
+# key of an existing projection (tools, permissions, mode, colour, memory, generated-header
+# comments) is project-owned native metadata and is preserved, as are leading generated-marker
+# comment lines in the body.
 # A neutral definition may limit its harnesses with a bracketed `harnesses: [claude, opencode]`
 # list; any other form is a finding. Once a Tier baseline is declared, a projection with no
 # neutral definition (or excluded by its harnesses: list) is a finding unless agents.md lists
@@ -214,12 +215,25 @@ updated_frontmatter() { # proj harness model variant desc_line desc
     ' "$1"
 }
 
+# A frontmatter key's whole entry: its line plus the indented lines of a block or folded value
+# (blank lines inside it included), so a new projection copies a multiline description whole.
+fm_entry() { # file key
+    awk -v key="$2" '
+        NR == 1 { if ($0 != "---") exit; next }
+        $0 == "---" { exit }
+        on && /^[ \t]*$/ { held = held $0 "\n"; next }
+        on && /^[ \t]/ { printf "%s", held; held = ""; print; next }
+        on { exit }
+        index($0, key ":") == 1 { print; on = 1 }
+    ' "$1"
+}
+
 new_projection() { # def harness name model variant
     local def="$1" harness="$2" name="$3" model="$4" variant="$5" line
     printf -- '---\n'
     printf '# Generated from .prdkit/agents/%s.md by render-agents.sh; model/variant resolve from .prdkit/memory/agents.md. Edit the neutral definition, then re-render.\n' "$name"
     line="$(at_fm_line "$def" name)"; printf '%s\n' "${line:-name: $name}"
-    line="$(at_fm_line "$def" description)"; [ -z "$line" ] || printf '%s\n' "$line"
+    line="$(fm_entry "$def" description)"; [ -z "$line" ] || printf '%s\n' "$line"
     [ "$harness" != opencode ] || printf 'mode: subagent\n'
     printf 'model: %s\n' "$model"
     [ "$harness" != opencode ] || [ -z "$variant" ] || printf 'variant: %s\n' "$variant"

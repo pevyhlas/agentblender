@@ -220,6 +220,30 @@ hashes AB was qualified against.
 
 **If no answer**: option 1.
 
+### Public baseline security and packaging findings
+
+*2026-10-23 · agent · open*
+
+Independent review of the public baseline found three pre-existing issues; the documentation/
+CI maintenance does not fix or waive them. No credentials or accidental private identifiers
+were identified by that bounded text review.
+
+- **High, C-03**: `LauncherOptions.ResolveBind` rejects wildcard binds but accepts a public
+  address. Enforce the approved private/loopback ranges, including resolved hostnames and
+  mapped addresses, before every listener starts; add rejection tests.
+- **Medium, C-04**: desktop Blender children inherit unrelated credentials from the launcher
+  environment. Apply a minimal environment and credential/token/Python-variable canary tests.
+- **Medium, release hygiene**: recursive worker-content globs can package ignored diagnostic
+  files. Use tracked-only release inputs and restricted content, with an ignored-file canary.
+
+1. **A separate bounded hardening change** (Recommended): address these findings and obtain
+   security, licence and package verification before a packaged release or desktop rollout.
+2. **Keep source-only preview**: document the outstanding findings; do not approve a packaged
+   release or desktop rollout until the same boundaries are enforced and re-reviewed.
+
+**If no answer**: leave release/rollout blocked; do not widen this documentation/CI change or
+change the network/security policy. Baseline and maintenance reviews stay separate.
+
 ## Your direction
 
 ### Delivery lanes beyond the first

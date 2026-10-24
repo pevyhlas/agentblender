@@ -72,7 +72,7 @@ same arguments and results.
 1. `session_open` gives you a warm Blender session for a project.
 2. Change the scene with `scene_exec` (a Python script that runs inside Blender, imports `bpy`
    and reads its arguments from the global dict `params`; see Op scripts in the
-   [README](../README.md#run-it)) and look at it with `scene_preview`. Previews are at most
+   [usage reference](../REFERENCE.md#run-it)) and look at it with `scene_preview`. Previews are at most
    512 px, which is enough to judge form and light.
 3. Read state as deltas with `scene_state`. Use `scene_inspect` for typed reads of selected
    objects, landmarks or the camera (see [scene inspection](scene-inspection.md)). Ask for

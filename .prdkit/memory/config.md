@@ -8,7 +8,7 @@ external event delivery lives in task-ledger.md.
 
 - retrospective: off
 - agent-optimization: off
-- adoption-manifest-sha256: 0ecd8b5cdf14c87d2d8ecdcc7fa35267b6038bab193416af62fed04f9f273918
+- adoption-manifest-sha256: a41208266390fd950993444948932b6e9b5e9ff0f9a922bdc326df161c799d99
 
 ## Meaning
 
@@ -18,7 +18,8 @@ the local ledger. Missing optional enrichment leaves usage unknown. Failure is a
 `agent-optimization: on` permits a suggestion to review capability/model effectiveness
 after learning. Applying proposed configuration changes still needs applicable authority.
 
-Product-Kit v1.1.0 is vendored in copy mode under `.prdkit/` (see `.prdkit/.manifest`); there is
+Product-Kit v1.1.1 (source commit `6ca57908ac5c161e8b1c178a688475f96e8ec216`) is
+vendored in copy mode under `.prdkit/` (see `.prdkit/.manifest`); there is
 no kit submodule, so a clone needs no access to the kit source. `.prdkit/scripts/bash/check-adoption.sh`
 runs as a CI step and verifies the manifest against `adoption-manifest-sha256` and the installed
 command surface. `adoption-pin` is intentionally unset: it checks a tracked kit gitlink, which this
