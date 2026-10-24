@@ -30,8 +30,8 @@ single verified still plus the recipe/replay source; final brand adoption is own
 
 ## State
 
-**Step**: verify
-**Waiting on**: metadata-delta review and closure-head CI; prerequisite PR #7 must merge first.
+**Step**: close
+**Waiting on**: closure-head CI; prerequisite PR #7 must merge first.
 **Next**: close this proposal-authoring record, retarget [PR #8](https://github.com/pevyhlas/agentblender/pull/8)
 after #7, and merge once exact-head CI/review gates pass. Permanent identity selection remains
 an owner decision outside this completed proposal-authoring scope.
@@ -49,3 +49,4 @@ authoring daemon stopped with its workers verified; no live service was changed.
 **Review**: round 1 · 5f241890dc4f952b87e35725f64e75e9f554c31c..1c76c2a6628b7ffc4642e7b2c1a349a1916c9d82 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/012-brand-artwork/reviews-summary.md
 **Review**: round 1 · 5f241890dc4f952b87e35725f64e75e9f554c31c..1c76c2a6628b7ffc4642e7b2c1a349a1916c9d82 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/012-brand-artwork/reviews-summary.md
 **Review**: round 1 · 5f241890dc4f952b87e35725f64e75e9f554c31c..1c76c2a6628b7ffc4642e7b2c1a349a1916c9d82 · eng-license · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/012-brand-artwork/reviews-summary.md
+**Review**: round 2 · a93b45807a5ca866efdfa3adde9968926ad30503..a681144e81ee34fa4cd9a3d02eacf246d483f929 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/8#issuecomment-6387281809
