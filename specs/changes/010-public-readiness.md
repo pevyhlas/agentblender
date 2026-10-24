@@ -66,6 +66,10 @@ not the policy. Verify links/examples, adoption/doctor, legal notices and hosted
 ## State
 
 **Step**: verify
+**Concise onboarding closeout**: README now preserves its tested AB/AGD-boundary phrases while
+remaining short. Same wording passed the complete unit lane in change 011; the standalone
+010 branch carries the correction too. Product-Kit public latest remains v1.1.1. Current app
+permissions still show no push access; no feature branch or PR exists remotely.
 **Resume**: 2026-10-24 owner reports app access added; current credential still returns push
 403. No new remote branch or PR exists. Public v1.1.1 remains the latest Product-Kit release.
 **Waiting on**: repository write access for the automation credential (push 403); then exact-head CI.
@@ -96,5 +100,6 @@ No real-Blender, Metal/OptiX or live desktop qualification was run for this main
 **Review**: round 2 · 7b9b262d5323ac8eb775db49348fcc3ce3457491..c882d404c0b41c7151472c88b60050199d339586 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/security-review-round-2.jsonl
 **Review**: round 2 · 7b9b262d5323ac8eb775db49348fcc3ce3457491..c882d404c0b41c7151472c88b60050199d339586 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/ops-review-round-2.jsonl
 **Review**: round 3 · c882d404c0b41c7151472c88b60050199d339586..fe1bf121e4ba2928e8c799b7c9e5b67cb853f234 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/code-review-round-3.jsonl
+**Review**: round 4 · fe1bf121e4ba2928e8c799b7c9e5b67cb853f234..04d921c507f0bfe6a10825943386245375e280ec · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/concise-readme-review.md
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
