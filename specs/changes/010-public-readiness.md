@@ -46,7 +46,8 @@ platform expansion. Add only bounded regression protection, not a claim of compl
 - [x] Polish README and preserve advanced reference and incoming anchors.
 - [x] Upgrade kit/notices and SDK patch.
 - [x] Finish bounded public-text/history audit and repeatable regression protection.
-- [ ] Verify, independently review and integrate through exact-head hosted CI.
+- [x] Verify and independently review; published PR #6 passed exact-head hosted CI.
+- [ ] Merge the closure head once its required CI passes.
 - [x] Recheck stale PRs (none open) and report release blockers separately.
 
 ## Checks
@@ -61,31 +62,26 @@ not the policy. Verify links/examples, adoption/doctor, legal notices and hosted
 | A1 | J-06 | documentation links and unchanged boundary test; independent code/ops read | 2 | PASS locally |
 | A2 | C-01 | adoption, doctor (existing advisories) and licence review | 1 | PASS |
 | A3 | C-04, C-09 | bounded public audit, guard self-tests/scan and CI-policy mutants | 1 | PASS within stated limits |
-| A4 | D-16 | locked restore, build/unit/package and exact-head CI | 3 | LOCAL PASS; hosted CI BLOCKED |
+| A4 | D-16 | locked restore, build/unit/package and exact-head CI | 3 local; 1 hosted | PASS: [run 40114647890](https://github.com/pevyhlas/agentblender/actions/runs/40114647890), head 63f2d673ec2a3c8c3bd5a268a50e65a8a1805bd9 |
 
 ## State
 
-**Step**: verify
+**Step**: close
 **Concise onboarding closeout**: README now preserves its tested AB/AGD-boundary phrases while
 remaining short. Same wording passed the complete unit lane in change 011; the standalone
-010 branch carries the correction too. Product-Kit public latest remains v1.1.1. Current app
-permissions still show no push access; no feature branch or PR exists remotely.
-**Resume**: 2026-10-24 owner reports app access added; current credential still returns push
-403. No new remote branch or PR exists. Public v1.1.1 remains the latest Product-Kit release.
-**Access diagnosis**: on the owner's renewed continuation request, one branch push returned 403.
-The existing token service then refreshed successfully. The fresh installation token still lists
-the archived counterpart but omits this public repository. The account installation uses selected
-repositories and already has contents, pull-request and workflow write permissions. Repository
-selection, not a stale token or missing write permission type, is the remaining blocker. Remote
-refs still contain only the unchanged public main. No implementation or qualification was rerun.
-**Waiting on**: the owner adding this public repository to the app installation's selected
-repositories; then credential refresh and exact-head CI.
-**Next**: confirm the public repository appears in the refreshed installation scope, push this branch, open a PR, and run required
-exact-head hosted CI. Do not merge or publish a release while those gates remain blocked.
+010 branch carries the correction too. Product-Kit public latest remains v1.1.1.
+**Resume**: 2026-10-24 owner: “it was not saved, added now - please continue”. Refreshed app
+scope includes the public repository; publication succeeded. Earlier 403 attempts remain in git
+history and the retained evidence. Required Validate and Build/unit jobs, plus advisory Blender
+integration and macOS arm64 jobs, passed on published head 63f2d673ec2a3c8c3bd5a268a50e65a8a1805bd9.
+**Waiting on**: required CI for the record/log-only closure commit.
+**Next**: close the record, verify the review gate and exact remote head, then squash-merge PR #6.
 **Authority**: constitution permits commits, branch push/PR and green-reviewed merge;
 release/tag and deployments stay owner-gated. No history rewrite or remote branch deletion.
 **Branch**: 010-public-readiness; base a93b45807a5ca866efdfa3adde9968926ad30503.
-**Delivery**: LOCAL_ONLY; remote main is the base above; no remote feature branch or PR exists.
+**Delivery**: REMOTE_READY; [PR #6](https://github.com/pevyhlas/agentblender/pull/6).
+**Public evidence**: [original independent reports](https://github.com/pevyhlas/agentblender/pull/6#issuecomment-6387116576)
+and [hosted CI](https://github.com/pevyhlas/agentblender/actions/runs/40114647890).
 **Attempts**: initial local unit run failed (long temporary path, uncommitted SDK pin and README
 boundary assertion); short-temp run isolated the README and umask-sensitive fixture failures.
 The committed-pin, restored-guidance, short-temp/umask-022 run passes: 692 core and 103
@@ -97,7 +93,7 @@ fix round 2); normal and symlinked-temp self-tests pass. Raw failed attempts sta
 logs, the bounded six-commit/366-blob public scan, upstream proof and all review transcripts.
 Public Product-Kit v1.1.1's complete upstream local suite passes all 28 test files; its exact
 source also has green hosted Linux and macOS CI. This verifies kit adoption, not our hosted CI.
-No real-Blender, Metal/OptiX or live desktop qualification was run for this maintenance.
+Hosted real-Blender integration passed; Metal/OptiX and live desktop qualification remain open.
 **Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-code · FAIL · 0 critical, 1 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/code-review.jsonl
 **Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/security-review.jsonl
 **Review**: round 1 · a93b45807a5ca866efdfa3adde9968926ad30503..7b9b262d5323ac8eb775db49348fcc3ce3457491 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/010-public-readiness/ops-review.jsonl
