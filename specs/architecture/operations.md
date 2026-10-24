@@ -4,7 +4,9 @@
   release is the bundle `scripts/release-bundle.sh` builds (the `agentblender` tool package,
   `SHA256SUMS`, `provenance.json`) after a temporary install passes `abl doctor --quick --json`
   and the package declares the MIT license and carries the third-party notices
-  (`THIRD-PARTY-NOTICES.md`, `licenses/`);
+   (`THIRD-PARTY-NOTICES.md`, `licenses/`). Packing uses an archive of the captured commit,
+   with only tracked modifications overlaid in explicitly dirty development mode; ignored
+   outputs never enter the build. CLI and launcher share an explicit worker-module list;
   tagging and publishing is owner-gated (D-16). How a release reaches a host:
   [environments](environments.md). Rollback is reinstalling the previous bundle; stop the
   daemon first.

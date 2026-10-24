@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
+using Abl.Core.Config;
 using Abl.Core.Workers;
 using Microsoft.Extensions.Logging;
 
@@ -17,7 +18,7 @@ namespace Abl.Launcher;
 /// </summary>
 public sealed class LauncherHost(LauncherOptions options, ILogger<LauncherHost> logger)
 {
-    private readonly TcpListener _listener = new(options.BindEndpoint);
+    private readonly TcpListener _listener = new(LauncherOptions.NormalizeEndpoint(options.BindEndpoint));
 
     // Anti-slow-loris (A1): a peer that connects but never finishes the handshake must not
     // pin a worker slot. Cap connections still in the pre-auth phase; each is also bounded
@@ -30,6 +31,7 @@ public sealed class LauncherHost(LauncherOptions options, ILogger<LauncherHost> 
 
     public void Start()
     {
+        LauncherOptions.ValidateBindAddress(((IPEndPoint)_listener.LocalEndpoint).Address);
         _listener.Start();
         logger.LogInformation("desktop launcher listening on {Endpoint} (private-network-only, token-gated)", BoundEndpoint);
     }
@@ -141,6 +143,18 @@ public sealed class LauncherHost(LauncherOptions options, ILogger<LauncherHost> 
 
     private Process SpawnWorker(int localPort)
     {
+        var startInfo = WorkerStartInfo(options, localPort);
+        var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException($"failed to start {options.BlenderPath}");
+        process.OutputDataReceived += (_, e) => LogWorker(e.Data);
+        process.ErrorDataReceived += (_, e) => LogWorker(e.Data);
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        return process;
+    }
+
+    internal static ProcessStartInfo WorkerStartInfo(LauncherOptions options, int localPort)
+    {
         var workerScript = Path.Combine(options.WorkerDir, "worker.py");
         var startInfo = new ProcessStartInfo(options.BlenderPath)
         {
@@ -153,14 +167,17 @@ public sealed class LauncherHost(LauncherOptions options, ILogger<LauncherHost> 
             RedirectStandardError = true,
             UseShellExecute = false,
         };
-        var process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException($"failed to start {options.BlenderPath}");
-        process.OutputDataReceived += (_, e) => LogWorker(e.Data);
-        process.ErrorDataReceived += (_, e) => LogWorker(e.Data);
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-        return process;
+        ChildEnvironment.Restrict(startInfo.Environment, AllowsWorkerVariable);
+        return startInfo;
     }
+
+    // Windows needs its system/profile/temp variables; no launcher token, model/cloud credentials,
+    // Python injection, loader hooks or .NET startup hooks are inherited on either platform.
+    internal static bool AllowsWorkerVariable(string name) =>
+        ChildEnvironment.WorkerNames.Contains(name, StringComparer.OrdinalIgnoreCase)
+        || name.StartsWith("LC_", StringComparison.OrdinalIgnoreCase)
+        || new[] { "SYSTEMROOT", "WINDIR", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "TEMP", "TMP" }
+            .Contains(name, StringComparer.OrdinalIgnoreCase);
 
     private void LogWorker(string? line)
     {

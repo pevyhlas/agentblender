@@ -24,12 +24,16 @@ flowchart LR
 
 The system's only non-loopback listener, on the GPU workstation (C-03, D-15).
 
-- **P5.I-01 Specific bind**: the launcher refuses wildcard binds (`0.0.0.0`, `::`, `*`, `+`).
-  Enforced by: `DesktopTransportTests.BindGuardRefusesWildcardInterfaces`.
+- **P5.I-01 Specific bind**: the launcher accepts only loopback, IPv4 RFC1918 or IPv6 ULA,
+  normalizing mapped IPv4 addresses. Resolved hosts and directly configured endpoints get
+  the same check before listening. Enforced by: `DesktopTransportTests` bind guard tests.
 - **P5.I-02 Token before spawn**: the launcher checks the bearer token in constant time before
   starting any Blender process. Enforced by: `DesktopTransportTests.HandshakeAcceptsMatchingTokenAndRejectsWrongOne`.
 - **P5.I-03 Headless factory startup**: the launcher only starts `--background --factory-startup`
   workers, never a GUI Blender. Enforced by: owner review (`LauncherHost`).
+- **P5.I-05 Child environment**: desktop workers inherit only home/user/PATH/locale/temp and
+  Windows system/profile basics. Launcher tokens, other credentials and Python/loader hooks
+  are excluded. Enforced by: `DesktopTransportTests.DesktopWorkerDropsCredentialsAndKeepsPlatformBasics`.
 
 ### Routing
 

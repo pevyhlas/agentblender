@@ -1,0 +1,8 @@
+<Project>
+  <!-- Explicit, reviewed source inputs: ignored diagnostics and local scripts never ship. -->
+  <ItemGroup>
+    <AblWorkerModule Include="$(MSBuildThisFileDirectory)../worker/worker.py;$(MSBuildThisFileDirectory)../worker/blobs.py;$(MSBuildThisFileDirectory)../worker/cycles_devices.py;$(MSBuildThisFileDirectory)../worker/fingerprint.py;$(MSBuildThisFileDirectory)../worker/inspection.py;$(MSBuildThisFileDirectory)../worker/sheet.py" />
+    <Content Include="@(AblWorkerModule)" Link="worker/%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Pack="false" />
+  </ItemGroup>
+</Project>

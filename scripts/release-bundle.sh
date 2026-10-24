@@ -18,7 +18,7 @@
 #   4. writes SHA256SUMS and provenance.json next to the package and checks the sums.
 #
 # The bundle lands in DIR (default artifacts/release-bundle), replacing an earlier one.
-# Works with the macOS system bash (3.2) and on Linux; needs dotnet, git, jq and unzip.
+# Works with the macOS system bash (3.2) and on Linux; needs dotnet, git, jq, tar and unzip.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
@@ -40,7 +40,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-for command in dotnet git jq unzip; do
+for command in dotnet git jq unzip tar; do
     command -v "$command" > /dev/null || die "required command not found: $command"
 done
 
@@ -49,6 +49,7 @@ sha256() {
 }
 
 cd "$ROOT_DIR"
+case "$OUT_DIR" in /*) ;; *) OUT_DIR="$ROOT_DIR/$OUT_DIR" ;; esac
 
 # --- 1. the reference SDK -------------------------------------------------------------
 REFERENCE_SDK="$(git show HEAD:global.json | jq -r '.sdk.version')"
@@ -67,12 +68,6 @@ if [ -n "$DIRTY" ]; then
     [ "$ALLOW_DIRTY" = 1 ] || die "the source tree has uncommitted changes; commit them, or pass --allow-dirty for a bundle marked dirty"
     SOURCE_DIRTY=true
 fi
-
-VERSION="$(dotnet msbuild "$PROJECT" --nologo -getProperty:PackageVersion -p:Configuration=Release)"
-case "$VERSION" in
-    ''|*[!0-9A-Za-z.-]*) die "unexpected package version '$VERSION'" ;;
-esac
-NUPKG="$PACKAGE_ID.$VERSION.nupkg"
 
 if [ -L "$OUT_DIR" ] || { [ -e "$OUT_DIR" ] && [ ! -d "$OUT_DIR" ]; }; then
     die "refusing an output path that is a symlink or not a directory: $OUT_DIR"
@@ -96,10 +91,34 @@ TOOLS="$WORK/tools"
 mkdir "$STAGE" "$TOOLS" "$WORK/home" "$WORK/cwd"
 TOOLS="$(cd "$TOOLS" && pwd -P)"
 
+# Build only a captured tracked tree, never the checkout's ignored files or old bin/obj.
+SOURCE_ROOT="$WORK/source"
+mkdir "$SOURCE_ROOT"
+git archive "$SOURCE_COMMIT" | tar -xf - -C "$SOURCE_ROOT"
+if [ "$SOURCE_DIRTY" = true ]; then
+    git diff --binary "$SOURCE_COMMIT" -- . ':(exclude)global.json' > "$WORK/tracked.patch"
+    if [ -s "$WORK/tracked.patch" ]; then
+        (cd "$SOURCE_ROOT" && git apply "$WORK/tracked.patch")
+    fi
+fi
+ROOT_DIR="$SOURCE_ROOT"
+PROJECT="$ROOT_DIR/src/Abl.Cli/Abl.Cli.csproj"
+cd "$ROOT_DIR"
+# CI may have selected the reference SDK through an uncommitted global.json rewrite.
+# Reapply that policy to the archive before any staged dotnet command.
+jq '.sdk.rollForward = "disable"' global.json > global.json.tmp
+mv global.json.tmp global.json
+[ "$(dotnet --version)" = "$REFERENCE_SDK" ] || die "staged build did not select reference SDK $REFERENCE_SDK"
+VERSION="$(dotnet msbuild "$PROJECT" --nologo -getProperty:PackageVersion -p:Configuration=Release)"
+case "$VERSION" in
+    ''|*[!0-9A-Za-z.-]*) die "unexpected package version '$VERSION'" ;;
+esac
+NUPKG="$PACKAGE_ID.$VERSION.nupkg"
+
 # --- 2. pack --------------------------------------------------------------------------
 echo "== pack $PACKAGE_ID $VERSION (source $SOURCE_COMMIT, SDK $SDK_VERSION)"
 dotnet restore "$PROJECT" --locked-mode --nologo
-dotnet pack "$PROJECT" --configuration Release --no-restore --nologo --output "$STAGE" -p:ContinuousIntegrationBuild=true
+dotnet pack "$PROJECT" --configuration Release --no-restore --nologo --output "$STAGE" -p:ContinuousIntegrationBuild=true -p:SourceRevisionId="$SOURCE_COMMIT"
 [ -f "$STAGE/$NUPKG" ] || die "expected package is missing: $NUPKG"
 
 # The package redistributes Apache-2.0 and MIT assemblies, so it carries their notices

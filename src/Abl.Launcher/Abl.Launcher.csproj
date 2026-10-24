@@ -10,7 +10,7 @@
     <ProjectReference Include="../Abl.Core/Abl.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- worker/ ships next to the launcher so a deployed desktop agent is self-contained. -->
-    <Content Include="../../worker/**" LinkBase="worker" CopyToOutputDirectory="PreserveNewest" />
+    <InternalsVisibleTo Include="Abl.Core.Tests" />
   </ItemGroup>
+  <Import Project="../WorkerContent.props" />
 </Project>
