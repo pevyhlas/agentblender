@@ -401,6 +401,11 @@ public sealed class DaemonLifecycle(LifecycleHost host)
             return (new ConfigException(check, blender.Problem ?? "Blender is not usable", blender.Hint), false);
         }
 
+        if (PrepareStateDir(stateDir) is { } stateProblem)
+        {
+            return (stateProblem, false);
+        }
+
         try
         {
             RuntimePaths.Prepare(options.RuntimeDir, options.Platform, inputs.FileSystem);
@@ -1286,8 +1291,8 @@ public sealed class DaemonLifecycle(LifecycleHost host)
         }
     }
 
-    /// <summary>Creates the state dir and the store (0700), then passes the store-root gate.</summary>
-    internal static ConfigException? PrepareDirs(string stateDir, string storeDir)
+    /// <summary>Validates state before any runtime, service or log writes beneath it.</summary>
+    internal static ConfigException? PrepareStateDir(string stateDir)
     {
         try
         {
@@ -1305,7 +1310,18 @@ public sealed class DaemonLifecycle(LifecycleHost host)
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return new ConfigException("runtime.dir", $"cannot create the state dir {stateDir}: {ex.Message}", "fix XDG_STATE_HOME or its permissions");
+            return new ConfigException("runtime.dir", $"cannot prepare the state dir {stateDir}: {ex.Message}", "fix XDG_STATE_HOME or its permissions");
+        }
+
+        return null;
+    }
+
+    /// <summary>Creates the state dir and the store (0700), then passes the store-root gate.</summary>
+    internal static ConfigException? PrepareDirs(string stateDir, string storeDir)
+    {
+        if (PrepareStateDir(stateDir) is { } stateProblem)
+        {
+            return stateProblem;
         }
 
         try

@@ -102,7 +102,20 @@ public static class Setup
         var search = inputs.Blender ?? throw new ArgumentException("setup needs a Blender search (ConfigInputs.WithBlenderSearch)", nameof(inputs));
         var (path, _) = AblConfig.LocateFile(inputs);
         var fs = inputs.FileSystem;
-        var facts = fs.Inspect(path);
+        PathFacts? facts;
+        string? resetProblem;
+        try
+        {
+            facts = fs.Inspect(path);
+            resetProblem = reset && facts is not null
+                ? DirectoryProblem(fs, Path.GetDirectoryName(facts.IsSymlink ? facts.Target : path)!) : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return Report(stdout, stderr, json, path, dryRun, reset, false, false, [],
+                [DoctorCheck.Fail("config.file", $"cannot inspect config file {path}: {ex.Message}",
+                    "check file and directory permissions/ACLs, or choose another config file with ABL_CONFIG")], []);
+        }
 
         // Canonical values: each flag alone, and the file alone (no environment), so neither is
         // confused with what the shell would override.
@@ -149,7 +162,7 @@ public static class Setup
                     [DoctorCheck.Fail(error.Check, error.Message, "fix it, or rewrite the file with `abl setup --reset`")], []);
             }
         }
-        else if (facts is not null && DirectoryProblem(fs, Path.GetDirectoryName(facts.IsSymlink ? facts.Target : path)!) is { } untrusted)
+        else if (resetProblem is { } untrusted)
         {
             return Report(stdout, stderr, json, path, dryRun, reset, false, false, [],
                 [DoctorCheck.Fail("config.file", untrusted, "fix the directory's owner or mode, or point ABL_CONFIG at a file you own")], []);

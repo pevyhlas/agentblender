@@ -32,6 +32,8 @@ of conduct and issue and pull-request templates describe how to take part.
 - State directories now require a real user-owned 0700 final directory, with trailing-slash
   symlinks refused and unsafe existing directories left unchanged. Runtime fallback uses the
   same state-path resolver. macOS qualification remains open.
+- Startup and service installation validate state before writing beneath it. Config inspection
+  failures stay structured, and log ACL refusals explain the actual cause and remedy.
 - Public onboarding now has a concise README, a complete usage reference and an explicit
   release-readiness checklist. Reference SDK: 10.0.113 (was 10.0.112); install the new patch
   before building a reference release bundle. No package version or storage-format change.

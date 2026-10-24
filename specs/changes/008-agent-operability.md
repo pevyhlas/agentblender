@@ -97,4 +97,4 @@ guarantees. Shared-facts migration preserves discovery trust anchors and store t
 
 **Step**: build
 **Waiting on**: the owner for T074 and T075
-**Next**: complete shared-facts child 013, then T021's log transaction, T040 and T056 in separate pull requests
+**Next**: after shared-facts [PR #9](https://github.com/pevyhlas/agentblender/pull/9), T021's log transaction, T040 and T056 in separate pull requests

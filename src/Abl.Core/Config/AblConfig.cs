@@ -244,15 +244,23 @@ public sealed partial class AblConfig
 
     private static bool LoadFile(ConfigInputs inputs, string path, Dictionary<string, JsonElement> file)
     {
-        if (inputs.FileSystem.Inspect(path) is null)
+        try
         {
-            return false; // no file: discovered values and defaults apply (AC-06)
-        }
+            if (inputs.FileSystem.Inspect(path) is null)
+            {
+                return false; // no file: discovered values and defaults apply (AC-06)
+            }
 
-        if (ConfigTrust.CheckConfigFile(inputs.FileSystem, path) is { } distrust)
+            if (ConfigTrust.CheckConfigFile(inputs.FileSystem, path) is { } distrust)
+            {
+                throw FileError(path, $"refusing to load: {distrust}",
+                    "the config file chooses which programs the daemon runs, so only you may be able to change it");
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            throw FileError(path, $"refusing to load: {distrust}",
-                "the config file chooses which programs the daemon runs, so only you may be able to change it");
+            throw FileError(path, $"cannot inspect: {ex.Message}",
+                "check the file and directory permissions/ACLs, or choose another config file with ABL_CONFIG");
         }
 
         string text;

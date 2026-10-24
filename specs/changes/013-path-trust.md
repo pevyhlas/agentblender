@@ -77,14 +77,14 @@ not applicable: no dependency, inbound code, asset or worker change.
 |------|--------|-------|----------|--------|
 | A1 | P1.B-10, P1.B-11, P1.B-13 | Shared ownership/ACL facts; fake and native filesystem trust regressions | 1 | PASS on Linux x64 in `unit-tests-isolated.log`; macOS ACL policy simulated |
 | A2 | P1 operability | Runtime/state path parity; private state and store gates; shared log-reader facts | 1 | PASS in `unit-tests-isolated.log` |
-| A3 | Q-04, C-12 | Unit lane, policy gates, exact-head hosted CI and independent reviews | 2 | Local PASS: 833 tests, one macOS-only skip; hosted CI/reviews pending |
+| A3 | Q-04, C-12 | Unit lane, policy gates, exact-head hosted CI and independent reviews | 3 | Local PASS after review fixes: 842 tests, one macOS-only skip; final hosted CI/reviews pending |
 
 ## State
 
 **Step**: implementation
 **Waiting on**: nothing for shared-facts increment
 **Next**: independent implementation review and exact-head CI; log transaction follows separately.
-**Branch**: `013-path-trust`, from public main `d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5`; PR pending.
+**Branch**: `013-path-trust`, from public main `d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5`; [PR #9](https://github.com/pevyhlas/agentblender/pull/9).
 **Authority**: owner “please continue on next capabilities” (2026-10-25); constitution authorizes
 feature commits, branch push/PR and exact-head green/reviewed merge. No release or deployment.
 **Attempts**: first unit-lane run failed 34 setup/doctor/discovery cases under the inherited long
@@ -93,9 +93,18 @@ Second unit-lane run passed with a short private test root and umask 022; existi
 was not modified. Two distinct test-authoring compile mistakes were corrected and their failed
 logs retained (`build.log`, `build-final.log`); complete build is `build-complete.log` with zero
 warnings/errors. Design review PASS, 0 critical/high and 2 medium advisories assigned to the
-log transaction increment. No implementation review yet, no holds on shared facts.
+log transaction increment. Implementation round 1 passed all four lenses under light rigor,
+with three distinct medium advisories. Fix round 1 addresses state preparation order and
+service installation, structured inspection errors, and accurate log ACL diagnostics; regression
+tests exercise the entry points. A test-helper syntax error was repaired before tests ran;
+`fix-1-build.log` is retained. Corrected build passed with zero warnings/errors; fix-1 unit lane
+passed 842 tests with one macOS-only skip. No holds on shared facts.
 **Evidence**: `.prdkit/cache/evidence/013-path-trust/`.
 **Design review**: eng-security PASS on public base `d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5`
 plus the proposed record; `design-review.md` and original `design-review.jsonl` retained in cache.
+**Review**: round 1 · d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5..a79c8a4f9dfe013081ae8280c7814f62bd617ca3 · eng-code · PASS · 0 critical, 0 high, 2 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/9#issuecomment-6390607026
+**Review**: round 1 · d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5..a79c8a4f9dfe013081ae8280c7814f62bd617ca3 · eng-security · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/9#issuecomment-6390607167
+**Review**: round 1 · d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5..a79c8a4f9dfe013081ae8280c7814f62bd617ca3 · eng-arch · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/9#issuecomment-6390607318
+**Review**: round 1 · d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5..a79c8a4f9dfe013081ae8280c7814f62bd617ca3 · eng-ergonomics · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/9#issuecomment-6390607479
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->

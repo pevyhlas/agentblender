@@ -47,6 +47,10 @@ How a fresh agent installs, configures, starts, checks and connects AgentBlender
   refused rather than repaired. Store gates retain target-symlink semantics and require a
   user-owned directory, no group/other write and no allow ACL before trusting the lock/record.
   Doctor reports the same ACL failure. Tests: `PathTrustTests`, `LifecycleCoreTests`.
+- Startup checks state before preparing a runtime beneath it; service installation uses the
+  same state-only gate before writing. Config inspection failures retain `config.file` and
+  structured setup/doctor remedies. Log-reader ACL refusals identify the ACL and recovery action.
+  Tests: `PathTrustTests`, `LifecycleCoreTests.StartRefusesUnsafeStateBeforePreparingItsRuntime`.
 - **P1.B-14 One daemon per store**: an exclusive lock and the instance record live in the store;
   `abl daemon start` detaches, returns once a worker is warm or fails fast with a check ID, and
   hands off to an installed user service that serves this store and port. Test:

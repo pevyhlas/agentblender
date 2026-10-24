@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net.Sockets;
+using System.Text.Json.Nodes;
 using Abl.Cli.Host;
 using Abl.Core.Config;
 using Abl.Core.Lifecycle;
@@ -126,6 +127,107 @@ public sealed class PathTrustTests : IDisposable
         Assert.Contains("ACL with an allow entry", output.ToString());
         Assert.Contains("config.file", output.ToString());
         Assert.Empty(fs.Reads);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ServiceInstallationRefusesUnsafeStateBeforeWritingOrCallingTheManager(bool symlink)
+    {
+        var home = Path.Combine(_root, "home");
+        var state = DaemonPaths.StateDir(home, new Dictionary<string, string>());
+        Directory.CreateDirectory(Path.GetDirectoryName(state)!, RuntimePaths.DirMode);
+        var target = symlink ? Path.Combine(_root, "target") : state;
+        var mode = symlink ? RuntimePaths.DirMode : RuntimePaths.DirMode | UnixFileMode.GroupRead;
+        Directory.CreateDirectory(target, mode);
+        if (symlink) Directory.CreateSymbolicLink(state, target);
+        var inputs = new ConfigInputs
+        {
+            Home = home, Platform = HostPlatform.Linux, UserId = UnixIdentity.EffectiveUserId,
+            Env = new Dictionary<string, string>(),
+        };
+        var unit = Path.Combine(_root, "units", "agentblender.service");
+        var services = new SystemdUserService(unit, (_, _) => throw new InvalidOperationException("must not call service manager"));
+        using var output = new StringWriter();
+
+        var code = DaemonVerbs.InstallService(["--json"], output, new StringWriter(), inputs, services);
+
+        Assert.Equal(1, code);
+        Assert.Equal("runtime.dir", JsonNode.Parse(output.ToString())!["error"]!["check"]!.GetValue<string>());
+        Assert.Contains(symlink ? "is a symlink" : "must be 0700", output.ToString());
+        Assert.Empty(Directory.EnumerateFileSystemEntries(target));
+        Assert.Equal(mode, File.GetUnixFileMode(target));
+        Assert.False(Directory.Exists(Path.GetDirectoryName(unit)));
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task ConfigInspectionFailuresRemainStructuredAndNeverReadOrProbe(bool parent, bool denied)
+    {
+        const string path = "/cfg/config.json";
+        var inner = new FakeConfigFileSystem().File(path, "unread");
+        var inputs = new ConfigInputs
+        {
+            Home = "/home/u", Platform = HostPlatform.Linux, UserId = 1000,
+            Env = new Dictionary<string, string> { ["ABL_CONFIG"] = path },
+            FileSystem = new FailingInspection(inner, parent ? "/cfg" : path, denied),
+            Blender = new BlenderSearch
+            {
+                Home = "/home/u", Platform = HostPlatform.Linux,
+                Probe = (_, _) => throw new InvalidOperationException("must not probe"),
+            },
+        };
+
+        var error = Assert.Throws<ConfigException>(() => AblConfig.Resolve(inputs));
+        Assert.Equal("config.file", error.Check);
+        Assert.Contains("cannot inspect", error.Message);
+        Assert.Contains("permissions/ACLs", error.Hint);
+
+        var host = new DoctorHost(inputs, _root, null, (_, _) => throw new InvalidOperationException("must not spawn"));
+        using var output = new StringWriter();
+        Assert.Equal(1, await Doctor.MainAsync(["--json", "--check", "config.file"], host, output, new StringWriter()));
+        var report = JsonNode.Parse(output.ToString())!;
+        Assert.Equal("doctor.v1", report["schema"]!.GetValue<string>());
+        Assert.Equal("config.file", report["checks"]![0]!["id"]!.GetValue<string>());
+        Assert.Contains("cannot inspect", report["checks"]![0]!["summary"]!.GetValue<string>());
+        Assert.False(string.IsNullOrEmpty(report["checks"]![0]!["remedy"]!.GetValue<string>()));
+
+        foreach (var reset in new[] { false, true })
+        {
+            using var setup = new StringWriter();
+            Assert.Equal(1, Setup.Run(reset ? ["--json", "--reset"] : ["--json"], inputs, setup, new StringWriter()));
+            var check = JsonNode.Parse(setup.ToString())!["checks"]![0]!;
+            Assert.Equal("config.file", check["id"]!.GetValue<string>());
+            Assert.Contains("cannot inspect", check["summary"]!.GetValue<string>());
+            Assert.False(string.IsNullOrEmpty(check["remedy"]!.GetValue<string>()));
+        }
+        Assert.Empty(inner.Reads);
+    }
+
+    [Fact]
+    public void LogAclRefusalNamesTheActualProblemAndRecovery()
+    {
+        var fs = new FakeConfigFileSystem().File("/logs/daemon.log", "not-read", allowAcl: true);
+        var problem = DaemonLog.ReadProblem("/logs/daemon.log", fs);
+        Assert.Contains("ACL with an allow entry", problem);
+        Assert.Contains("chmod -N", problem);
+        Assert.DoesNotContain("not a regular file", problem);
+        var (path, note) = DaemonLog.Readable("/logs/daemon.log", "/logs/fallback.log", fs);
+        Assert.Equal("/logs/fallback.log", path);
+        Assert.Contains(problem!, note);
+        Assert.Empty(fs.Reads);
+    }
+
+    private sealed class FailingInspection(IConfigFileSystem inner, string refused, bool denied) : IConfigFileSystem
+    {
+        public PathFacts? Inspect(string path) => path == refused
+            ? throw (denied ? new UnauthorizedAccessException("metadata denied") : new IOException("ACL read failed"))
+            : inner.Inspect(path);
+
+        public string ReadAllText(string path) => throw new InvalidOperationException("must not read");
     }
 
     [Theory]
