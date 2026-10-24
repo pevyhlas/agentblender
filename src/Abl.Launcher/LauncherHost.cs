@@ -18,7 +18,7 @@ namespace Abl.Launcher;
 /// </summary>
 public sealed class LauncherHost(LauncherOptions options, ILogger<LauncherHost> logger)
 {
-    private readonly TcpListener _listener = new(options.BindEndpoint);
+    private readonly TcpListener _listener = new(LauncherOptions.NormalizeEndpoint(options.BindEndpoint));
 
     // Anti-slow-loris (A1): a peer that connects but never finishes the handshake must not
     // pin a worker slot. Cap connections still in the pre-auth phase; each is also bounded

@@ -104,6 +104,11 @@ fi
 ROOT_DIR="$SOURCE_ROOT"
 PROJECT="$ROOT_DIR/src/Abl.Cli/Abl.Cli.csproj"
 cd "$ROOT_DIR"
+# CI may have selected the reference SDK through an uncommitted global.json rewrite.
+# Reapply that policy to the archive before any staged dotnet command.
+jq '.sdk.rollForward = "disable"' global.json > global.json.tmp
+mv global.json.tmp global.json
+[ "$(dotnet --version)" = "$REFERENCE_SDK" ] || die "staged build did not select reference SDK $REFERENCE_SDK"
 VERSION="$(dotnet msbuild "$PROJECT" --nologo -getProperty:PackageVersion -p:Configuration=Release)"
 case "$VERSION" in
     ''|*[!0-9A-Za-z.-]*) die "unexpected package version '$VERSION'" ;;

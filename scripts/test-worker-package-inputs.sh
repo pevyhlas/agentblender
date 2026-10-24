@@ -6,6 +6,9 @@ WORK="$(mktemp -d)"
 trap 'rm -rf -- "$WORK"' EXIT
 git -C "$ROOT" archive HEAD | tar -xf - -C "$WORK"
 cd "$WORK"
+jq '.sdk.rollForward = "disable"' global.json > global.json.tmp
+mv global.json.tmp global.json
+[[ "$(dotnet --version)" == "$(jq -r '.sdk.version' global.json)" ]]
 mkdir -p worker/__pycache__ worker/diagnostics
 printf 'SYNTHETIC_PACKAGE_CANARY\n' > worker/local-only.py
 printf 'SYNTHETIC_PACKAGE_CANARY\n' > worker/__pycache__/cache.pyc

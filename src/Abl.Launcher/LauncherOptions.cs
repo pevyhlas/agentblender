@@ -58,8 +58,11 @@ public sealed class LauncherOptions
               ?? throw new ArgumentException($"bind host '{host}' did not resolve to an IP", nameof(bind));
 
         ValidateBindAddress(address);
-        return new IPEndPoint(address, port);
+        return NormalizeEndpoint(new IPEndPoint(address, port));
     }
+
+    internal static IPEndPoint NormalizeEndpoint(IPEndPoint endpoint) =>
+        new(endpoint.Address.IsIPv4MappedToIPv6 ? endpoint.Address.MapToIPv4() : endpoint.Address, endpoint.Port);
 
     /// <summary>Also enforced at Start so directly constructed options cannot bypass C-03.</summary>
     public static void ValidateBindAddress(IPAddress address)
