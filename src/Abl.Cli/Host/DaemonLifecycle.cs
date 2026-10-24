@@ -401,6 +401,11 @@ public sealed class DaemonLifecycle(LifecycleHost host)
             return (new ConfigException(check, blender.Problem ?? "Blender is not usable", blender.Hint), false);
         }
 
+        if (PrepareStateDir(stateDir) is { } stateProblem)
+        {
+            return (stateProblem, false);
+        }
+
         try
         {
             RuntimePaths.Prepare(options.RuntimeDir, options.Platform, inputs.FileSystem);
@@ -1263,21 +1268,22 @@ public sealed class DaemonLifecycle(LifecycleHost host)
     /// <c>stop</c> and <c>status</c> through <see cref="LocateAsync"/>, and <c>logs</c>
     /// before it reads the record. Null when trusted.
     /// </summary>
-    internal static ConfigException? UntrustedStore(string store)
+    internal static ConfigException? UntrustedStore(string store, IConfigFileSystem? fs = null)
     {
         try
         {
-            var mode = File.GetUnixFileMode(store);
-            if (UnixIdentity.OwnerOf(store) == UnixIdentity.EffectiveUserId
-                && (mode & (UnixFileMode.GroupWrite | UnixFileMode.OtherWrite)) == 0)
+            var facts = (fs ?? UnixConfigFileSystem.Instance).Inspect(store);
+            if (facts is { TargetExists: true, IsDirectory: true, OwnedByCurrentUser: true, HasAllowAcl: false }
+                && (facts.Mode & (UnixFileMode.GroupWrite | UnixFileMode.OtherWrite)) == 0)
             {
                 return null;
             }
 
             return new ConfigException(
                 "paths.store",
-                $"the store {store} is not owned by this user or is writable by others ({Convert.ToString((int)mode, 8)}); its lock and daemon.json are not trusted",
-                "use a store you own with mode 0700 (paths.store, ABL_STORE)");
+                facts is { HasAllowAcl: true } ? ConfigTrust.AllowAclProblem(facts)!
+                    : $"the store {store} is not a directory owned by this user or is writable by others; its lock and daemon.json are not trusted",
+                "use a store you own with mode 0700 and no allow ACL (paths.store, ABL_STORE)");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -1285,16 +1291,37 @@ public sealed class DaemonLifecycle(LifecycleHost host)
         }
     }
 
-    /// <summary>Creates the state dir and the store (0700), then passes the store-root gate.</summary>
-    internal static ConfigException? PrepareDirs(string stateDir, string storeDir)
+    /// <summary>Validates state before any runtime, service or log writes beneath it.</summary>
+    internal static ConfigException? PrepareStateDir(string stateDir)
     {
         try
         {
-            Directory.CreateDirectory(stateDir, PrivateDir);
+            var fs = UnixConfigFileSystem.Instance;
+            if (fs.Inspect(stateDir) is null)
+            {
+                Directory.CreateDirectory(stateDir, PrivateDir);
+            }
+
+            if (RuntimePaths.CheckDir(stateDir, fs, "state") is { } stateProblem)
+            {
+                return new ConfigException("runtime.dir", stateProblem,
+                    "use a real state directory you own with mode 0700 and no allow ACL (XDG_STATE_HOME)");
+            }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return new ConfigException("runtime.dir", $"cannot create the state dir {stateDir}: {ex.Message}", "fix XDG_STATE_HOME or its permissions");
+            return new ConfigException("runtime.dir", $"cannot prepare the state dir {stateDir}: {ex.Message}", "fix XDG_STATE_HOME or its permissions");
+        }
+
+        return null;
+    }
+
+    /// <summary>Creates the state dir and the store (0700), then passes the store-root gate.</summary>
+    internal static ConfigException? PrepareDirs(string stateDir, string storeDir)
+    {
+        if (PrepareStateDir(stateDir) is { } stateProblem)
+        {
+            return stateProblem;
         }
 
         try

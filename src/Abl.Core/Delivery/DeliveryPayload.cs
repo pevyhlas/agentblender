@@ -155,8 +155,9 @@ public static class DeliveryPayload
         try
         {
             const UnixFileMode othersWrite = UnixFileMode.GroupWrite | UnixFileMode.OtherWrite;
-            return (File.GetUnixFileMode(directory) & othersWrite) == 0 && Config.UnixIdentity.OwnerOf(directory) == 0 &&
-                !(OperatingSystem.IsMacOS() && Config.UnixIdentity.HasAllowAcl(directory));
+            var facts = Config.UnixConfigFileSystem.Instance.Inspect(directory);
+            return facts is { TargetExists: true, IsDirectory: true, OwnerUserId: 0, HasAllowAcl: false }
+                && (facts.Mode & othersWrite) == 0;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }

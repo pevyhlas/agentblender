@@ -8,18 +8,12 @@ namespace Abl.Core.Config;
 /// Unix identity primitives (008 T010, N1; T013). .NET has no managed effective-uid,
 /// file-owner or ACL API, so this is the one place that reaches libc through
 /// <c>LibraryImport</c>: <c>geteuid()</c>, the owner uid (<see cref="OwnerOf"/>) and the
-/// macOS ACL read (<see cref="HasAllowAcl"/>). It offers two ownership answers.
-/// <see cref="IsOwnedByCurrentUser"/> (the config, token-file and runtime-dir checks) is
-/// proved by an idempotent <c>chmod</c> to the current mode, a no-op for the owner and EPERM
-/// for anyone else. <c>chmod</c> follows symlinks, so callers pass a path whose final
-/// component is not a link (it refuses one rather than prove the target by accident).
-/// <see cref="OwnerOf"/> (the discovery trust rule) reads the uid itself. Plan task T021
-/// consolidates the two.
+/// macOS ACL read (<see cref="HasAllowAcl"/>). Ownership is always read from the uid, never
+/// proved by a mode-changing operation. <see cref="UnixConfigFileSystem"/> collects these
+/// primitives into the shared <see cref="PathFacts"/> used by path-trust policies (008 T021).
 /// </summary>
 /// <remarks>
-/// Root passes the chmod proof for every file; running AgentBlender as root is not a
-/// supported configuration. The chmod proof cannot tell root from another user, so the
-/// discovery trust rule (plan A4 item 4) reads the owner uid with <see cref="OwnerOf"/>:
+/// Running AgentBlender as root is not a supported configuration. <see cref="OwnerOf"/> uses
 /// <c>statx(2)</c> on Linux, whose layout is the same on every architecture, and the
 /// 64-bit-inode <c>stat(2)</c> on macOS, whose layout is the same on arm64 and x64. On macOS
 /// <see cref="HasAllowAcl"/> reads extended ACLs, which the mode bits do not show. The
@@ -43,34 +37,19 @@ public static partial class UnixIdentity
     public static uint EffectiveUserId => geteuid();
 
     /// <summary>
-    /// True when the current user owns <paramref name="path"/> (proved by an idempotent
-    /// <c>chmod</c> to its current mode). False when the chmod is refused (EPERM). On a
-    /// read-only file system (EROFS, such as the sealed macOS system volume, where the kernel
-    /// may report it before EPERM) the chmod proves nothing either way, so the owner uid is
-    /// read instead.
+    /// True when the path's owner uid equals the effective uid, including on read-only
+    /// filesystems. Does not change permission bits or metadata.
     /// </summary>
     /// <exception cref="ArgumentException">The final component is a symlink.</exception>
     public static bool IsOwnedByCurrentUser(string path)
     {
+        path = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
         if (new FileInfo(path).LinkTarget is not null)
         {
             throw new ArgumentException($"'{path}' is a symlink; resolve it before proving ownership", nameof(path));
         }
 
-        var mode = File.GetUnixFileMode(path);
-        try
-        {
-            File.SetUnixFileMode(path, mode);
-            return true;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return false;
-        }
-        catch (IOException ex) when (ex.HResult == ERoFs)
-        {
-            return OwnerOf(path) == EffectiveUserId;
-        }
+        return OwnerOf(path) == EffectiveUserId;
     }
 
     /// <summary>The owner uid of <paramref name="path"/>, following symlinks (as the mode check does).</summary>
@@ -192,7 +171,6 @@ public static partial class UnixIdentity
     private const int RegularFileType = 0x8000;
     private const int AtFdCwd = -100;
     private const int ENoEnt = 2;
-    private const int ERoFs = 30; // the same on Linux and macOS; .NET puts the raw errno in HResult
     private const int AclTypeExtended = 0x100;
     private const int AclFirstEntry = 0;
     private const int AclNextEntry = -1;

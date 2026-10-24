@@ -194,6 +194,11 @@ public static class HostChecks
                 return DoctorCheck.Fail(id, $"{path} is writable by group or others (mode {Octal(facts.Mode)})", $"chmod 700 {facts.Target}", detail);
             }
 
+            if (ConfigTrust.AllowAclProblem(facts) is { } aclProblem)
+            {
+                return DoctorCheck.Fail(id, aclProblem, $"remove the allow ACL (chmod -N {facts.Target}) or choose another directory", detail);
+            }
+
             if ((facts.Mode & UnixFileMode.UserWrite) == 0)
             {
                 return DoctorCheck.Fail(id, $"{path} is not writable (mode {Octal(facts.Mode)})", $"chmod 700 {facts.Target}", detail);

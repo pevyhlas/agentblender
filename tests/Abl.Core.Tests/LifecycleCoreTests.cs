@@ -109,6 +109,38 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         Assert.Equal("h1", body["droppedSessions"]![0]!["lastCheckpoint"]!.GetValue<string>());
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task StartRefusesUnsafeStateBeforePreparingItsRuntime(bool symlink)
+    {
+        var inputs = Inputs();
+        var state = DaemonPaths.StateDir(inputs.Home, inputs.Env);
+        Directory.CreateDirectory(Path.GetDirectoryName(state)!, Private);
+        var target = symlink ? Path.Combine(_root, "state-target") : state;
+        var mode = symlink ? Private : Private | UnixFileMode.GroupRead;
+        Directory.CreateDirectory(target, mode);
+        if (symlink) Directory.CreateSymbolicLink(state, target);
+        inputs = inputs with
+        {
+            Env = inputs.Env.ToDictionary(pair => pair.Key,
+                pair => pair.Key == "ABL_RUNTIME_DIR" ? Path.Combine(state, "run") : pair.Value),
+        };
+        using var stdout = new StringWriter();
+        var processes = new FakeProcesses(_events);
+        var lifecycle = new DaemonLifecycle(new LifecycleHost(inputs, stdout, TextWriter.Null,
+            processes, new FakeServices(_events, processes)));
+
+        var code = await lifecycle.StartAsync(json: true, TimeSpan.FromSeconds(1));
+
+        Assert.Equal(1, code);
+        Assert.Equal("runtime.dir", JsonNode.Parse(stdout.ToString())!["error"]!["check"]!.GetValue<string>());
+        Assert.Contains(symlink ? "is a symlink" : "must be 0700", stdout.ToString());
+        Assert.Empty(Directory.EnumerateFileSystemEntries(target));
+        Assert.Equal(mode, File.GetUnixFileMode(target));
+        Assert.Empty(_events);
+    }
+
     [Fact]
     public async Task OnTheServicePathActiveSessionsRefuseStopBeforeTheManagerIsAsked()
     {

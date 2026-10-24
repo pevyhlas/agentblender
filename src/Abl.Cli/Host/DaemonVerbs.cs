@@ -257,9 +257,9 @@ public static class DaemonVerbs
             return 1;
         }
 
-        if (!DaemonLog.IsOwnRegularFile(logFile))
+        if (DaemonLog.ReadProblem(logFile) is { } logProblem)
         {
-            Console.Error.WriteLine($"abl: {logFile} is not a regular file you own; not reading it");
+            Console.Error.WriteLine(DaemonLog.Clean($"abl: {logProblem}; not reading it"));
             return 1;
         }
 
@@ -279,6 +279,13 @@ public static class DaemonVerbs
     /// environment is <c>DOTNET_ROOT</c>. <c>--dry-run</c> prints it and changes no file (AC-22).
     /// </summary>
     public static int InstallService(IReadOnlyList<string> rest, TextWriter stdout, TextWriter stderr)
+    {
+        var inputs = ConfigInputs.FromProcess();
+        return InstallService(rest, stdout, stderr, inputs, ServiceManagers.ForService(inputs.Home, inputs.Env));
+    }
+
+    internal static int InstallService(IReadOnlyList<string> rest, TextWriter stdout, TextWriter stderr,
+        ConfigInputs inputs, IServiceManager services)
     {
         bool dryRun = false, atLogin = false, json = false;
         foreach (var arg in rest)
@@ -300,7 +307,6 @@ public static class DaemonVerbs
         }
 
         var (program, prefix) = SelfCommand.Current();
-        var inputs = ConfigInputs.FromProcess();
         var plan = ServicePlan.For(
             inputs, program, prefix, RuntimeEnvironment.GetRuntimeDirectory(),
             Environment.GetEnvironmentVariable("DOTNET_ROOT"), Directory.Exists,
@@ -310,7 +316,6 @@ public static class DaemonVerbs
             return Fail(stdout, stderr, json, error);
         }
 
-        var services = ServiceManagers.ForService(inputs.Home, inputs.Env);
         var path = services switch
         {
             LaunchdAgent launchd => launchd.PlistPath(atLogin),
@@ -325,7 +330,10 @@ public static class DaemonVerbs
             {
                 // The unit's working directory, and launchd's output file next to its state-dir
                 // plist, must exist before the manager starts the job (0700, like every state dir).
-                Directory.CreateDirectory(plan.StateDir!, PrivateDir);
+                if (DaemonLifecycle.PrepareStateDir(plan.StateDir!) is { } stateProblem)
+                {
+                    return Fail(stdout, stderr, json, stateProblem);
+                }
                 if (services is LaunchdAgent)
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(ServiceUnits.LaunchdOutput(plan.StateDir!))!, PrivateDir);

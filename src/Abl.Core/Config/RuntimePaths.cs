@@ -82,7 +82,7 @@ public static class RuntimePaths
             }
         }
 
-        var state = StateRunDir(home, Lookup(env, "XDG_STATE_HOME"));
+        var state = Path.Combine(Lifecycle.DaemonPaths.StateDir(home, env), "run");
         if (CheckSocketLength(state, platform) is null)
         {
             return state;
@@ -93,10 +93,8 @@ public static class RuntimePaths
 
     /// <summary><c>$XDG_STATE_HOME/agentblender/run</c> (default <c>~/.local/state/agentblender/run</c>).</summary>
     public static string StateRunDir(string home, string? xdgStateHome) =>
-        Path.Combine(
-            xdgStateHome is { Length: > 0 } && Path.IsPathRooted(xdgStateHome) ? Normalize(xdgStateHome) : Path.Combine(home, ".local", "state"),
-            "agentblender",
-            "run");
+        Path.Combine(Lifecycle.DaemonPaths.StateDir(home,
+            new Dictionary<string, string> { ["XDG_STATE_HOME"] = xdgStateHome ?? "" }), "run");
 
     /// <summary>The last-resort dir, used only when the user-owned ones are too long.</summary>
     public static string Fallback(HostPlatform platform, uint userId) =>
@@ -127,7 +125,7 @@ public static class RuntimePaths
                 // The umask may have cleared bits (chmod never widens past 0700). chmod follows
                 // links, so it runs only on a real, owned directory: a symlink planted between
                 // the check and the create is left alone for CheckDir to refuse.
-                if (fs.Inspect(runtimeDir) is { IsSymlink: false, IsDirectory: true, OwnedByCurrentUser: true })
+                if (fs.Inspect(runtimeDir) is { IsSymlink: false, IsDirectory: true, OwnedByCurrentUser: true, HasAllowAcl: false })
                 {
                     File.SetUnixFileMode(runtimeDir, DirMode);
                 }
@@ -148,35 +146,35 @@ public static class RuntimePaths
     }
 
     /// <summary>Null when the final component is a usable runtime dir, otherwise the <c>runtime.dir</c> reason.</summary>
-    public static string? CheckDir(string runtimeDir, IConfigFileSystem fs)
+    public static string? CheckDir(string runtimeDir, IConfigFileSystem fs, string kind = "runtime")
     {
         var facts = fs.Inspect(runtimeDir);
         if (facts is null)
         {
-            return $"runtime dir {runtimeDir} does not exist";
+            return $"{kind} dir {runtimeDir} does not exist";
         }
 
         if (facts.IsSymlink)
         {
-            return $"runtime dir {runtimeDir} is a symlink (to {facts.Target}); its final component must be a real directory";
+            return $"{kind} dir {runtimeDir} is a symlink (to {facts.Target}); its final component must be a real directory";
         }
 
-        if (!facts.IsDirectory)
+        if (!facts.TargetExists || !facts.IsDirectory)
         {
-            return $"runtime dir {runtimeDir} is not a directory";
+            return $"{kind} dir {runtimeDir} is not a directory";
         }
 
         if (!facts.OwnedByCurrentUser)
         {
-            return $"runtime dir {runtimeDir} is owned by another user";
+            return $"{kind} dir {runtimeDir} is owned by another user";
         }
 
         if ((facts.Mode & PermissionBits) != DirMode)
         {
-            return $"runtime dir {runtimeDir} has mode {Convert.ToString((int)(facts.Mode & PermissionBits), 8).PadLeft(4, '0')}; it must be 0700";
+            return $"{kind} dir {runtimeDir} has mode {Convert.ToString((int)(facts.Mode & PermissionBits), 8).PadLeft(4, '0')}; it must be 0700";
         }
 
-        return null;
+        return ConfigTrust.AllowAclProblem(facts);
     }
 
     private static string Normalize(string path) =>

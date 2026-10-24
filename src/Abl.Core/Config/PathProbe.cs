@@ -7,11 +7,14 @@ namespace Abl.Core.Config;
 /// </summary>
 /// <param name="Path">The path as asked.</param>
 /// <param name="IsSymlink">The final component of <paramref name="Path"/> is a symlink.</param>
-/// <param name="Target">The fully resolved target (equal to <paramref name="Path"/> when not a link).</param>
+/// <param name="Target">The final link target, or the normalized path when not a link.</param>
 /// <param name="TargetExists">The target exists (false for a dangling link).</param>
 /// <param name="IsDirectory">The target is a directory.</param>
 /// <param name="Mode">The target's permission bits.</param>
-/// <param name="OwnedByCurrentUser">The current user owns the target.</param>
+/// <param name="OwnerUserId">The target's owner uid, or null for a missing target.</param>
+/// <param name="EffectiveUserId">The inspecting process's effective uid.</param>
+/// <param name="HasAllowAcl">The target has a macOS extended allow ACL entry.</param>
+/// <param name="IsRegularFile">The target is a regular file, not a directory, FIFO, socket or device.</param>
 public sealed record PathFacts(
     string Path,
     bool IsSymlink,
@@ -19,7 +22,13 @@ public sealed record PathFacts(
     bool TargetExists,
     bool IsDirectory,
     UnixFileMode Mode,
-    bool OwnedByCurrentUser);
+    uint? OwnerUserId,
+    uint EffectiveUserId,
+    bool HasAllowAcl,
+    bool IsRegularFile)
+{
+    public bool OwnedByCurrentUser => TargetExists && OwnerUserId == EffectiveUserId;
+}
 
 /// <summary>
 /// The file-system seam of the config resolver (plan M10): tests inject a fake to simulate a
@@ -46,6 +55,9 @@ public sealed class UnixConfigFileSystem : IConfigFileSystem
             throw new PlatformNotSupportedException("config trust checks need a Unix host");
         }
 
+        var asked = path;
+        // A trailing separator must not hide a linked final directory.
+        path = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
         FileSystemInfo info = new FileInfo(path);
         if (info.LinkTarget is null && Directory.Exists(path))
         {
@@ -53,9 +65,16 @@ public sealed class UnixConfigFileSystem : IConfigFileSystem
         }
 
         var isLink = info.LinkTarget is not null;
-        if (!isLink && !info.Exists)
+        if (!isLink)
         {
-            return null;
+            try
+            {
+                _ = File.GetAttributes(path);
+            }
+            catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+            {
+                return null;
+            }
         }
 
         var target = path;
@@ -63,21 +82,28 @@ public sealed class UnixConfigFileSystem : IConfigFileSystem
         {
             var resolved = File.ResolveLinkTarget(path, returnFinalTarget: true);
             target = resolved?.FullName ?? path;
-            if (resolved is null || !(File.Exists(target) || Directory.Exists(target)))
+            try
             {
-                return new PathFacts(path, true, target, false, false, 0, false);
+                _ = File.GetAttributes(target);
+            }
+            catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+            {
+                return new PathFacts(asked, true, target, false, false, 0, null, UnixIdentity.EffectiveUserId, false, false);
             }
         }
 
         var isDirectory = Directory.Exists(target);
         return new PathFacts(
-            path,
+            asked,
             isLink,
             target,
             true,
             isDirectory,
             File.GetUnixFileMode(target),
-            UnixIdentity.IsOwnedByCurrentUser(target));
+            UnixIdentity.OwnerOf(target),
+            UnixIdentity.EffectiveUserId,
+            OperatingSystem.IsMacOS() && UnixIdentity.HasAllowAcl(target),
+            UnixIdentity.IsRegularFile(target));
     }
 
     public string ReadAllText(string path) => File.ReadAllText(path);

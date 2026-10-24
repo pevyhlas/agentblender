@@ -12,11 +12,12 @@ How a fresh agent installs, configures, starts, checks and connects AgentBlender
   secrets reduced to their source. Test: `ConfigResolverTests`, `ConfigStartupTests`.
 - **P1.B-10 Strict, trusted file**: the per-user JSON file (`version: 1`) is refused with the
   file, key and check ID on an unknown key, a comment or another version, and refused before it
-  is parsed unless it and its directory are the user's and not writable by others (a symlink is
-  judged at its target). Test: `ConfigResolverTests.UntrustedConfigFilesAreRefusedBeforeTheyAreRead`,
+  is parsed unless it is regular and it and its directory are the user's, not writable by others,
+  and have no macOS allow ACL (a symlink is judged at its target). Setup/reset uses the same ACL
+  rule. Test: `ConfigResolverTests.UntrustedConfigFilesAreRefusedBeforeTheyAreRead`,
   `ConfigStartupTests.DaemonAndCliRefuseAWorldWritableConfig`.
 - **P1.B-11 Private token**: `ABL_DESKTOP_TOKEN` wins over `desktop.tokenFile`; a token file
-  readable by others or owned by another user leaves the desktop tier off. Test:
+  non-regular, readable by others, owned by another user or carrying a macOS allow ACL leaves the desktop tier off. Test:
   `ConfigResolverTests`.
 
 ## Blender and the worker environment
@@ -28,13 +29,28 @@ How a fresh agent installs, configures, starts, checks and connects AgentBlender
   `BlenderDiscoveryTests`.
 - **P1.B-13 Runtime directory**: worker sockets live in a short private directory; before every
   spawn the longest socket path must fit `sun_path`, and the final component must be a real,
-  user-owned 0700 directory. Test: `RuntimePathsTests`.
+  user-owned 0700 directory without a macOS allow ACL. Trailing separators cannot hide a final
+  symlink. Test: `RuntimePathsTests`, `PathTrustTests`.
 - **P1.I-05 Allowlisted worker environment**: workers start with `HOME`, `USER`, `PATH`, `LANG`,
   `LC_*`, `TMPDIR` and `worker.envPassthrough` only, every `PYTHON*` removed; the version probe
   gets a narrower list. Enforced by: `ChildEnvironmentTests`, `WorkerEnvironmentTests`.
 
 ## Lifecycle
 
+- Path-trust policies consume shared read-only `PathFacts` (owner/effective uid, mode, kind,
+  final symlink and macOS allow ACL). Ownership is uid equality, never a chmod probe.
+  Discovery preserves its user/root trust-anchor walk and delivery aliases still require root.
+  Deny-only ACLs remain permitted; inspection failures refuse trust. Tests: `UnixIdentityTests`,
+  `PathTrustTests`, `BlenderDiscoveryTests`, `ConfigResolverTests`.
+- State derives from one `DaemonPaths.StateDir`; runtime fallback appends `run`. Before use,
+  state's final directory obeys the runtime private-directory rule. Existing unsafe state is
+  refused rather than repaired. Store gates retain target-symlink semantics and require a
+  user-owned directory, no group/other write and no allow ACL before trusting the lock/record.
+  Doctor reports the same ACL failure. Tests: `PathTrustTests`, `LifecycleCoreTests`.
+- Startup checks state before preparing a runtime beneath it; service installation uses the
+  same state-only gate before writing. Config inspection failures retain `config.file` and
+  structured setup/doctor remedies. Log-reader ACL refusals identify the ACL and recovery action.
+  Tests: `PathTrustTests`, `LifecycleCoreTests.StartRefusesUnsafeStateBeforePreparingItsRuntime`.
 - **P1.B-14 One daemon per store**: an exclusive lock and the instance record live in the store;
   `abl daemon start` detaches, returns once a worker is warm or fails fast with a check ID, and
   hands off to an installed user service that serves this store and port. Test:

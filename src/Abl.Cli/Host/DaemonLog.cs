@@ -78,19 +78,24 @@ public static class DaemonLog
     /// symlink, FIFO, socket or device, so reading it neither follows a planted link nor blocks
     /// (008 T021, 2a round-4 eng-security LOW-2, the reader half).
     /// </summary>
-    public static bool IsOwnRegularFile(string path)
+    public static bool IsOwnRegularFile(string path) => ReadProblem(path) is null;
+
+    /// <summary>The existing reader predicate's actionable refusal, without opening the log.</summary>
+    internal static string? ReadProblem(string path, IConfigFileSystem? fs = null)
     {
         try
         {
-            var info = new FileInfo(path);
-            return info.Exists
-                && info.LinkTarget is null
-                && UnixIdentity.IsRegularFile(path)
-                && UnixIdentity.OwnerOf(path) == UnixIdentity.EffectiveUserId;
+            var facts = (fs ?? UnixConfigFileSystem.Instance).Inspect(path);
+            if (facts is not { TargetExists: true, IsSymlink: false, IsRegularFile: true, OwnedByCurrentUser: true })
+            {
+                return $"{path} is missing or not a regular file you own; select a regular log file you own without a final symlink";
+            }
+
+            return ConfigTrust.AllowAclProblem(facts);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return false;
+            return $"cannot inspect log {path}: {ex.Message}; check its permissions/ACLs or select another log path";
         }
     }
 
@@ -100,9 +105,17 @@ public static class DaemonLog
     /// <paramref name="derived"/> per-store log, with a note naming the refused path.
     /// </summary>
     public static (string Path, string? Note) Readable(string? recorded, string derived) =>
-        recorded is null || recorded == derived || IsOwnRegularFile(recorded)
-            ? (recorded ?? derived, null)
-            : (derived, $"the daemon record names {recorded}, which is missing or not a regular file you own; reading {derived}");
+        Readable(recorded, derived, UnixConfigFileSystem.Instance);
+
+    internal static (string Path, string? Note) Readable(string? recorded, string derived, IConfigFileSystem fs)
+    {
+        if (recorded is null || recorded == derived || ReadProblem(recorded, fs) is not { } problem)
+        {
+            return (recorded ?? derived, null);
+        }
+
+        return (derived, $"the daemon record names {recorded}: {problem}; reading {derived}");
+    }
 
     /// <summary>The last <paramref name="lines"/> lines of the log, control characters (but tabs) replaced.</summary>
     public static IReadOnlyList<string> Tail(string logFile, int lines)

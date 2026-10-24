@@ -13,7 +13,8 @@
   [inbox](../inbox.md) question).
 - **Local files**: the config file is refused unless it and its directory are the user's and
   not writable by others; the token file must be private or the desktop tier stays off; the
-  runtime directory's final component must be a private, user-owned directory; workers start
+  runtime and state directories' final components must be private, user-owned real directories;
+  these guarantees reject macOS allow ACLs and use read-only shared uid/mode/type facts. Workers start
   with an allowlisted environment (no `PYTHON*`); delivery paths refuse symlinks except system
   aliases. Detail: [P1 operability](../parts/p1-host/operability.md).
 - **Encryption**: none in transit on loopback; the desktop link relies on the private network
