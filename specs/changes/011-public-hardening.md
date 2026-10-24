@@ -34,23 +34,36 @@ Release packing stages git archive of one captured commit, never ignored working
 
 ## Tasks
 
-- [ ] Bind/environ fixes with positive and negative regressions.
-- [ ] Explicit worker inputs and tracked-archive release staging; poison-file package proof.
-- [ ] Independent code, security and licence reviews; publish/CI when credential refresh works.
+- [x] Bind/environ fixes with positive and negative regressions.
+- [x] Explicit worker inputs and tracked-archive release staging; poison-file package proof.
+- [x] Independent code, security, licence and operations reviews; one fix round completed.
+- [ ] Publish/CI when credential refresh works.
 
 ## Acceptance
 
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
-| A1 | P5.I-01 | public/mapped/wildcard rejection and private acceptance, direct Start bypass | 0 | NOT_RUN |
-| A2 | P5.I-05 | child environment canaries and headless argument contract | 0 | NOT_RUN |
-| A3 | C-04 | package excludes ignored/untracked worker poison, normal bundle proof | 0 | NOT_RUN |
-| A4 | C-01, C-03 | named independent reviews and exact-head hosted CI | 0 | NOT_RUN |
+| A1 | P5.I-01 | public/mapped/wildcard rejection and private acceptance, direct Start bypass | 2 | PASS, includes live mapped-loopback connect after review correction |
+| A2 | P5.I-05 | child environment canaries and headless argument contract | 1 | PASS |
+| A3 | C-04 | package excludes ignored/untracked worker poison, normal bundle proof | 2 | PASS at 5f24189; SDK pin regression also passes |
+| A4 | C-01, C-03 | named independent reviews and exact-head hosted CI | 1 | reviews PASS after fix round 1; hosted CI BLOCKED by App403 |
 
 ## State
 
-**Step**: build
+**Step**: verify
 **Waiting on**: app token refresh for public pushes (403 despite owner adding repositories).
-**Next**: fix and verify locally, then checkpoint and publish.
+**Next**: refresh app installation credential, publish stacked branches, obtain exact-head CI.
 **Authority**: standing commit/branch push/PR/green-reviewed merge; no release or deployment.
 **Base**: 588d820 (stacked on 010-public-readiness, public ancestry only).
+**Evidence**: `.prdkit/cache/evidence/011-public-hardening/`: zero-warning build; initial
+targeted run 71 passed and one README assertion failed (corrected); full unit lane 813 passed,
+one platform skip; fix-round targeted 35 passed. Package/install/doctor, unknown-file canaries,
+synthetic multi-SDK regression, shellcheck, adoption/doctor and CI policy pass. Native Windows,
+live desktop and hardware qualification are not claimed. One review fix round used.
+**Review**: round 1 · 588d8205d0017ea5d07163e5de7db5c92f56427f..1832b45cbe4d436f26222c18f5186d6cfafbc5bf · eng-code · PASS · 0 critical, 0 high, 2 medium, 0 low · .prdkit/cache/evidence/011-public-hardening/reviews-summary.md
+**Review**: round 1 · 588d8205d0017ea5d07163e5de7db5c92f56427f..1832b45cbe4d436f26222c18f5186d6cfafbc5bf · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/011-public-hardening/reviews-summary.md
+**Review**: round 1 · 588d8205d0017ea5d07163e5de7db5c92f56427f..1832b45cbe4d436f26222c18f5186d6cfafbc5bf · eng-license · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/011-public-hardening/reviews-summary.md
+**Review**: round 1 · 588d8205d0017ea5d07163e5de7db5c92f56427f..1832b45cbe4d436f26222c18f5186d6cfafbc5bf · eng-arch · FAIL · 0 critical, 1 high, 0 medium, 0 low · .prdkit/cache/evidence/011-public-hardening/reviews-summary.md
+**Review**: round 2 · 1832b45cbe4d436f26222c18f5186d6cfafbc5bf..5f241890dc4f952b87e35725f64e75e9f554c31c · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/011-public-hardening/reviews-summary.md
+**Review**: round 2 · 1832b45cbe4d436f26222c18f5186d6cfafbc5bf..5f241890dc4f952b87e35725f64e75e9f554c31c · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/011-public-hardening/reviews-summary.md
+**Review**: round 2 · 1832b45cbe4d436f26222c18f5186d6cfafbc5bf..5f241890dc4f952b87e35725f64e75e9f554c31c · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/011-public-hardening/reviews-summary.md
