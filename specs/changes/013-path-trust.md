@@ -60,7 +60,7 @@ transaction. This increment does not close all of T021.
 - [x] Independent security/design review resolves ACL and state-directory choices.
 - [x] Shared read-only facts and caller migration; remove duplicate state-path construction.
 - [x] Refusal/ownership/ACL and real-filesystem regression tests, including read-only inspection proofs.
-- [ ] Required CI, independent code/security/architecture/ergonomics reviews, publish and merge.
+- [x] Required CI, independent code/security/architecture/ergonomics reviews and published PR #9.
 
 ## Checks
 
@@ -77,13 +77,13 @@ not applicable: no dependency, inbound code, asset or worker change.
 |------|--------|-------|----------|--------|
 | A1 | P1.B-10, P1.B-11, P1.B-13 | Shared ownership/ACL facts; fake and native filesystem trust regressions | 1 | PASS on Linux x64 in `unit-tests-isolated.log`; macOS ACL policy simulated |
 | A2 | P1 operability | Runtime/state path parity; private state and store gates; shared log-reader facts | 1 | PASS in `unit-tests-isolated.log` |
-| A3 | Q-04, C-12 | Unit lane, policy gates, exact-head hosted CI and independent reviews | 3 | Local PASS after review fixes: 842 tests, one macOS-only skip; final hosted CI/reviews pending |
+| A3 | Q-04, C-12 | Unit lane, policy gates, exact-head hosted CI and independent reviews | 3 | PASS: local842/one macOS-only skip; all four review lenses clean; all hosted jobs including advisory lanes pass at43701a4 ([run](https://github.com/pevyhlas/agentblender/actions/runs/40140936402)) |
 
 ## State
 
-**Step**: verify
-**Waiting on**: exact-head hosted CI
-**Next**: close after CI, publish final record/log head and merge when its checks pass; log transaction follows separately.
+**Step**: ready to close
+**Waiting on**: nothing for acceptance
+**Next**: close record, publish final record/log head and merge when its checks pass; log transaction follows separately.
 **Branch**: `013-path-trust`, from public main `d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5`; [PR #9](https://github.com/pevyhlas/agentblender/pull/9).
 **Authority**: owner “please continue on next capabilities” (2026-10-25); constitution authorizes
 feature commits, branch push/PR and exact-head green/reviewed merge. No release or deployment.
