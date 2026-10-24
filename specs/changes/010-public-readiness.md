@@ -72,8 +72,15 @@ remaining short. Same wording passed the complete unit lane in change 011; the s
 permissions still show no push access; no feature branch or PR exists remotely.
 **Resume**: 2026-10-24 owner reports app access added; current credential still returns push
 403. No new remote branch or PR exists. Public v1.1.1 remains the latest Product-Kit release.
-**Waiting on**: repository write access for the automation credential (push 403); then exact-head CI.
-**Next**: restore the app's repository write access, push this branch, open a PR, and run required
+**Access diagnosis**: on the owner's renewed continuation request, one branch push returned 403.
+The existing token service then refreshed successfully. The fresh installation token still lists
+the archived counterpart but omits this public repository. The account installation uses selected
+repositories and already has contents, pull-request and workflow write permissions. Repository
+selection, not a stale token or missing write permission type, is the remaining blocker. Remote
+refs still contain only the unchanged public main. No implementation or qualification was rerun.
+**Waiting on**: the owner adding this public repository to the app installation's selected
+repositories; then credential refresh and exact-head CI.
+**Next**: confirm the public repository appears in the refreshed installation scope, push this branch, open a PR, and run required
 exact-head hosted CI. Do not merge or publish a release while those gates remain blocked.
 **Authority**: constitution permits commits, branch push/PR and green-reviewed merge;
 release/tag and deployments stay owner-gated. No history rewrite or remote branch deletion.
