@@ -61,7 +61,7 @@ See [readiness and roadmap](docs/public-readiness.md), [changelog](CHANGELOG.md)
 
 ## Contributing and license
 
-[Contributing](CONTRIBUTING.md) · [Product and architecture](specs/product.md) · [MIT](LICENSE)
+[Contributing](CONTRIBUTING.md) · [Brand artwork](docs/brand/README.md) · [Product and architecture](specs/product.md) · [MIT](LICENSE)
 · [Third-party notices](THIRD-PARTY-NOTICES.md). Fork-safe GitHub-hosted CI;
 [Product-Kit 1.1.1](https://github.com/pevyhlas/product-kit) vendored, no submodule required.
 
