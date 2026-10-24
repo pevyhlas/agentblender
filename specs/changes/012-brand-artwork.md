@@ -31,9 +31,13 @@ single verified still plus the recipe/replay source; final brand adoption is own
 ## State
 
 **Step**: verify
-**Waiting on**: App credential blocks public push; final identity selection is owner acceptance.
-**Next**: publish the stacked artwork branch after app access refresh; exact-head CI and owner
-identity selection remain separate. Local proposal and evidence are complete.
+**Waiting on**: metadata-delta review and closure-head CI; prerequisite PR #7 must merge first.
+**Next**: close this proposal-authoring record, retarget [PR #8](https://github.com/pevyhlas/agentblender/pull/8)
+after #7, and merge once exact-head CI/review gates pass. Permanent identity selection remains
+an owner decision outside this completed proposal-authoring scope.
+**Hosted evidence**: [run 40114874578](https://github.com/pevyhlas/agentblender/actions/runs/40114874578)
+passed required Validate/build-unit and advisory Blender/macOS jobs on the initial published
+artwork head. Subsequent changes close parent records and record evidence only.
 **Authority**: owner artwork request, standing feature commit/push/PR; no release/deployment.
 **Base**: 1832b45, stacked on 011-public-hardening.
 **Evidence**: `.prdkit/cache/evidence/012-brand-artwork/`; public original recipe and PNG in
