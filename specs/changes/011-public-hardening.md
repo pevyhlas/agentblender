@@ -37,7 +37,7 @@ Release packing stages git archive of one captured commit, never ignored working
 - [x] Bind/environ fixes with positive and negative regressions.
 - [x] Explicit worker inputs and tracked-archive release staging; poison-file package proof.
 - [x] Independent code, security, licence and operations reviews; one fix round completed.
-- [ ] Publish/CI when credential refresh works.
+- [x] Publish and qualify hosted CI; retain publication delta reviews.
 
 ## Acceptance
 
@@ -46,13 +46,17 @@ Release packing stages git archive of one captured commit, never ignored working
 | A1 | P5.I-01 | public/mapped/wildcard rejection and private acceptance, direct Start bypass | 2 | PASS, includes live mapped-loopback connect after review correction |
 | A2 | P5.I-05 | child environment canaries and headless argument contract | 1 | PASS |
 | A3 | C-04 | package excludes ignored/untracked worker poison, normal bundle proof | 2 | PASS at 5f24189; SDK pin regression also passes |
-| A4 | C-01, C-03 | named independent reviews and exact-head hosted CI | 1 | reviews PASS after fix round 1; hosted CI BLOCKED by App403 |
+| A4 | C-01, C-03 | named independent reviews and exact-head hosted CI | 1 local; 1 hosted | PASS: reviews and [run 40114811463](https://github.com/pevyhlas/agentblender/actions/runs/40114811463) on b025db1169c7694c72603a345f870da5f18d584e |
 
 ## State
 
-**Step**: verify
-**Waiting on**: app token refresh for public pushes (403 despite owner adding repositories).
-**Next**: refresh app installation credential, publish stacked branches, obtain exact-head CI.
+**Step**: close
+**Waiting on**: closure-head CI and prerequisite PR #6 merge.
+**Next**: close the record, retarget [PR #7](https://github.com/pevyhlas/agentblender/pull/7)
+to main after #6, verify exact-head CI and the review gate, then merge.
+**Publication**: app repository selection is fixed. Required Validate/build-unit and advisory
+real-Blender/macOS jobs passed. Subsequent changes are parent closure and review records only;
+the final closure head still requires fresh CI. Prior failed attempts remain preserved.
 **Authority**: standing commit/branch push/PR/green-reviewed merge; no release or deployment.
 **Base**: 588d820 (stacked on 010-public-readiness, public ancestry only).
 **Evidence**: `.prdkit/cache/evidence/011-public-hardening/`: zero-warning build; initial
@@ -67,3 +71,5 @@ live desktop and hardware qualification are not claimed. One review fix round us
 **Review**: round 2 · 1832b45cbe4d436f26222c18f5186d6cfafbc5bf..5f241890dc4f952b87e35725f64e75e9f554c31c · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/011-public-hardening/reviews-summary.md
 **Review**: round 2 · 1832b45cbe4d436f26222c18f5186d6cfafbc5bf..5f241890dc4f952b87e35725f64e75e9f554c31c · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/011-public-hardening/reviews-summary.md
 **Review**: round 2 · 1832b45cbe4d436f26222c18f5186d6cfafbc5bf..5f241890dc4f952b87e35725f64e75e9f554c31c · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · .prdkit/cache/evidence/011-public-hardening/reviews-summary.md
+**Review**: round 3 · a93b45807a5ca866efdfa3adde9968926ad30503..1b5855955ddad0ec8a1ad1cbb22bfcef81e6c8db · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/7#issuecomment-6387250750
+**Review**: round 3 · a93b45807a5ca866efdfa3adde9968926ad30503..1b5855955ddad0ec8a1ad1cbb22bfcef81e6c8db · eng-license · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/7#issuecomment-6387250750
