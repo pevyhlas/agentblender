@@ -15,16 +15,16 @@ internal sealed class FakeConfigFileSystem : IConfigFileSystem
 
     public List<string> Reads { get; } = [];
 
-    public FakeConfigFileSystem Dir(string path, UnixFileMode mode = PrivateDir, bool owned = true)
+    public FakeConfigFileSystem Dir(string path, UnixFileMode mode = PrivateDir, bool owned = true, bool allowAcl = false)
     {
-        _entries[path] = new Entry(null, true, mode, owned, null);
+        _entries[path] = new Entry(null, true, mode, owned, null, allowAcl);
         return this;
     }
 
     /// <summary>Adds a file (and a private, owned parent directory unless one exists).</summary>
-    public FakeConfigFileSystem File(string path, string content, UnixFileMode mode = Private, bool owned = true)
+    public FakeConfigFileSystem File(string path, string content, UnixFileMode mode = Private, bool owned = true, bool allowAcl = false)
     {
-        _entries[path] = new Entry(content, false, mode, owned, null);
+        _entries[path] = new Entry(content, false, mode, owned, null, allowAcl);
         var parent = Path.GetDirectoryName(path)!;
         if (!_entries.ContainsKey(parent))
         {
@@ -36,7 +36,7 @@ internal sealed class FakeConfigFileSystem : IConfigFileSystem
 
     public FakeConfigFileSystem Link(string path, string target)
     {
-        _entries[path] = new Entry(null, false, 0, true, target);
+        _entries[path] = new Entry(null, false, 0, true, target, false);
         return this;
     }
 
@@ -49,7 +49,7 @@ internal sealed class FakeConfigFileSystem : IConfigFileSystem
 
         if (entry.LinkTarget is null)
         {
-            return new PathFacts(path, false, path, true, entry.IsDirectory, entry.Mode, entry.Owned);
+            return Facts(path, false, path, entry);
         }
 
         var target = entry.LinkTarget;
@@ -59,8 +59,8 @@ internal sealed class FakeConfigFileSystem : IConfigFileSystem
         }
 
         return _entries.TryGetValue(target, out var final)
-            ? new PathFacts(path, true, target, true, final.IsDirectory, final.Mode, final.Owned)
-            : new PathFacts(path, true, target, false, false, 0, false);
+            ? Facts(path, true, target, final)
+            : new PathFacts(path, true, target, false, false, 0, null, 1000, false, false);
     }
 
     public string ReadAllText(string path)
@@ -70,5 +70,9 @@ internal sealed class FakeConfigFileSystem : IConfigFileSystem
         return _entries[facts.Target].Content ?? throw new IOException($"{path} is a directory");
     }
 
-    private sealed record Entry(string? Content, bool IsDirectory, UnixFileMode Mode, bool Owned, string? LinkTarget);
+    private static PathFacts Facts(string path, bool link, string target, Entry entry) =>
+        new(path, link, target, true, entry.IsDirectory, entry.Mode, entry.Owned ? 1000u : 1001u,
+            1000, entry.AllowAcl, !entry.IsDirectory);
+
+    private sealed record Entry(string? Content, bool IsDirectory, UnixFileMode Mode, bool Owned, string? LinkTarget, bool AllowAcl);
 }

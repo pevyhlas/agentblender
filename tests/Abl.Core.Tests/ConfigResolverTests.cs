@@ -14,6 +14,37 @@ public class ConfigResolverTests
     private const string Home = "/home/u";
     private const string ConfigFile = "/home/u/.config/agentblender/config.json";
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AllowAclOnConfigOrDirectoryRefusesBeforeReading(bool onFile)
+    {
+        var fs = new FakeConfigFileSystem().File(ConfigFile, "{not-json", allowAcl: onFile);
+        if (!onFile) fs.Dir(Path.GetDirectoryName(ConfigFile)!, allowAcl: true);
+
+        var error = Assert.Throws<ConfigException>(() => Resolve(fs));
+
+        Assert.Equal("config.file", error.Check);
+        Assert.Contains("ACL with an allow entry", error.Message);
+        Assert.Empty(fs.Reads);
+    }
+
+    [Fact]
+    public void TokenAllowAclRefusesDesktopWithoutReadingSecret()
+    {
+        const string tokenPath = "/home/u/.config/agentblender/desktop.token";
+        var fs = new FakeConfigFileSystem()
+            .File(ConfigFile, """{"version":1,"desktop":{"endpoint":"192.0.2.2:7812","tokenFile":"/home/u/.config/agentblender/desktop.token"}}""")
+            .File(tokenPath, "unread-token", allowAcl: true);
+
+        var config = Resolve(fs);
+
+        Assert.Null(config.Options.DesktopToken);
+        Assert.Contains("ACL with an allow entry", config[AblConfig.TokenKey].Error);
+        Assert.DoesNotContain(tokenPath, fs.Reads);
+        AssertNoSecret(config, "unread-token");
+    }
+
     [Fact]
     public void NoFileAndNoVariablesGiveDefaultsWithDefaultSources()
     {

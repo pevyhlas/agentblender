@@ -82,11 +82,8 @@ public static class DaemonLog
     {
         try
         {
-            var info = new FileInfo(path);
-            return info.Exists
-                && info.LinkTarget is null
-                && UnixIdentity.IsRegularFile(path)
-                && UnixIdentity.OwnerOf(path) == UnixIdentity.EffectiveUserId;
+            return UnixConfigFileSystem.Instance.Inspect(path) is
+                { TargetExists: true, IsSymlink: false, IsRegularFile: true, OwnedByCurrentUser: true, HasAllowAcl: false };
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

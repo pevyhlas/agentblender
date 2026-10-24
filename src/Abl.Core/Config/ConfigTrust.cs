@@ -37,6 +37,11 @@ public static class ConfigTrust
             return $"{Describe(file)} is a directory, not a file";
         }
 
+        if (!file.IsRegularFile)
+        {
+            return $"{Describe(file)} is not a regular file";
+        }
+
         if (Writable(file) is { } fileProblem)
         {
             return fileProblem;
@@ -83,6 +88,16 @@ public static class ConfigTrust
             return $"token file {Describe(file)} is a directory";
         }
 
+        if (!file.IsRegularFile)
+        {
+            return $"token file {Describe(file)} is not a regular file";
+        }
+
+        if (AllowAclProblem(file) is { } aclProblem)
+        {
+            return aclProblem;
+        }
+
         if (!file.OwnedByCurrentUser)
         {
             return $"token file {Describe(file)} is owned by another user; recreate it as this user";
@@ -99,6 +114,10 @@ public static class ConfigTrust
 
     private static string? Writable(PathFacts facts)
     {
+        if (AllowAclProblem(facts) is { } aclProblem)
+        {
+            return aclProblem;
+        }
         if (!facts.OwnedByCurrentUser)
         {
             return $"{Describe(facts)} is owned by another user; it must be owned by this user (chown it, " +
@@ -113,6 +132,11 @@ public static class ConfigTrust
 
         return null;
     }
+
+    /// <summary>Mode bits alone cannot establish privacy in the presence of macOS allow ACLs.</summary>
+    public static string? AllowAclProblem(PathFacts facts) => facts.HasAllowAcl
+        ? $"{Describe(facts)} has an ACL with an allow entry; remove it (chmod -N) or choose a path without allow ACLs"
+        : null;
 
     private static string Describe(PathFacts facts) =>
         facts.IsSymlink ? $"{facts.Path} (symlink to {facts.Target})" : facts.Path;

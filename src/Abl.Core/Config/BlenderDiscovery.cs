@@ -123,8 +123,8 @@ public sealed record BlenderSearch
     /// <summary>Runs one bounded version probe.</summary>
     public Func<string, TimeSpan, BlenderProbe> Probe { get; init; } = BlenderDiscovery.RunVersionProbe;
 
-    /// <summary>The owner uid of a path, following symlinks; tests stub a foreign owner.</summary>
-    public Func<string, uint> Owner { get; init; } = BlenderDiscovery.FileOwner;
+    /// <summary>Shared read-only path facts; tests can simulate foreign ownership or allow ACLs.</summary>
+    public Func<string, PathFacts?> Inspect { get; init; } = UnixConfigFileSystem.Instance.Inspect;
 
     /// <summary>The search for this process (real PATH, <c>/</c>, real Spotlight).</summary>
     public static BlenderSearch ForProcess(HostPlatform platform, string home, IReadOnlyDictionary<string, string> env) => new()
@@ -478,23 +478,28 @@ public static partial class BlenderDiscovery
             checkedPaths.AddRange(anchors.Chain(file));
         }
 
-        var user = UnixIdentity.EffectiveUserId;
         foreach (var checkedPath in checkedPaths.Distinct(StringComparer.Ordinal))
         {
             try
             {
-                if ((File.GetUnixFileMode(checkedPath) & GroupOrOtherWrite) != 0)
+                var facts = search.Inspect(checkedPath);
+                if (facts is not { TargetExists: true, OwnerUserId: not null })
+                {
+                    return $"cannot inspect {checkedPath}: target is missing or ownership is unknown";
+                }
+
+                if ((facts.Mode & GroupOrOtherWrite) != 0)
                 {
                     return $"{checkedPath} is writable by group or others; fix its mode or set blender.path explicitly";
                 }
 
-                if (search.Owner(checkedPath) is var owner && owner != 0 && owner != user)
+                if (facts.OwnerUserId is var owner && owner != 0 && !facts.OwnedByCurrentUser)
                 {
                     return string.Create(CultureInfo.InvariantCulture,
                         $"{checkedPath} is owned by another user (uid {owner}), who can replace it; chown it to you or root, or set blender.path explicitly");
                 }
 
-                if (OperatingSystem.IsMacOS() && UnixIdentity.HasAllowAcl(checkedPath))
+                if (facts.HasAllowAcl)
                 {
                     return $"{checkedPath} has an ACL with an allow entry, which can let others write to it; remove it (chmod -N) or set blender.path explicitly";
                 }
@@ -507,9 +512,6 @@ public static partial class BlenderDiscovery
 
         return null;
     }
-
-    /// <summary>The owner uid of <paramref name="path"/> (the default <see cref="BlenderSearch.Owner"/>).</summary>
-    public static uint FileOwner(string path) => OperatingSystem.IsWindows() ? 0 : UnixIdentity.OwnerOf(path);
 
     /// <summary>
     /// Where the trust walk of a discovered path stops (plan A4 item 4). The home directory is

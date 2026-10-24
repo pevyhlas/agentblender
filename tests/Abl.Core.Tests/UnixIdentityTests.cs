@@ -5,7 +5,7 @@ using Xunit;
 namespace Abl.Core.Tests;
 
 /// <summary>
-/// 008 T010 (N1): the libc identity primitives and the chmod ownership proof, plus the
+/// 008 T010/T021: the read-only libc identity primitives, plus the
 /// config and token trust rules on the real file system (modes and symlinks a test can make
 /// for real; a foreign owner is simulated in <see cref="ConfigResolverTests"/>).
 /// </summary>
@@ -45,24 +45,24 @@ public sealed class UnixIdentityTests : IDisposable
     [Fact]
     public void RootOwnedPathIsNotOwned()
     {
-        if (UnixIdentity.EffectiveUserId == 0) return; // root passes every chmod proof
+        if (UnixIdentity.EffectiveUserId == 0) return; // root owns this directory
 
         // "/" is root-owned everywhere; on macOS it is the sealed, read-only system volume,
-        // where the chmod may fail with EROFS before EPERM and the owner uid decides.
+        // which must be inspected without attempting chmod.
         Assert.False(UnixIdentity.IsOwnedByCurrentUser("/"));
     }
 
     [RootOwnedTmpFact]
     public void RootOwnedDirectoryOnAWritableFileSystemIsNotOwned()
     {
-        // The EPERM path: the chmod proof itself is refused.
+        // Ownership comes from the uid even on a writable filesystem.
         Assert.False(UnixIdentity.IsOwnedByCurrentUser(RootOwnedTmpFactAttribute.Tmp));
     }
 
     [ReadOnlyImageFact]
     public void OwnFileOnAReadOnlyFileSystemIsOwned()
     {
-        // The EROFS path: the chmod proves nothing, so the owner uid decides. hdiutil attaches
+        // hdiutil attaches
         // a read-only image as an unprivileged user; its files show as owned by that user.
         var source = Path.Combine(_root, "image-source");
         Directory.CreateDirectory(source);
@@ -75,7 +75,7 @@ public sealed class UnixIdentityTests : IDisposable
         {
             var file = Path.Combine(mount, "mine");
             var refused = Assert.Throws<IOException>(() => File.SetUnixFileMode(file, File.GetUnixFileMode(file)));
-            Assert.Equal(30, refused.HResult); // EROFS, so the proof below takes the fallback
+            Assert.Equal(30, refused.HResult); // EROFS; ownership inspection itself is read-only
             Assert.Equal(UnixIdentity.EffectiveUserId, UnixIdentity.OwnerOf(file));
             Assert.True(UnixIdentity.IsOwnedByCurrentUser(file));
         }
@@ -153,8 +153,7 @@ public sealed class UnixIdentityTests : IDisposable
     [Fact]
     public void OwnerOfReadsTheOwnerUidAndFollowsSymlinks()
     {
-        // The discovery trust rule (plan A4 item 4) needs root told apart from another user,
-        // which the chmod proof cannot do.
+        // Every trust rule now shares the discovery rule's uid distinction.
         var file = Path.Combine(_root, "mine");
         File.WriteAllText(file, "x");
         Assert.Equal(UnixIdentity.EffectiveUserId, UnixIdentity.OwnerOf(file));
@@ -181,9 +180,12 @@ public sealed class UnixIdentityTests : IDisposable
 
         ChmodAcl("group:everyone deny delete", dir); // the stock home ACL
         Assert.False(UnixIdentity.HasAllowAcl(dir));
+        Assert.False(UnixConfigFileSystem.Instance.Inspect(dir)!.HasAllowAcl);
 
         ChmodAcl("group:everyone allow add_file,add_subdirectory,delete_child", dir);
         Assert.True(UnixIdentity.HasAllowAcl(dir));
+        Assert.True(UnixConfigFileSystem.Instance.Inspect(dir)!.HasAllowAcl);
+        Assert.NotNull(ConfigTrust.AllowAclProblem(UnixConfigFileSystem.Instance.Inspect(dir)!));
     }
 
     /// <summary>macOS <c>chmod +a</c>: adds one ACL entry.</summary>
@@ -233,7 +235,7 @@ public sealed class RootOwnedTmpFactAttribute : FactAttribute
     {
         if (UnixIdentity.EffectiveUserId == 0)
         {
-            Skip = "root passes every chmod proof";
+            Skip = "root owns the root-owned temp directory";
         }
         else if (!Directory.Exists(Tmp) || new DirectoryInfo(Tmp).LinkTarget is not null || UnixIdentity.OwnerOf(Tmp) != 0)
         {

@@ -720,7 +720,11 @@ public sealed class BlenderDiscoveryTests : IDisposable
         var foreignDir = FakeBlender(Path.Combine(opt, "blender"), "5.2.1");
         var home = FakeBlender(Path.Combine(Home, "blender-5.2.1", "blender"), "5.2.1");
         var linux = BlenderDiscovery.Discover(
-            allowUnsupported: false, Linux(pathVariable: null) with { Owner = p => p == opt ? other : 0 }); // the rest: root
+            allowUnsupported: false, Linux(pathVariable: null) with
+            {
+                Inspect = p => UnixConfigFileSystem.Instance.Inspect(p) is { } facts
+                    ? facts with { OwnerUserId = p == opt ? other : 0 } : null,
+            }); // the rest: root
 
         Assert.Null(linux.Check);
         Assert.Equal(home, linux.Path);
@@ -734,7 +738,11 @@ public sealed class BlenderDiscoveryTests : IDisposable
         // The binary itself (macOS bundle), with the real owner for every other path.
         var bin = FakeBlender(Path.Combine(SysRoot, "Applications", "Blender.app", MacBinary), "5.2.1");
         var mac = BlenderDiscovery.Discover(
-            allowUnsupported: false, Mac() with { Owner = p => p == bin ? other : BlenderDiscovery.FileOwner(p) });
+            allowUnsupported: false, Mac() with
+            {
+                Inspect = p => UnixConfigFileSystem.Instance.Inspect(p) is { } facts && p == bin
+                    ? facts with { OwnerUserId = other } : UnixConfigFileSystem.Instance.Inspect(p),
+            });
         Assert.Equal("blender.found", mac.Check);
         Assert.Contains($"not probed: {bin} is owned by another user (uid {other})", Assert.Single(mac.Alternatives).Probe.Error);
         Assert.Single(File.ReadAllLines(ProbeLog));
@@ -762,6 +770,26 @@ public sealed class BlenderDiscoveryTests : IDisposable
         Assert.Equal(
             $"not probed: {shared} has an ACL with an allow entry, which can let others write to it; remove it (chmod -N) or set blender.path explicitly",
             listed.Probe.Error);
+        Assert.False(File.Exists(ProbeLog));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SharedFactsAclOrInspectionFailurePreventsAProbe(bool inspectionFails)
+    {
+        var bin = FakeBlender(Path.Combine(SysRoot, "Applications", "Blender.app", MacBinary), "5.2.1");
+        var search = Mac() with
+        {
+            Inspect = p => p != bin ? UnixConfigFileSystem.Instance.Inspect(p)
+                : inspectionFails ? throw new IOException("inspection refused")
+                : UnixConfigFileSystem.Instance.Inspect(p)! with { HasAllowAcl = true },
+        };
+
+        var result = BlenderDiscovery.Discover(allowUnsupported: false, search);
+
+        Assert.Equal("blender.found", result.Check);
+        Assert.Contains(inspectionFails ? "cannot inspect" : "ACL with an allow entry", Assert.Single(result.Alternatives).Probe.Error);
         Assert.False(File.Exists(ProbeLog));
     }
 

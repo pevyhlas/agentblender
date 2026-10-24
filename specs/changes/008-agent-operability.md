@@ -33,19 +33,23 @@ release" are this change's owner items.
 
 ## Approach
 
-Decided in the original design reviews (D-16). Open choice in T021: whether the config-file,
-token-file and runtime-dir checks also refuse an `allow` ACL (today only discovery does); the
-security reviewer decides.
+Decided in the original design reviews (D-16). The T021 security design review in child 013
+decided to refuse macOS allow ACLs for private path guarantees and apply the runtime final-directory
+rule to state. Shared facts/caller migration land first; log-write/rotation hardening follows.
 
 ## Tasks
 
-- [ ] T021 One path-trust primitive: add the owner uid and, on macOS, the `allow`-ACL flag to
+- [ ] T021 (shared-facts increment in child 013) One path-trust primitive: add the owner uid and, on macOS, the `allow`-ACL flag to
   `PathFacts`; derive ownership from the uid and retire the `chmod` proof; discovery and
   delivery's system-alias predicate read mode, owner and ACL through the shared facts; update
   `FakeConfigFileSystem` and the trust tests. Fold `RuntimePaths.StateRunDir` onto
   `DaemonPaths.StateDir`; decide whether the state directory gets the runtime directory's
   final-component rule; open the daemon log only as a regular file the user owns (the reader
   half is built); the store-root gate moves onto the shared facts for every daemon verb.
+  Log follow-up from child 013 design review: require private existing logs before rotation;
+  protect directory identity against replacement by another uid, open without following final
+  links and verify the opened object; validate every selected tail path, including derived and
+  startup-failure paths. The existing reader predicate alone is not comprehensive protection.
 - [ ] T040 Delivery provenance records `blender.allowUnsupported` use (the producing Blender's
   version and support) as an additive descriptor field, reviewed with the descriptor schema.
 - [ ] T056 Tests: a `DesktopTier` unit test that two equal probes log one line and a changed
@@ -77,8 +81,8 @@ security reviewer decides.
 
 ## Checks
 
-Every new behavior names its test; T021 changes no observable behavior except the ACL decision,
-which becomes a P1.B line.
+Every new behavior names its test; T021's reviewed ACL and private-state decisions become P1
+guarantees. Shared-facts migration preserves discovery trust anchors and store target-link semantics.
 
 ## Acceptance
 
@@ -93,4 +97,4 @@ which becomes a P1.B line.
 
 **Step**: build
 **Waiting on**: the owner for T074 and T075
-**Next**: T021, then T040 and T056, each in its own pull request
+**Next**: complete shared-facts child 013, then T021's log transaction, T040 and T056 in separate pull requests

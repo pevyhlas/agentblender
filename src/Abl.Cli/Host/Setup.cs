@@ -431,6 +431,11 @@ public static class Setup
             return $"config directory {directory} is owned by another user";
         }
 
+        if (ConfigTrust.AllowAclProblem(facts) is { } aclProblem)
+        {
+            return aclProblem;
+        }
+
         return (facts.Mode & (UnixFileMode.GroupWrite | UnixFileMode.OtherWrite)) != 0
             ? $"config directory {directory} is writable by group or others; run: chmod go-w {facts.Target}"
             : null;
@@ -442,8 +447,10 @@ public static class Setup
         private readonly string _directory = Path.GetDirectoryName(path)!;
 
         public PathFacts? Inspect(string asked) =>
-            asked == path ? new PathFacts(asked, false, asked, true, false, PrivateFile, true)
-            : inner.Inspect(asked) ?? (asked == _directory ? new PathFacts(asked, false, asked, true, true, PrivateDir, true) : null);
+            asked == path ? new PathFacts(asked, false, asked, true, false, PrivateFile,
+                UnixIdentity.EffectiveUserId, UnixIdentity.EffectiveUserId, false, true)
+            : inner.Inspect(asked) ?? (asked == _directory ? new PathFacts(asked, false, asked, true, true, PrivateDir,
+                UnixIdentity.EffectiveUserId, UnixIdentity.EffectiveUserId, false, false) : null);
 
         public string ReadAllText(string asked) => asked == path ? text : inner.ReadAllText(asked);
     }

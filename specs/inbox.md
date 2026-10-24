@@ -246,6 +246,15 @@ change the network/security policy. Baseline and maintenance reviews stay separa
 
 ## Your direction
 
+### Continue the next capabilities
+
+*2026-10-25 · owner · folded: 013-path-trust*
+
+> please continue on next capabilities
+
+Continues the public roadmap with shared path trust (008/T021); platform qualification,
+release and live desktop rollout keep their existing gates.
+
 ### Public projects, fixes and logos
 
 *2026-10-24 · owner · folded: 011-public-hardening*
