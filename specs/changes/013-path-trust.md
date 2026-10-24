@@ -81,9 +81,9 @@ not applicable: no dependency, inbound code, asset or worker change.
 
 ## State
 
-**Step**: implementation
-**Waiting on**: nothing for shared-facts increment
-**Next**: independent implementation review and exact-head CI; log transaction follows separately.
+**Step**: verify
+**Waiting on**: exact-head hosted CI
+**Next**: close after CI, publish final record/log head and merge when its checks pass; log transaction follows separately.
 **Branch**: `013-path-trust`, from public main `d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5`; [PR #9](https://github.com/pevyhlas/agentblender/pull/9).
 **Authority**: owner “please continue on next capabilities” (2026-10-25); constitution authorizes
 feature commits, branch push/PR and exact-head green/reviewed merge. No release or deployment.
@@ -99,6 +99,8 @@ service installation, structured inspection errors, and accurate log ACL diagnos
 tests exercise the entry points. A test-helper syntax error was repaired before tests ran;
 `fix-1-build.log` is retained. Corrected build passed with zero warnings/errors; fix-1 unit lane
 passed 842 tests with one macOS-only skip. No holds on shared facts.
+Round-2 re-review passes all four lenses with zero outstanding findings; the earlier log
+transaction carry-items remain in parent 008.
 **Evidence**: `.prdkit/cache/evidence/013-path-trust/`.
 **Design review**: eng-security PASS on public base `d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5`
 plus the proposed record; `design-review.md` and original `design-review.jsonl` retained in cache.
@@ -106,5 +108,9 @@ plus the proposed record; `design-review.md` and original `design-review.jsonl` 
 **Review**: round 1 · d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5..a79c8a4f9dfe013081ae8280c7814f62bd617ca3 · eng-security · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/9#issuecomment-6390607167
 **Review**: round 1 · d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5..a79c8a4f9dfe013081ae8280c7814f62bd617ca3 · eng-arch · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/9#issuecomment-6390607318
 **Review**: round 1 · d83c020ffb9d3724f5c647eb27dde4d28bc8bbd5..a79c8a4f9dfe013081ae8280c7814f62bd617ca3 · eng-ergonomics · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/9#issuecomment-6390607479
+**Review**: round 2 · a79c8a4f9dfe013081ae8280c7814f62bd617ca3..43701a456fbc225618b0ccd9f3ad8f36a3de25b5 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/9#issuecomment-6390638868
+**Review**: round 2 · a79c8a4f9dfe013081ae8280c7814f62bd617ca3..43701a456fbc225618b0ccd9f3ad8f36a3de25b5 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/9#issuecomment-6390639037
+**Review**: round 2 · a79c8a4f9dfe013081ae8280c7814f62bd617ca3..43701a456fbc225618b0ccd9f3ad8f36a3de25b5 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/9#issuecomment-6390639197
+**Review**: round 2 · a79c8a4f9dfe013081ae8280c7814f62bd617ca3..43701a456fbc225618b0ccd9f3ad8f36a3de25b5 · eng-ergonomics · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/9#issuecomment-6390639337
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
