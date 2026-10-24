@@ -6,6 +6,10 @@
 
 ## Intent
 
+Owner follow-up (2026-10-24): make both READMEs very succinct, retain public Product-Kit,
+then fix confirmed issues, advance the roadmap and generate logos through the tools' workflows.
+README is shortened again here; implementation and artwork continue in bounded child work.
+
 Polish public documentation, verify hosted CI and public-data hygiene, and adopt the latest
 public kit. Afterwards check stale PRs. Release, hardware and live-deployment questions stay
 open; this maintenance does not decide them.
@@ -62,6 +66,8 @@ not the policy. Verify links/examples, adoption/doctor, legal notices and hosted
 ## State
 
 **Step**: verify
+**Resume**: 2026-10-24 owner reports app access added; current credential still returns push
+403. No new remote branch or PR exists. Public v1.1.1 remains the latest Product-Kit release.
 **Waiting on**: repository write access for the automation credential (push 403); then exact-head CI.
 **Next**: restore the app's repository write access, push this branch, open a PR, and run required
 exact-head hosted CI. Do not merge or publish a release while those gates remain blocked.
