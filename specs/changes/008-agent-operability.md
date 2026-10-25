@@ -51,7 +51,7 @@ acceptance are completed by015 (public PR #11).
   protect directory identity against replacement by another uid, open without following final
   links and verify the opened object; validate every selected tail path, including derived and
   startup-failure paths. Native Linux/macOS behavior passed at9bf90fc in public PR #11.
-- [ ] T040 Delivery provenance records `blender.allowUnsupported` use (the producing Blender's
+- [ ] T040 (child016-delivery-provenance) Delivery provenance records `blender.allowUnsupported` use (the producing Blender's
   version and support) as an additive descriptor field, reviewed with the descriptor schema.
 - [ ] T056 Tests: a `DesktopTier` unit test that two equal probes log one line and a changed
   result a second; an integration case that `ABL_LOG_LEVEL=Warning` prints no `info:` lines
@@ -98,6 +98,7 @@ guarantees. Shared-facts migration preserves discovery trust anchors and store t
 
 **Step**: build
 **Waiting on**: the owner for T074 and T075
-**Next**: T040 provenance, then T056 and bounded service carry-overs as separate reviewed increments.
+**Next**: T040 provenance design review in child016, then implementation; T056 and bounded service
+carry-overs follow as separate reviewed increments.
 T021 shared facts landed in [PR #9](https://github.com/pevyhlas/agentblender/pull/9); log transactions
 and native acceptance are complete in [PR #11](https://github.com/pevyhlas/agentblender/pull/11).

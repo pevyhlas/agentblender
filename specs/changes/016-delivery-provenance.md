@@ -103,11 +103,14 @@ generation from the actual exporter, then reject an inconsistent policy without 
 ## State
 
 **Step**: bounded design draft
-**Waiting on**: design review; log-safety015's closing CI/merge is running independently.
+**Waiting on**: independent architecture/security design review.
 **Authority**: owner public-roadmap continuation and “and then continue with next steps”;
 constitution feature commit/push/PR and reviewed exact-head green merge policy.
 **Attempts**: design0, implementation0, acceptance0.
-**Next**: incorporate merged015, publish the draft, obtain architecture/security design review,
-then implement. No release, deployment or platform-qualification approval is inferred.
+**Branch / PR**: 016-delivery-provenance, [draft #12](https://github.com/pevyhlas/agentblender/pull/12).
+Merged015 is incorporated from main8bd52bb; its final source/installed, native and review evidence
+is in [PR #11](https://github.com/pevyhlas/agentblender/pull/11).
+**Next**: obtain architecture/security design review, then implement. No release, deployment or
+platform-qualification approval is inferred.
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
