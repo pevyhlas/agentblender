@@ -212,6 +212,36 @@ public sealed class PrivateLogFileTests : IDisposable
         Assert.True(UnixIdentity.HasAllowAcl(path));
     }
 
+    [Fact]
+    public void DarwinAbsentAndDenyOnlyAclsPermitPrivateLogsButDirectoryAllowDoesNot()
+    {
+        if (!OperatingSystem.IsMacOS()) { return; }
+        var path = PathOf("log");
+        Write(path, "retained");
+        Run("chmod", "-N", path);
+        using (var absent = PrivateLogFile.OpenRead(path))
+        {
+            Assert.False(UnixIdentity.InspectHandle(absent).AllowAcl);
+        }
+
+        Run("chmod", "+a", $"user:{UnixIdentity.EffectiveUserId} deny delete", path);
+        using (var deniedDelete = PrivateLogFile.OpenRead(path))
+        {
+            Assert.False(UnixIdentity.InspectHandle(deniedDelete).AllowAcl);
+        }
+
+        Run("chmod", "-N", path);
+        Run("chmod", "+a", $"user:{UnixIdentity.EffectiveUserId} allow read", _root);
+        try
+        {
+            Assert.Throws<IOException>(() => PrivateLogFile.OpenRead(path));
+            Assert.Throws<IOException>(() => PrivateLogFile.OpenAppend(path, 1));
+            Assert.Equal("retained", File.ReadAllText(path));
+            Assert.False(File.Exists(path + ".1"));
+        }
+        finally { Run("chmod", "-N", _root); }
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

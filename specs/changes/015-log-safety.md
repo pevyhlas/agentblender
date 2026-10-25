@@ -125,6 +125,11 @@ initial final-review FAIL is tooling/evidence-only (shell denied), with no code 
 review's high finding is missing completed evidence and those two regressions. Both reports
 are preserved; final exact-head evidence and scoped re-review remain required.
 **Next**: complete Linux/macOS unit/installed verification and final security/architecture/code/ergonomics reviews.
+**Native verification repair1**: run40231067326 passed required Linux checks but failed advisory
+macOS because descriptor ACL absence returnsNULL/ENOENT. Its logs/TRX are retained. Treat that
+specific absence as no ACL after successful fstat; every other error still refuses. Add native
+absent/deny-only/file-allow/directory-allow regressions. Run40231692889 started before this fix
+and does not exercise it. Native retry after this repair is pending.
 **Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-code · FAIL · 0 critical, 1 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901141
 **Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-security · FAIL · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901333
 **Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901521

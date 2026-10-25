@@ -102,7 +102,16 @@ public static partial class UnixIdentity
         var acl = acl_get_fd_np(handle, AclTypeExtended);
         if (acl == IntPtr.Zero)
         {
-            throw new IOException($"cannot read opened-file ACL: {Marshal.GetPInvokeErrorMessage(Marshal.GetLastPInvokeError())}");
+            var error = Marshal.GetLastPInvokeError();
+            // Darwin also uses ENOENT for an absent FILESEC_ACL property. This handle
+            // has already passed fstat and remains owned throughout the call: no path
+            // lookup can confuse an absent ACL with a missing or substituted file.
+            if (error == ENoEnt)
+            {
+                return false;
+            }
+
+            throw new IOException($"cannot read opened-file ACL: {Marshal.GetPInvokeErrorMessage(error)}");
         }
 
         try
