@@ -51,7 +51,7 @@
   `DOTNET_ROOT`; `deploy/README.md` describes it.
 - **Desktop launcher**: installed and started by hand on the GPU workstation, with the
   `worker/` matching the host; upgraded together with the host.
-- **Product-Kit**: v1.1.1 vendored in copy mode under `.prdkit/` (no kit submodule); CI checks
+- **Product-Kit**: v1.2.0 vendored in copy mode under `.prdkit/` (no kit submodule); CI checks
   the install against its manifest hash. Upgrade path: `.prdkit/memory/config.md`.
 - **Scripts**: `scripts/install-local.sh`, `scripts/uninstall-local.sh`,
   `scripts/release-bundle.sh`, the opt-in `scripts/claude-with-telemetry.sh` and its

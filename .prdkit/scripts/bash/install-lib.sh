@@ -33,6 +33,9 @@ Everyday entry points are `/prdkit` and `/prdkit-status`; the others are `/prdki
 `/prdkit-target`, `/prdkit-learn`, `/prdkit-init`, `/prdkit-configure` and `/prdkit-doctor`.
 Without native slash commands, follow the matching installed playbook. Status and doctor are
 read-only. Raw evidence stays in CI or the gitignored `.prdkit/cache/evidence/`, never `specs/`.
+For product-to-feature discovery use `.prdkit/workflows/planning.md`; ready work follows
+`.prdkit/workflows/implementation.md`. Preserve useful context/evidence on the same PR and finalize
+its execution record there; runtime unknowns do not become PASS when a PR closes.
 EOF
     printf '%s\n' "$AGENTS_END"
 }
