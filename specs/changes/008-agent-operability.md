@@ -35,21 +35,22 @@ release" are this change's owner items.
 
 Decided in the original design reviews (D-16). The T021 security design review in child 013
 decided to refuse macOS allow ACLs for private path guarantees and apply the runtime final-directory
-rule to state. Shared facts/caller migration land first; log-write/rotation hardening follows.
+rule to state. Shared facts/caller migration landed in013; log-write/rotation hardening and native
+acceptance are completed by015 (public PR #11).
 
 ## Tasks
 
-- [ ] T021 (shared-facts increment in child 013) One path-trust primitive: add the owner uid and, on macOS, the `allow`-ACL flag to
+- [x] T021 (child013 and child015) One path-trust primitive: add the owner uid and, on macOS, the `allow`-ACL flag to
   `PathFacts`; derive ownership from the uid and retire the `chmod` proof; discovery and
   delivery's system-alias predicate read mode, owner and ACL through the shared facts; update
   `FakeConfigFileSystem` and the trust tests. Fold `RuntimePaths.StateRunDir` onto
   `DaemonPaths.StateDir`; decide whether the state directory gets the runtime directory's
   final-component rule; open the daemon log only as a regular file the user owns (the reader
   half is built); the store-root gate moves onto the shared facts for every daemon verb.
-  Log follow-up in child015-log-safety from child013 design review: require private existing logs before rotation;
+  Log transaction in child015-log-safety from child013 design review: require private existing logs before rotation;
   protect directory identity against replacement by another uid, open without following final
   links and verify the opened object; validate every selected tail path, including derived and
-  startup-failure paths. The existing reader predicate alone is not comprehensive protection.
+  startup-failure paths. Native Linux/macOS behavior passed at9bf90fc in public PR #11.
 - [ ] T040 Delivery provenance records `blender.allowUnsupported` use (the producing Blender's
   version and support) as an additive descriptor field, reviewed with the descriptor schema.
 - [ ] T056 Tests: a `DesktopTier` unit test that two equal probes log one line and a changed
@@ -89,7 +90,7 @@ guarantees. Shared-facts migration preserves discovery trust anchors and store t
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
 | A1 | R-12, C-12 | macOS arm64 qualification run (T074) | 0 | NOT_RUN |
-| A2 | P1.B-10, P1.B-13 | trust tests over the shared facts (T021) | 0 | NOT_RUN |
+| A2 | P1.B-10, P1.B-13 | trust tests over the shared facts and log transactions (T021) | Linux4, native4 | PASS at9bf90fc: Linux863pass/1skip and macOS864pass/0skip; [run40240250983](https://github.com/pevyhlas/agentblender/actions/runs/40240250983), children013/015 |
 | A3 | R-08 | descriptor test for the provenance field (T040) | 0 | NOT_RUN |
 | A4 | P1 operability | T056 and carry-over tests in CI | 0 | NOT_RUN |
 
@@ -97,5 +98,6 @@ guarantees. Shared-facts migration preserves discovery trust anchors and store t
 
 **Step**: build
 **Waiting on**: the owner for T074 and T075
-**Next**: T021's log transaction in child015-log-safety after shared-facts
-[PR #9](https://github.com/pevyhlas/agentblender/pull/9); T040 and T056 remain separate increments.
+**Next**: T040 provenance, then T056 and bounded service carry-overs as separate reviewed increments.
+T021 shared facts landed in [PR #9](https://github.com/pevyhlas/agentblender/pull/9); log transactions
+and native acceptance are complete in [PR #11](https://github.com/pevyhlas/agentblender/pull/11).

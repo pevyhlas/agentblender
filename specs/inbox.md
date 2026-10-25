@@ -246,25 +246,6 @@ change the network/security policy. Baseline and maintenance reviews stay separa
 
 ## Your direction
 
-### Extend log-safety verification budget
-
-*2026-10-25 · owner · folded: 015-log-safety*
-
-> what is the status and next steps? I approve the budget at least 5x extra
-
-Responds to the three-attempt native acceptance limit. Proceed with up to15additional native
-acceptance attempts for015 (five times the original three), preserving failed evidence and all
-review/merge gates. No release, deployment or platform-qualification authority is added.
-
-### Continue after CI setup
-
-*2026-10-25 · owner · folded: 015-log-safety*
-
-> and then continue with next steps
-
-Continues the independently designed log-safety increment after hosted macOS CI merged.
-Capability acceptance, exact-head review/CI, release and rollout gates still apply.
-
 ### GitHub macOS CI
 
 *2026-10-25 · owner · folded: 014-macos-ci*

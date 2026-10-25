@@ -80,7 +80,7 @@ custom paths; prefer a reusable anchored transaction for the existing paths.
 
 - [x] Native syscall/ABI contracts in observed, independent security and architecture design review.
 - [x] Anchored log open/rotate and authoritative reader path; no unsafe-path repair.
-- [ ] Native and deterministic race-seam tests, startup/derived-tail regressions on both OSes.
+- [x] Native and deterministic race-seam tests, startup/derived-tail regressions on both OSes.
 - [ ] Full unit/installed checks, independent final risk reviews, exact-head CI and delivery.
 
 ## Checks
@@ -93,15 +93,15 @@ predicate booleans. Retain Linux failures and hosted macOS results; qualificatio
 
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
-| A1 | P1 operability, C-04 | create/append/rotate only private owned regular files; final links/specials/ACL/foreign/wide/hardlink cases refuse before effects | Linux1, native3 | FAIL native append fixture: expected first+second lines, got second; other native path/ACL/mode/rotation refusals pass |
-| A2 | Q-04 | injected ancestor/leaf substitution and opened-object mismatch cannot redirect IO; failures preserve bytes and modes | Linux1, native3 | PASS Linux/native substitution, fd-owner and rollback cases atb513703 |
-| A3 | P1 operability | recorded, derived and startup/down tails guard actual opened file, bounded reads and actionable refusal | Linux2, native3 | PASS Linux source/installed and all103native lifecycle integration cases |
-| A4 | Delivery | Linux/macOS unit and installed behavior; independent security/architecture/code/ergonomics reviews and exact-head CI | source3, native3 | BLOCKED: run40232947019 Linux863pass/1skip, Blender56pass/1skip; macOS863pass/1fail. Installed checks pass; final code/security verdicts remain pending |
+| A1 | P1 operability, C-04 | create/append/rotate only private owned regular files; final links/specials/ACL/foreign/wide/hardlink cases refuse before effects | Linux2, native4 | PASS at9bf90fc, Linux and macOS; ordinary descriptor-write oracle preserves both appended lines and private modes |
+| A2 | Q-04 | injected ancestor/leaf substitution and opened-object mismatch cannot redirect IO; failures preserve bytes and modes | Linux2, native4 | PASS at9bf90fc, Linux/native substitution, fd-owner and rollback cases |
+| A3 | P1 operability | recorded, derived and startup/down tails guard actual opened file, bounded reads and actionable refusal | Linux3, native4 | PASS source and installed behavior; all103native lifecycle integration cases pass |
+| A4 | Delivery | Linux/macOS unit and installed behavior; independent security/architecture/code/ergonomics reviews and exact-head CI | source4, native4 | Linux863pass/1skip, macOS864pass/0skip, Blender56pass/1skip in run40240250983; installed checks pass, final code review/closing-head CI pending |
 
 ## State
 
-**Step**: resumed native verification under owner-extended budget
-**Waiting on**: native append-oracle correction, final code/security review and exact-head gates.
+**Step**: native acceptance passed; final review and delivery
+**Waiting on**: final code/test-evidence review and closing-head CI.
 **Authority**: owner roadmap continuation and “go ahead - we should setup github CI for mac os”;
 constitution feature commit/push/PR and exact-head reviewed green merge. Releases and live rollout
 remain owner-gated.
@@ -124,29 +124,38 @@ unsafe daemon-log failure preservation in the lifecycle test. Focused tests pass
 initial final-review FAIL is tooling/evidence-only (shell denied), with no code finding; code
 review's high finding is missing completed evidence and those two regressions. Both reports
 are preserved; final exact-head evidence and scoped re-review remain required.
-**Next**: run the corrected write(2) append oracle on both platforms, finish reviews, merge after gates.
+**Next**: finish code review, record acceptance, close the child and merge after exact-head gates.
 **Owner extension**: 2026-10-25 conversation: “what is the status and next steps? I approve the
 budget at least 5x extra”. Apply up to15additional native acceptance attempts (five times the
 original three), counted from run afterb513703. Initial3attempts remain recorded; no automatic
 reset of any result, merge gate, release or platform-qualification requirement.
-**Native verification repair1**: run40231067326 passed required Linux checks but failed advisory
+**Native verification repair1 (historical)**: run40231067326 passed required Linux checks but failed advisory
 macOS because descriptor ACL absence returnsNULL/ENOENT. Its logs/TRX are retained. Treat that
 specific absence as no ACL after successful fstat; every other error still refuses. Add native
 absent/deny-only/file-allow/directory-allow regressions. Run40231692889 started before this fix
-and does not exercise it. Native retry after this repair is pending.
-**Native verification repair2**: run40231977979 required Linux/integration jobs passed; native
+and does not exercise it. Its repair was exercised by attempt2 below.
+**Native verification repair2 (historical)**: run40231977979 required Linux/integration jobs passed; native
 macOS had847pass/17fail. ACL absence was fixed; new evidence identifies Apple arm64 variadic ABI
 placement (incorrect creation modes/fcntl EINVAL) plus chmod's named-principal fixture requirement.
 Add architecture-restricted stack signatures for the two scalar calls and fix ACL principals;
-rollback tests now prove the injected failure was reached. Third native acceptance attempt is
-next; if it still fails, stop that line and record alternatives for the owner under protocol limits.
+rollback tests now prove the injected failure was reached. Third native acceptance failed only
+the positioned-write append fixture; work stopped at the original limit and the owner extended it.
 **Installed evidence**: sourceb513703 clean bundle (SDK10.0.113, package0.2.0-dev), isolated
 doctor/worker/lifecycle checks and installed private/wide/link/startup log checks passed.
 `installed-bundle-b513703.log`, provenance and `installed-log-probe-b513703.log` retain proof.
 Security/license lens: no dependency, inbound implementation or worker/GPL-boundary change;
 observed Apple/.NET sources establish ABI behavior only, with no implementation copied.
 Unchanged ergonomics approval covers the native-only ABI repair; source architecture re-review
-passes, while native acceptance remains a separate gate.
+passes. Native acceptance subsequently passed on attempt4 below.
+**Native verification repair3 / acceptance**: run
+[40240250983](https://github.com/pevyhlas/agentblender/actions/runs/40240250983) at
+9bf90fcfe83a6c2fefc34b8e0c3b3c417c58e8b3 passes every job: Linux863passed/1host-dependent skip,
+macOS864passed/0skipped (761Core plus103lifecycle), real Blender56passed/1receiver-package skip.
+Both platform builds report0warnings/errors. The ordinary write(2) append test preserves both
+lines; production code is identical tob513703, whose clean-source installed log checks passed.
+Logs, TRX and package evidence stay under `.prdkit/cache/evidence/015-log-safety/`; security review
+passes with no findings. Native budget consumed: initial3plus extension1of15, with14remaining.
+No further repair attempt is needed; the final record-only head still needs required CI.
 
 ### Native acceptance alternatives (after attempt3, resolved by owner extension)
 
@@ -159,7 +168,7 @@ Learned: ACL absence and arm64 varargs defects are repaired and their native reg
 The remaining test uses a seekable FileStream over a raw fd, which .NET implements using
 positioned writes; POSIX pwrite ignores O_APPEND, whereas Linux exceptionally honors it. The
 daemon uses dup2 and ordinary stdout/stderr writes. This supports a fixture mismatch hypothesis,
-but a corrected descriptor-write oracle has not been run and A1 stays failed.
+which attempt4 subsequently verified with a passing corrected descriptor-write oracle.
 Contracts: [.NET FileStream strategy](https://github.com/dotnet/runtime/blob/v10.0.0/src/libraries/System.Private.CoreLib/src/System/IO/Strategies/OSFileStreamStrategy.cs),
 [pwrite/O_APPEND distinction](https://man7.org/linux/man-pages/man2/pwrite.2.html).
 
@@ -176,7 +185,7 @@ Contracts: [.NET FileStream strategy](https://github.com/dotnet/runtime/blob/v10
 The record-only checkpoint438f14a skipped CI while awaiting the owner's decision. The owner
 subsequently extended the budget as recorded above. The next change corrects only the test oracle:
 a fixed-arity write(2) delegate matches the daemon's descriptor semantics and verifies both prefix
-bytes and private modes. Production code is unchanged; native attempt4(extension1of15) is next.
+bytes and private modes. Production code is unchanged; native attempt4(extension1of15) passed.
 **Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-code · FAIL · 0 critical, 1 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901141
 **Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-security · FAIL · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901333
 **Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901521
@@ -184,6 +193,7 @@ bytes and private modes. Production code is unchanged; native attempt4(extension
 **Review**: round 4 · 9e03ce0b271b80117a65fd4308222e4cf25862d2..e7d32be9de7c71617ba5493a7b62787a4d9aad36 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6403106522
 **Review**: round 4 · 9e03ce0b271b80117a65fd4308222e4cf25862d2..e7d32be9de7c71617ba5493a7b62787a4d9aad36 · eng-ergonomics · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6403106726
 **Review**: round 5 · e7d32be9de7c71617ba5493a7b62787a4d9aad36..b5137037c397eaf4adaf9c71a236d71688f2bdf9 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6403255547
+**Review**: round 6 · 9e03ce0b271b80117a65fd4308222e4cf25862d2..9bf90fcfe83a6c2fefc34b8e0c3b3c417c58e8b3 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6404307869
 **Design review**: d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..a190e884ca5bc8173a57955197e89d7b3d0092f5 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6401409148
 **Design review**: d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..a190e884ca5bc8173a57955197e89d7b3d0092f5 · eng-arch · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6401409361; advisory addressed by item7 before coding.
 <!-- One line per verdict (workflows/change.md, Review):
