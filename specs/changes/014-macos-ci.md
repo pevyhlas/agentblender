@@ -33,9 +33,10 @@ Keep the existing advisory exit condition in the constitution/inbox.
 
 ## Tasks
 
-- [ ] Update the lane and operational description.
-- [ ] Validate locally, publish a PR, inspect native tests and download the artifact.
-- [ ] Independent code/test and architecture/operations review; exact-head gates; merge.
+- [x] Update the lane and operational description.
+- [x] Validate locally, publish PR #10, inspect native tests and download the artifact.
+- [x] Independent code/test and architecture/operations review; required source-head gates.
+- [ ] Close and merge after final-head gates.
 
 ## Checks
 
@@ -48,18 +49,21 @@ no product boundary, dependency, asset, protocol or agent-facing surface changes
 
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
-| A1 | C-09, L1 CI | CI policy/self-tests, adoption, doctor, public hygiene and whitespace | 1 | PASS: Linux local checks, `.prdkit/cache/evidence/014-macos-ci/local-checks.log`; hosted verification pending |
-| A2 | C-12, Q-04, L1 CI | PR run asserts macOS 26 arm64, builds and completes unit lane; downloadable profile/log/TRX artifact and summary agree with actual outcomes | 0 | NOT_RUN |
-| A3 | Delivery policy | exact-head required checks and independent reviews pass | 0 | NOT_RUN |
+| A1 | C-09, L1 CI | CI policy/self-tests, adoption, doctor, public hygiene and whitespace | 1 | PASS: local log and hosted Validate on `e6d1ff5`, [run](https://github.com/pevyhlas/agentblender/actions/runs/40219612662) |
+| A2 | C-12, Q-04, L1 CI | native macOS PR build/unit run with downloaded diagnostics and truthful summary | 1 | PASS: macOS 26.6.2 arm64/SDK 10.0.113, 843/843 unit passes, zero skipped or failed; [independent evidence](https://github.com/pevyhlas/agentblender/pull/10#issuecomment-6401297110) |
+| A3 | Delivery policy | required checks and independent reviews pass on exact source head | 1 | PASS: Validate and Build & unit tests green on `e6d1ff5`, two independent PASS verdicts below; final metadata-only head gated again before merge |
 
 ## State
 
-**Step**: implement
+**Step**: close
 **Waiting on**: nothing
 **Authority**: owner request “go ahead - we should setup github CI for mac os”; constitution
 permits feature commit/push/PR and exact-head reviewed green merge. Release/live rollout remain
 owner-gated.
-**Branch**: 014-macos-ci; base d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41.
-**Attempts**: acceptance 0; review fix rounds 0. Branch-protection API read returned 403 with
+**Branch / PR**: 014-macos-ci; base d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41; [PR #10](https://github.com/pevyhlas/agentblender/pull/10).
+**Attempts**: A1/A2/A3 one each; review fix rounds 0. Branch-protection API read returned 403 with
 app credentials; workflow delivery does not require administration access.
-**Next**: publish the CI checkpoint and inspect hosted macOS results before final review.
+**Next**: commit review record, close, publish and enforce final-head gates before merge.
+**Review**: round 1 · d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..e6d1ff59a200ae0f6423cf23a81d5af54b9f6f24 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/10#issuecomment-6401263766
+**Review**: round 1 · d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..e6d1ff59a200ae0f6423cf23a81d5af54b9f6f24 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/10#issuecomment-6401263959
+**Evidence addendum**: eng-code independently established A2 on the same range without re-reviewing unchanged source: https://github.com/pevyhlas/agentblender/pull/10#issuecomment-6401297110
