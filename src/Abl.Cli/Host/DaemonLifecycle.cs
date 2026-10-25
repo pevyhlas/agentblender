@@ -292,7 +292,7 @@ public sealed class DaemonLifecycle(LifecycleHost host)
         // not a bare timeout): show launchd's output file, or name the journal.
         var down = services.Query();
         _ = services.Stop();
-        var output = down.OutputFile is { } file && File.Exists(file) ? DaemonLog.Tail(file, FailureTailLines) : [];
+        var output = down.OutputFile is { } file ? DaemonLog.FailureTail(file, FailureTailLines) : [];
         var where = down.OutputFile is { } outputFile
             ? $"its output before the daemon's own log is in {outputFile}"
             : services.Kind == "systemd"
@@ -1412,7 +1412,7 @@ public sealed class DaemonLifecycle(LifecycleHost host)
 
     private int FailStart(bool json, ConfigException error, IReadOnlyList<string> early, string logFile)
     {
-        IReadOnlyList<string> tail = File.Exists(logFile) ? DaemonLog.Tail(logFile, FailureTailLines) : [];
+        var tail = DaemonLog.FailureTail(logFile, FailureTailLines);
         if (json)
         {
             var body = ErrorJson(error);

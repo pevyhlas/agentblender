@@ -263,9 +263,17 @@ public static class DaemonVerbs
             return 1;
         }
 
-        foreach (var line in DaemonLog.Tail(logFile, lines))
+        try
         {
-            Console.WriteLine(line);
+            foreach (var line in DaemonLog.Tail(logFile, lines))
+            {
+                Console.WriteLine(line);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine(DaemonLog.Clean($"abl: log tail refused: {ex.Message}; select a private log path"));
+            return 1;
         }
 
         return 0;

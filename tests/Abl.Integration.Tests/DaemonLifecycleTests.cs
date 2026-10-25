@@ -781,30 +781,19 @@ public sealed partial class DaemonLifecycleTests : IAsyncLifetime
     }
 
     [Fact(Timeout = 120_000)]
-    public async Task ForegroundRunNarrowsAnExistingWiderLogTo0600()
+    public async Task ForegroundRunRefusesAnExistingWiderLogWithoutRepair()
     {
-        // Round-2 eng-test L-2 (round-1 eng-code L-8): a log that already exists 0644 and is
-        // too small to rotate is narrowed through the opened handle.
+        // 015 replaces the old chmod-repair contract: refusal preserves existing bytes/mode.
         var logFile = Path.Combine(PrivateDir("logs"), "daemon.log");
         File.WriteAllText(logFile, "an earlier run\n");
         File.SetUnixFileMode(logFile, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
 
-        using var daemon = Process.Start(Prepare(["daemon", "run", "--log-file", logFile]))!;
-        daemon.OutputDataReceived += (_, _) => { };
-        daemon.ErrorDataReceived += (_, _) => { };
-        daemon.BeginOutputReadLine();
-        daemon.BeginErrorReadLine();
-        try
-        {
-            Assert.Equal(daemon.Id, (await HealthAsync())["pid"]!.GetValue<int>());
-            Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(logFile));
-            Assert.False(File.Exists(logFile + ".1"), "a small log is not rotated");
-        }
-        finally
-        {
-            UnixIdentity.Signal(daemon.Id, UnixIdentity.SigTerm);
-            await daemon.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
-        }
+        var (code, _, stderr) = await RunAsync(["daemon", "run", "--log-file", logFile]);
+        Assert.NotEqual(0, code);
+        Assert.Contains("unsafe log", stderr);
+        Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead, File.GetUnixFileMode(logFile));
+        Assert.Equal("an earlier run\n", File.ReadAllText(logFile));
+        Assert.False(File.Exists(logFile + ".1"));
     }
 
     [Fact(Timeout = 120_000)]
@@ -866,6 +855,7 @@ public sealed partial class DaemonLifecycleTests : IAsyncLifetime
         {
             old.SetLength(10 * 1024 * 1024 + 1);
         }
+        File.SetUnixFileMode(logFile, UnixFileMode.UserRead | UnixFileMode.UserWrite);
 
         var start = Prepare(["daemon", "run", "--log-file", logFile]);
         using var daemon = Process.Start(start)!;

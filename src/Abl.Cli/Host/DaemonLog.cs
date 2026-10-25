@@ -1,5 +1,6 @@
 using System.Text;
 using Abl.Core.Config;
+using Microsoft.Win32.SafeHandles;
 
 namespace Abl.Cli.Host;
 
@@ -28,49 +29,53 @@ public static class DaemonLog
     /// <summary>The most lines <c>abl daemon logs</c> prints.</summary>
     public const int MaxTailLines = 1000;
 
-    private const UnixFileMode PrivateFile = UnixFileMode.UserRead | UnixFileMode.UserWrite;
-    private const UnixFileMode PrivateDir = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
-
     /// <summary>Rotation first, then open, then the descriptors (review L-b step order).</summary>
-    public static void Redirect(string logFile, bool detached, string stateDir)
+    public static void Redirect(string logFile, bool detached, string stateDir) =>
+        Redirect(logFile, detached, stateDir, (0, 1, 2), UnixIdentity.Duplicate, Directory.SetCurrentDirectory);
+
+    internal static void Redirect(string logFile, bool detached, string stateDir,
+        (int Input, int Output, int Error) targets, Action<SafeFileHandle, int> duplicate, Action<string> changeDirectory)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(logFile)!, PrivateDir);
-        Rotate(logFile);
-        using (var log = new FileStream(logFile, new FileStreamOptions
+        using var log = PrivateLogFile.OpenAppend(logFile, RotateBytes);
+        using var devNull = detached ? File.OpenHandle("/dev/null", FileMode.Open, FileAccess.Read) : null;
+        using var savedOut = UnixIdentity.SaveDescriptor(targets.Output);
+        using var savedError = UnixIdentity.SaveDescriptor(targets.Error);
+        using var savedIn = detached ? UnixIdentity.SaveDescriptor(targets.Input) : null;
+        try
         {
-            Mode = FileMode.Append,
-            Access = FileAccess.Write,
-            Share = FileShare.ReadWrite,
-            UnixCreateMode = PrivateFile,
-        }))
-        {
-            // The create mode covers a new log only; an existing, wider one is narrowed too.
-            File.SetUnixFileMode(log.SafeFileHandle, PrivateFile);
-            UnixIdentity.Duplicate(log.SafeFileHandle, 1);
-            UnixIdentity.Duplicate(log.SafeFileHandle, 2);
+            duplicate(log, targets.Output);
+            duplicate(log, targets.Error);
+            if (detached)
+            {
+                duplicate(devNull!, targets.Input);
+                changeDirectory(stateDir);
+            }
         }
-
-        if (!detached)
+        catch
         {
-            return;
-        }
+            // Try every restoration even if one fails. Startup still fails; never continue with
+            // partial redirection. These close-on-exec saved handles outlive all dup operations.
+            try { duplicate(savedOut, targets.Output); }
+            finally
+            {
+                try { duplicate(savedError, targets.Error); }
+                finally
+                {
+                    if (savedIn is not null)
+                    {
+                        duplicate(savedIn, targets.Input);
+                    }
+                }
+            }
 
-        using (var devNull = File.OpenHandle("/dev/null", FileMode.Open, FileAccess.Read))
-        {
-            UnixIdentity.Duplicate(devNull, 0);
+            throw;
         }
-
-        Directory.SetCurrentDirectory(stateDir);
     }
 
     /// <summary>Renames a log over <see cref="RotateBytes"/> to <c>X.1</c> (replacing the previous one).</summary>
     public static void Rotate(string logFile)
     {
-        var info = new FileInfo(logFile);
-        if (info.Exists && info.Length > RotateBytes)
-        {
-            File.Move(logFile, logFile + ".1", overwrite: true);
-        }
+        using var log = PrivateLogFile.OpenAppend(logFile, RotateBytes);
     }
 
     /// <summary>
@@ -85,6 +90,12 @@ public static class DaemonLog
     {
         try
         {
+            if (fs is null)
+            {
+                using var file = PrivateLogFile.OpenRead(path);
+                return null;
+            }
+
             var facts = (fs ?? UnixConfigFileSystem.Instance).Inspect(path);
             if (facts is not { TargetExists: true, IsSymlink: false, IsRegularFile: true, OwnedByCurrentUser: true })
             {
@@ -105,9 +116,9 @@ public static class DaemonLog
     /// <paramref name="derived"/> per-store log, with a note naming the refused path.
     /// </summary>
     public static (string Path, string? Note) Readable(string? recorded, string derived) =>
-        Readable(recorded, derived, UnixConfigFileSystem.Instance);
+        Readable(recorded, derived, null);
 
-    internal static (string Path, string? Note) Readable(string? recorded, string derived, IConfigFileSystem fs)
+    internal static (string Path, string? Note) Readable(string? recorded, string derived, IConfigFileSystem? fs)
     {
         if (recorded is null || recorded == derived || ReadProblem(recorded, fs) is not { } problem)
         {
@@ -118,19 +129,44 @@ public static class DaemonLog
     }
 
     /// <summary>The last <paramref name="lines"/> lines of the log, control characters (but tabs) replaced.</summary>
-    public static IReadOnlyList<string> Tail(string logFile, int lines)
+    public static IReadOnlyList<string> Tail(string logFile, int lines) => Tail(logFile, lines, null);
+
+    internal static IReadOnlyList<string> Tail(string logFile, int lines, Action<long>? afterLength)
     {
         const int window = 256 * 1024;
-        using var stream = new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        var start = Math.Max(0, stream.Length - window);
-        stream.Seek(start, SeekOrigin.Begin);
-        var buffer = new byte[stream.Length - start];
-        stream.ReadExactly(buffer);
-        var text = Encoding.UTF8.GetString(buffer);
+        using var handle = PrivateLogFile.OpenRead(logFile);
+        var length = RandomAccess.GetLength(handle);
+        afterLength?.Invoke(length);
+        var start = Math.Max(0, length - window);
+        var buffer = new byte[(int)(length - start)];
+        var read = 0;
+        while (read < buffer.Length)
+        {
+            var count = RandomAccess.Read(handle, buffer.AsSpan(read), start + read);
+            if (count == 0)
+            {
+                break; // truncated since the one captured length; growth stays outside this window
+            }
+
+            read += count;
+        }
+
+        var text = Encoding.UTF8.GetString(buffer.AsSpan(0, read));
         var all = text.Split('\n');
         var skipFirst = start > 0 ? 1 : 0; // the first line of a window may be partial
         var trimmed = all.Length > 0 && all[^1].Length == 0 ? all[..^1] : all;
-        return [.. trimmed.Skip(skipFirst).TakeLast(lines).Select(Clean)];
+        return [.. trimmed.Skip(skipFirst).TakeLast(Math.Clamp(lines, 0, MaxTailLines)).Select(Clean)];
+    }
+
+    /// <summary>Startup diagnostics must preserve the original error even when its log is unsafe.</summary>
+    internal static IReadOnlyList<string> FailureTail(string logFile, int lines)
+    {
+        try { return Tail(logFile, lines); }
+        catch (FileNotFoundException) { return []; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return [Clean($"log tail refused: {ex.Message}; select a private regular log file in a trusted directory")];
+        }
     }
 
     /// <summary>The line with control characters (but tabs) replaced, safe to print to a terminal.</summary>

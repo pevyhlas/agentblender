@@ -78,8 +78,8 @@ custom paths; prefer a reusable anchored transaction for the existing paths.
 
 ## Tasks
 
-- [ ] Native syscall/ABI contracts in observed, independent security and architecture design review.
-- [ ] Anchored log open/rotate and authoritative reader path; no unsafe-path repair.
+- [x] Native syscall/ABI contracts in observed, independent security and architecture design review.
+- [x] Anchored log open/rotate and authoritative reader path; no unsafe-path repair.
 - [ ] Native and deterministic race-seam tests, startup/derived-tail regressions on both OSes.
 - [ ] Full unit/installed checks, independent final risk reviews, exact-head CI and delivery.
 
@@ -100,16 +100,25 @@ predicate booleans. Retain Linux failures and hosted macOS results; qualificatio
 
 ## State
 
-**Step**: ready to implement
-**Waiting on**: nothing for implementation; design passed, creation/cleanup advisory settled in item7.
+**Step**: implementation verification
+**Waiting on**: native macOS checks, complete unit/installed evidence and implementation reviews.
 **Authority**: owner roadmap continuation and “go ahead - we should setup github CI for mac os”;
 constitution feature commit/push/PR and exact-head reviewed green merge. Releases and live rollout
 remain owner-gated.
 **Branch / PR**: 015-log-safety, originally based on d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41;
 [PR #11](https://github.com/pevyhlas/agentblender/pull/11). Merged014 hosted macOS CI is incorporated;
-integration base is64c538a95dd95fac00b440386160a2979358dd37. No production implementation yet.
-**Attempts**: 0 acceptance attempts; initial design passed; one advisory clarification, no failed fix round.
-**Next**: implement anchored primitives and log paths with the defined creation/cleanup tests.
+integration base is64c538a95dd95fac00b440386160a2979358dd37. Anchored primitives and all log paths implemented.
+**Attempts**: Linux focused102pass on first run; complete acceptance pending. Initial design passed;
+one advisory clarification, no failed review fix round. Pre-implementation Linux CI run40221466466
+failed two version-probe tests, then unchanged-head diagnostic rerun attempt2passed (all jobs).
+Original failure and rerun evidence retained under `.prdkit/cache/evidence/015-log-safety/`.
+This establishes a transient failure, not a proved root cause or production repair.
+Full unit attempt1 found three stale pre-contract tests: two 0644 fixtures intended for valid
+reads/rotation and one explicit chmod-repair expectation. Fixtures now use0600; the repair test
+now proves refusal preserves bytes/modes, and service failure covers both private and unsafe output.
+No production repair was needed for these failures. Partial dup/cwd restoration uses real native
+operations over isolated test descriptors; whole unit rerun pending.
+**Next**: complete Linux/macOS unit/installed verification and final security/architecture/code/ergonomics reviews.
 **Design review**: d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..a190e884ca5bc8173a57955197e89d7b3d0092f5 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6401409148
 **Design review**: d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..a190e884ca5bc8173a57955197e89d7b3d0092f5 · eng-arch · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6401409361; advisory addressed by item7 before coding.
 <!-- One line per verdict (workflows/change.md, Review):
