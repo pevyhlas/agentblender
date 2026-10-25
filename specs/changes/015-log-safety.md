@@ -100,8 +100,8 @@ predicate booleans. Retain Linux failures and hosted macOS results; qualificatio
 
 ## State
 
-**Step**: NEEDS_DECISION — native acceptance attempt limit reached
-**Waiting on**: owner decision on one additional bounded native attempt; PR stays draft.
+**Step**: resumed native verification under owner-extended budget
+**Waiting on**: native append-oracle correction, final code/security review and exact-head gates.
 **Authority**: owner roadmap continuation and “go ahead - we should setup github CI for mac os”;
 constitution feature commit/push/PR and exact-head reviewed green merge. Releases and live rollout
 remain owner-gated.
@@ -124,7 +124,11 @@ unsafe daemon-log failure preservation in the lifecycle test. Focused tests pass
 initial final-review FAIL is tooling/evidence-only (shell denied), with no code finding; code
 review's high finding is missing completed evidence and those two regressions. Both reports
 are preserved; final exact-head evidence and scoped re-review remain required.
-**Next**: owner chooses an alternative below; no further native repair/retry before that decision.
+**Next**: run the corrected write(2) append oracle on both platforms, finish reviews, merge after gates.
+**Owner extension**: 2026-10-25 conversation: “what is the status and next steps? I approve the
+budget at least 5x extra”. Apply up to15additional native acceptance attempts (five times the
+original three), counted from run afterb513703. Initial3attempts remain recorded; no automatic
+reset of any result, merge gate, release or platform-qualification requirement.
 **Native verification repair1**: run40231067326 passed required Linux checks but failed advisory
 macOS because descriptor ACL absence returnsNULL/ENOENT. Its logs/TRX are retained. Treat that
 specific absence as no ACL after successful fstat; every other error still refuses. Add native
@@ -144,7 +148,7 @@ observed Apple/.NET sources establish ABI behavior only, with no implementation 
 Unchanged ergonomics approval covers the native-only ABI repair; source architecture re-review
 passes, while native acceptance remains a separate gate.
 
-### Native acceptance alternatives (after attempt3)
+### Native acceptance alternatives (after attempt3, resolved by owner extension)
 
 Observed: run40232947019 atb513703 passed required Linux gates and advisory Blender integration;
 macOS passed863of864 tests with no skips. All103lifecycle integration cases passed. The only
@@ -169,8 +173,10 @@ Contracts: [.NET FileStream strategy](https://github.com/dotnet/runtime/blob/v10
 3. **Defer native delivery**: leave this draft published and pause015. Resume other roadmap
    work; later split or relax the cross-platform acceptance only on explicit owner direction.
 
-If no answer: option3. This record-only checkpoint skips CI rather than rerunning the exhausted
-native outcome; sourceb513703 and run40232947019 remain the current implementation evidence.
+The record-only checkpoint438f14a skipped CI while awaiting the owner's decision. The owner
+subsequently extended the budget as recorded above. The next change corrects only the test oracle:
+a fixed-arity write(2) delegate matches the daemon's descriptor semantics and verifies both prefix
+bytes and private modes. Production code is unchanged; native attempt4(extension1of15) is next.
 **Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-code · FAIL · 0 critical, 1 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901141
 **Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-security · FAIL · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901333
 **Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901521

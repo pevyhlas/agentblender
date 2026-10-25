@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using Abl.Cli.Host;
 using Abl.Core.Config;
+using Microsoft.Win32.SafeHandles;
 using Xunit;
 
 namespace Abl.Core.Tests;
@@ -11,6 +13,20 @@ public sealed class PrivateLogFileTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), "abl-pl-" + Guid.NewGuid().ToString("N"));
     private const UnixFileMode Private = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+    private static readonly DescriptorWriter NativeWrite = Marshal.GetDelegateForFunctionPointer<DescriptorWriter>(
+        NativeLibrary.GetExport(NativeLibrary.GetMainProgramHandle(), "write"));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl, SetLastError = true)]
+    private delegate nint DescriptorWriter(SafeFileHandle handle, [In] byte[] buffer, nuint count);
+
+    private static void Append(SafeFileHandle handle, string text)
+    {
+        // Match redirected stdout/stderr's write(2), not FileStream(handle)'s pwrite.
+        // POSIX positioned writes ignore O_APPEND; Linux's different behavior hid this
+        // fixture error. A fresh fd offset is zero, so preserving the prefix proves append.
+        var bytes = Encoding.UTF8.GetBytes(text);
+        Assert.Equal((nint)bytes.Length, NativeWrite(handle, bytes, (nuint)bytes.Length));
+    }
 
     public PrivateLogFileTests() => Directory.CreateDirectory(_root, Private | UnixFileMode.UserExecute);
     public void Dispose() => Directory.Delete(_root, true);
@@ -27,17 +43,15 @@ public sealed class PrivateLogFileTests : IDisposable
     {
         var path = PathOf("new/daemon.log");
         using (var handle = PrivateLogFile.OpenAppend(path))
-        using (var stream = new FileStream(handle, FileAccess.Write))
         {
-            stream.Write(Encoding.UTF8.GetBytes("first\n"));
+            Append(handle, "first\n");
         }
 
         Assert.Equal(Private, File.GetUnixFileMode(path));
         Assert.Equal(Private | UnixFileMode.UserExecute, File.GetUnixFileMode(Path.GetDirectoryName(path)!));
         using (var handle = PrivateLogFile.OpenAppend(path))
-        using (var stream = new FileStream(handle, FileAccess.Write))
         {
-            stream.Write(Encoding.UTF8.GetBytes("second\n"));
+            Append(handle, "second\n");
         }
 
         Assert.Equal("first\nsecond\n", File.ReadAllText(path));
