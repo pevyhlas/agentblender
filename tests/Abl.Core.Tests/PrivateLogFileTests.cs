@@ -205,7 +205,7 @@ public sealed class PrivateLogFileTests : IDisposable
         if (!OperatingSystem.IsMacOS()) { return; }
         var path = PathOf("log");
         Write(path, "retained");
-        Run("chmod", "+a", $"user:{UnixIdentity.EffectiveUserId} allow read", path);
+        Run("chmod", "+a", $"user:{Environment.UserName} allow read", path);
         Assert.Throws<IOException>(() => PrivateLogFile.OpenRead(path));
         Assert.Throws<IOException>(() => PrivateLogFile.OpenAppend(path, 1));
         Assert.Equal("retained", File.ReadAllText(path));
@@ -224,14 +224,14 @@ public sealed class PrivateLogFileTests : IDisposable
             Assert.False(UnixIdentity.InspectHandle(absent).AllowAcl);
         }
 
-        Run("chmod", "+a", $"user:{UnixIdentity.EffectiveUserId} deny delete", path);
+        Run("chmod", "+a", $"user:{Environment.UserName} deny delete", path);
         using (var deniedDelete = PrivateLogFile.OpenRead(path))
         {
             Assert.False(UnixIdentity.InspectHandle(deniedDelete).AllowAcl);
         }
 
         Run("chmod", "-N", path);
-        Run("chmod", "+a", $"user:{UnixIdentity.EffectiveUserId} allow read", _root);
+        Run("chmod", "+a", $"user:{Environment.UserName} allow read", _root);
         try
         {
             Assert.Throws<IOException>(() => PrivateLogFile.OpenRead(path));
@@ -254,6 +254,7 @@ public sealed class PrivateLogFileTests : IDisposable
         RandomAccess.Write(input, "input"u8, 0);
         var targets = ((int)input.DangerousGetHandle(), (int)output.DangerousGetHandle(), (int)error.DangerousGetHandle());
         var injected = false;
+        var reachedDirectory = false;
         Assert.Throws<IOException>(() => DaemonLog.Redirect(PathOf("log"), true, _root, targets,
             (handle, fd) =>
             {
@@ -264,7 +265,13 @@ public sealed class PrivateLogFileTests : IDisposable
                 }
 
                 UnixIdentity.Duplicate(handle, fd);
-            }, _ => throw new IOException("injected cwd failure")));
+            }, _ =>
+            {
+                reachedDirectory = true;
+                throw new IOException("injected cwd failure");
+            }));
+        Assert.Equal(!failDirectory, injected);
+        Assert.Equal(failDirectory, reachedDirectory);
         RandomAccess.Write(output, "out"u8, 0);
         RandomAccess.Write(error, "err"u8, 0);
         var data = new byte[5];

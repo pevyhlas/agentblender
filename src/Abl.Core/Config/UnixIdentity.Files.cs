@@ -17,10 +17,10 @@ public static partial class UnixIdentity
     private static int DirectoryFlag => OperatingSystem.IsMacOS() ? 0x100000 : 0x10000;
     private static int NonBlocking => OperatingSystem.IsMacOS() ? 0x4 : 0x800;
 
-    internal static SafeFileHandle OpenRoot() => Handle(open("/", CloseOnExec | DirectoryFlag | NoFollow, 0), "/");
+    internal static SafeFileHandle OpenRoot() => Handle(open("/", CloseOnExec | DirectoryFlag | NoFollow), "/");
 
     internal static SafeFileHandle OpenDirectoryAt(SafeFileHandle parent, string name) =>
-        Handle(openat(parent, name, CloseOnExec | DirectoryFlag | NoFollow, 0), name);
+        Handle(OpenAt(parent, name, CloseOnExec | DirectoryFlag | NoFollow, 0), name);
 
     internal static void CreateDirectoryAt(SafeFileHandle parent, string name)
     {
@@ -43,7 +43,7 @@ public static partial class UnixIdentity
             flags |= OperatingSystem.IsMacOS() ? 0xa00 : 0xc0; // O_CREAT | O_EXCL
         }
 
-        return Handle(openat(parent, name, flags, 0x180), name); // 0600, never truncation
+        return Handle(OpenAt(parent, name, flags, 0x180), name); // 0600, never truncation
     }
 
     internal static void RenameAt(SafeFileHandle parent, string from, string to) =>
@@ -147,7 +147,15 @@ public static partial class UnixIdentity
 
     /// <summary>Save a standard descriptor with close-on-exec before changing redirection.</summary>
     public static SafeFileHandle SaveDescriptor(int descriptor) =>
-        Handle(fcntl(descriptor, OperatingSystem.IsMacOS() ? 67 : 1030, 3), "standard descriptor");
+        Handle(IsDarwinArm64
+            ? fcntl_arm64(descriptor, 67, 0, 0, 0, 0, 0, 0, 3)
+            : fcntl(descriptor, OperatingSystem.IsMacOS() ? 67 : 1030, 3), "standard descriptor");
+
+    private static bool IsDarwinArm64 => OperatingSystem.IsMacOS() && RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
+
+    private static int OpenAt(SafeFileHandle parent, string name, int flags, int mode) => IsDarwinArm64
+        ? openat_arm64(parent, name, flags, 0, 0, 0, 0, 0, mode)
+        : openat(parent, name, flags, mode);
 
     private static SafeFileHandle Handle(int fd, string name)
     {
@@ -161,9 +169,19 @@ public static partial class UnixIdentity
 
 #pragma warning disable SA1300, IDE1006 // libc symbol names
     [LibraryImport(Libc, StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]
-    private static partial int open(string path, int flags, int mode);
+    private static partial int open(string path, int flags);
     [LibraryImport(Libc, StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]
     private static partial int openat(SafeFileHandle parent, string name, int flags, int mode);
+    // Apple arm64 sends variadic arguments on the stack, unlike its fixed arguments.
+    // Explicit x3..x7/x2..x7 placeholders occupy the unused integer registers so the one
+    // integral variadic argument is at SP+0 (8-byte slot). These signatures are used ONLY
+    // for this architecture and these exact scalar calls; see observed native ABI contract.
+    [LibraryImport(Libc, EntryPoint = "openat", StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]
+    private static partial int openat_arm64(SafeFileHandle parent, string name, int flags,
+        nint x3, nint x4, nint x5, nint x6, nint x7, nint mode);
+    [LibraryImport(Libc, EntryPoint = "fcntl", SetLastError = true)]
+    private static partial int fcntl_arm64(int fd, int command,
+        nint x2, nint x3, nint x4, nint x5, nint x6, nint x7, nint minimum);
     [LibraryImport(Libc, StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]
     private static partial int mkdirat(SafeFileHandle parent, string name, int mode);
     [LibraryImport(Libc, StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]

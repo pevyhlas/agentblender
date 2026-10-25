@@ -130,6 +130,12 @@ macOS because descriptor ACL absence returnsNULL/ENOENT. Its logs/TRX are retain
 specific absence as no ACL after successful fstat; every other error still refuses. Add native
 absent/deny-only/file-allow/directory-allow regressions. Run40231692889 started before this fix
 and does not exercise it. Native retry after this repair is pending.
+**Native verification repair2**: run40231977979 required Linux/integration jobs passed; native
+macOS had847pass/17fail. ACL absence was fixed; new evidence identifies Apple arm64 variadic ABI
+placement (incorrect creation modes/fcntl EINVAL) plus chmod's named-principal fixture requirement.
+Add architecture-restricted stack signatures for the two scalar calls and fix ACL principals;
+rollback tests now prove the injected failure was reached. Third native acceptance attempt is
+next; if it still fails, stop that line and record alternatives for the owner under protocol limits.
 **Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-code · FAIL · 0 critical, 1 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901141
 **Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-security · FAIL · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901333
 **Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901521
