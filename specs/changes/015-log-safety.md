@@ -100,13 +100,14 @@ predicate booleans. Retain Linux failures and hosted macOS results; qualificatio
 
 ## State
 
-**Step**: design
+**Step**: ready to implement
 **Waiting on**: nothing for implementation; design passed, creation/cleanup advisory settled in item7.
 **Authority**: owner roadmap continuation and “go ahead - we should setup github CI for mac os”;
 constitution feature commit/push/PR and exact-head reviewed green merge. Releases and live rollout
 remain owner-gated.
-**Branch**: 015-log-safety, based on d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41; incorporate014
-hosted macOS CI before implementation verification.
+**Branch / PR**: 015-log-safety, originally based on d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41;
+[PR #11](https://github.com/pevyhlas/agentblender/pull/11). Merged014 hosted macOS CI is incorporated;
+integration base is64c538a95dd95fac00b440386160a2979358dd37. No production implementation yet.
 **Attempts**: 0 acceptance attempts; initial design passed; one advisory clarification, no failed fix round.
 **Next**: implement anchored primitives and log paths with the defined creation/cleanup tests.
 **Design review**: d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..a190e884ca5bc8173a57955197e89d7b3d0092f5 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6401409148
