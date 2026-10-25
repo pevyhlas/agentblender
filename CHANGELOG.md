@@ -26,6 +26,11 @@ of conduct and issue and pull-request templates describe how to take part.
 
 ### Fixed since the initial public source
 
+- Logs are opened and rotated through validated directory/file descriptors. Unsafe existing
+  logs (wide permissions, links, special files or allow ACLs) are refused without repair.
+  Every tail path uses the same private-file rule and a captured, bounded read window;
+  startup keeps its original error when a tail is refused. Partial redirection restores
+  original descriptors. Replacement-creation failure preserves rotated bytes in `.1`.
 - Path trust now reads owner UIDs without chmod side effects and shares owner, mode, file-kind
   and ACL facts across setup, discovery, runtime, delivery aliases and daemon store checks.
   Config/token files must be regular; macOS allow ACLs refuse private-path guarantees.

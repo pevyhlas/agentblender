@@ -51,6 +51,25 @@ How a fresh agent installs, configures, starts, checks and connects AgentBlender
   same state-only gate before writing. Config inspection failures retain `config.file` and
   structured setup/doctor remedies. Log-reader ACL refusals identify the ACL and recovery action.
   Tests: `PathTrustTests`, `LifecycleCoreTests.StartRefusesUnsafeStateBeforePreparingItsRuntime`.
+- Log open/append/rotation and all tail readers walk and retain validated directory descriptors.
+  Ancestors must be root/current-user-owned, not group/other writable and have no macOS allow
+  ACL; root-owned sticky temporary ancestors are permitted. Only verified stock `/tmp`, `/var`
+  and `/etc` aliases normalize on macOS. Arbitrary ancestor/final links are refused.
+  Opened files must be current-user-owned regular files, private (no group/other bits), with
+  one hard link and no allow ACL. Final opens are no-follow/nonblocking, validated before IO;
+  new directories/files are created 0700/0600. Existing unsafe entries are never chmod-repaired.
+  Tests: `PrivateLogFileTests`, `DaemonLifecycleUnitTests`.
+- Rotation validates active and previous entries, checks active identity, renames relative to
+  the held parent and creates the replacement exclusively. Replacement failure retains old
+  bytes in `.1`; this is not multi-file atomic publication. Validation refusal changes no
+  pre-existing bytes/modes. Failed creation may leave exclusively created empty entries;
+  readers never create. Redirection saves close-on-exec original descriptors and restores them
+  on partial dup/cwd failure, then fails startup. Same-UID malicious mutation/root are outside
+  the local-user threat model. Tests: `PrivateLogFileTests`.
+- Every tail (recorded, derived, startup and service-down) validates its actual opened file.
+  It reads at most one captured 256 KiB window and returns at most 1000 cleaned lines;
+  growth cannot enlarge the buffer and truncation terminates the read. Startup preserves its
+  original error and reports an actionable tail refusal. Tests: `PrivateLogFileTests`.
 - **P1.B-14 One daemon per store**: an exclusive lock and the instance record live in the store;
   `abl daemon start` detaches, returns once a worker is warm or fails fast with a check ID, and
   hands off to an installed user service that serves this store and port. Test:

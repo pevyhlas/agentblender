@@ -369,8 +369,10 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         Assert.Equal(["service start", "service stop"], _events);
     }
 
-    [Fact]
-    public async Task AServiceJobThatDiesBeforeTheLockFailsFastWithItsOutput()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AServiceJobThatDiesBeforeTheLockFailsFastWithItsOutput(bool privateOutput)
     {
         // eng-code MEDIUM-1: a daemon that exits before its own redirect (a moved ExecStart, a
         // runtime without ASP.NET Core 10) is reported by the manager as down; start fails at
@@ -378,6 +380,12 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         await NoDaemonAsync();
         var output = Path.Combine(_root, "daemon.out");
         File.WriteAllText(output, "You must install or update .NET to run this application.\n");
+        File.SetUnixFileMode(output, UnixFileMode.UserRead | UnixFileMode.UserWrite |
+            (privateOutput ? 0 : UnixFileMode.OtherRead));
+        Directory.CreateDirectory(Path.GetDirectoryName(ServiceLog)!, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        File.WriteAllText(ServiceLog, "older daemon log\n");
+        File.SetUnixFileMode(ServiceLog, UnixFileMode.UserRead | UnixFileMode.UserWrite |
+            (privateOutput ? 0 : UnixFileMode.OtherRead));
         var processes = new FakeProcesses(_events);
         var services = new FakeServices(_events, processes)
         {
@@ -395,8 +403,21 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         Assert.Equal("service.state", error["error"]!["check"]!.GetValue<string>());
         Assert.Contains("exited before it took the store lock (last exit code = 150)", error["error"]!["message"]!.GetValue<string>());
         Assert.Contains(output, error["error"]!["hint"]!.GetValue<string>());
-        Assert.Equal(["You must install or update .NET to run this application."], error["output"]!.AsArray().Select(l => l!.GetValue<string>()));
-        Assert.Contains("You must install or update .NET", stderr);
+        if (privateOutput)
+        {
+            Assert.Equal(["You must install or update .NET to run this application."], error["output"]!.AsArray().Select(l => l!.GetValue<string>()));
+            Assert.Contains("You must install or update .NET", stderr);
+            Assert.Equal("older daemon log", error["logTail"]![0]!.GetValue<string>());
+        }
+        else
+        {
+            Assert.Contains("log tail refused", error["output"]![0]!.GetValue<string>());
+            Assert.DoesNotContain("You must install or update .NET", stderr);
+            Assert.Contains("log tail refused", error["logTail"]![0]!.GetValue<string>());
+            Assert.DoesNotContain("older daemon log", stdout + stderr);
+            Assert.Equal("older daemon log\n", File.ReadAllText(ServiceLog));
+            Assert.Equal("You must install or update .NET to run this application.\n", File.ReadAllText(output));
+        }
         Assert.Equal(["service start", "service stop"], _events);
     }
 

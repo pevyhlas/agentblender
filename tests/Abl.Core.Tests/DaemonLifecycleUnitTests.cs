@@ -406,14 +406,16 @@ public sealed class DaemonLifecycleUnitTests : IDisposable
     {
         var log = Path.Combine(_root, "daemon.log");
         File.WriteAllText(log + ".1", "older");
+        File.SetUnixFileMode(log + ".1", UnixFileMode.UserRead | UnixFileMode.UserWrite);
         using (var big = File.Create(log))
         {
             big.SetLength(DaemonLog.RotateBytes + 1);
         }
+        File.SetUnixFileMode(log, UnixFileMode.UserRead | UnixFileMode.UserWrite);
 
         DaemonLog.Rotate(log);
 
-        Assert.False(File.Exists(log));
+        Assert.Equal(0, new FileInfo(log).Length);
         Assert.Equal(DaemonLog.RotateBytes + 1, new FileInfo(log + ".1").Length);
 
         File.WriteAllText(log, "small");
@@ -426,6 +428,7 @@ public sealed class DaemonLifecycleUnitTests : IDisposable
     {
         var log = Path.Combine(_root, "daemon.log");
         File.WriteAllText(log, string.Concat(Enumerable.Range(1, 30).Select(i => $"line {i}\n")) + "esc \u001b[31mred\ttab\r\n");
+        File.SetUnixFileMode(log, UnixFileMode.UserRead | UnixFileMode.UserWrite);
 
         var tail = DaemonLog.Tail(log, 3);
 
@@ -441,6 +444,7 @@ public sealed class DaemonLifecycleUnitTests : IDisposable
         var derived = Path.Combine(_root, "derived.log");
         var recorded = Path.Combine(_root, "recorded.log");
         File.WriteAllText(recorded, "recorded");
+        File.SetUnixFileMode(recorded, UnixFileMode.UserRead | UnixFileMode.UserWrite);
 
         Assert.Equal((recorded, (string?)null), DaemonLog.Readable(recorded, derived));
         Assert.Equal((derived, (string?)null), DaemonLog.Readable(null, derived));
@@ -462,7 +466,7 @@ public sealed class DaemonLifecycleUnitTests : IDisposable
             var (path, note) = DaemonLog.Readable(refused, derived);
             Assert.Equal(derived, path);
             Assert.Contains(refused, note);
-            Assert.Contains("not a regular file you own", note);
+            Assert.Contains("select", note);
         }
     }
 
@@ -471,6 +475,7 @@ public sealed class DaemonLifecycleUnitTests : IDisposable
     {
         var log = Path.Combine(_root, "daemon.log");
         File.WriteAllText(log, new string('a', 300 * 1024) + "\nlast\n");
+        File.SetUnixFileMode(log, UnixFileMode.UserRead | UnixFileMode.UserWrite);
 
         Assert.Equal(["last"], DaemonLog.Tail(log, 5));
     }
