@@ -108,6 +108,9 @@ generation from the actual exporter, then reject an inconsistent policy without 
 constitution feature commit/push/PR and reviewed exact-head green merge policy.
 **Attempts**: design0, implementation0, acceptance0.
 **Branch / PR**: 016-delivery-provenance, [draft #12](https://github.com/pevyhlas/agentblender/pull/12).
+Product-Kit 1.2.0 is incorporated from public main `d97f545` ([uptake #13](https://github.com/pevyhlas/agentblender/pull/13));
+its independent reviews and exact-head CI passed. This design's own review and acceptance are
+still pending. Readiness assessment confirms this is the next bounded implementation outcome.
 Merged015 is incorporated from main8bd52bb; its final source/installed, native and review evidence
 is in [PR #11](https://github.com/pevyhlas/agentblender/pull/11).
 **Next**: obtain architecture/security design review, then implement. No release, deployment or
