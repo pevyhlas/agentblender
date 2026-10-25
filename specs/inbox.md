@@ -19,6 +19,23 @@ Name roles, never people. Delete a folded item once its change has landed. -->
 
 ## Waiting for you
 
+### AgentBlender log safety: one more native acceptance attempt?
+
+*2026-10-25 · agent · open*
+
+Change015 reached its three-attempt native limit. Latest macOS run passes863of864 tests, including
+all103lifecycle integration cases; the remaining append fixture uses FileStream's positioned
+writes, unlike daemon stdout/stderr. Linux and installed checks pass. The draft remains unmerged.
+
+1. **One extra attempt** (Recommended): authorize one native run after correcting that test oracle,
+   then final independent reviews and exact-head gates. Stop again if it fails.
+2. **Revisit IO implementation**: choose the managed/fixed-arity-shim direction with fresh design
+   review and an owner-set attempt limit; broader than a test correction.
+3. **Defer this increment**: keep the published draft and continue other roadmap work. No native
+   acceptance or merge is claimed.
+
+**If no answer**: option3. Details and retained evidence: [015-log-safety](changes/015-log-safety.md).
+
 ### Confirm the restructured spec
 
 *2026-10-20 · agent · open*
