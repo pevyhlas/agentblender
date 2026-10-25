@@ -246,6 +246,14 @@ change the network/security policy. Baseline and maintenance reviews stay separa
 
 ## Your direction
 
+### Latest Product-Kit and next steps
+
+*2026-10-26 · owner · folded: 017-product-kit-120*
+
+> please uptake the latest product kit and then see what are the next steps
+
+Updates the public vendored kit and assesses roadmap readiness under the existing action policy.
+
 ### GitHub macOS CI
 
 *2026-10-25 · owner · folded: 014-macos-ci*

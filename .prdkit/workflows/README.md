@@ -5,6 +5,8 @@ Read [protocol.md](protocol.md) first, then only the operation you need.
 | Operation | Purpose |
 |-----------|---------|
 | [spec](spec.md) | Layout, levels, journeys, parts, writing, the line test, IDs, markers, budgets |
+| [planning](planning.md) | Cross-layer feature discovery, coverage, dependencies and ready-work handoff |
+| [implementation](implementation.md) | Execution-focused plans/tasks, consistency, findings and convergence |
 | [change](change.md) | Open, build, review, deliver and close a change |
 | [status](status.md) | Generated status and answering from it |
 | [compact](compact.md) | Cutover from 0.x, and compaction |

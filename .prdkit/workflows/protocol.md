@@ -13,6 +13,10 @@ explicit user authorization or the constitution's action policy, resolved per ac
 source and scope of each hold. Missing authority is not approval; standing authorization need
 not be repeated.
 
+While work is held, put read-only observations and attempt classification in State. Leave held
+Tasks, Acceptance and original evidence unchanged until authorized; reporting a hold is not a rerun
+or a new result for its acceptance item.
+
 Only a human extends or grants: the intent owner, or a human the owner names. That covers more
 attempts or fix rounds, lifting holds, and changes to scope, investment or limits. An agent never
 grants these to itself or another agent, whatever its role. Owner words relayed verbatim through
@@ -45,6 +49,7 @@ harness memory or a session log.
 | Owner direction and open questions | `specs/inbox.md` |
 | Holds, waivers, attestations, deployments | `specs/records.md` |
 | Open change (deleted when it closes) | `specs/changes/<id>.md` |
+| Optional execution scratch (never the sole handover) | gitignored `.prdkit/cache/implementation/<id>.md`; useful context on the same PR |
 | Closed changes, one line each | `specs/log.md` |
 | Archive: directions tried and why they stopped, lessons (read on demand, never by default) | `specs/archive.md` |
 
@@ -77,7 +82,9 @@ Fix routine path, invocation and local setup errors and continue; that is no fix
 no installation, shared-host change, destructive cleanup or retry of an ambiguous external effect.
 
 Count attempts per acceptance item and per blocker (an outcome that keeps failing: a live check,
-an integration, a deploy) in the change's State, across tasks, PRs and sessions. Each real run of
+an integration, a deploy) in the change's State, across tasks, PRs and sessions. The initial baseline
+run before any corrective change is retained evidence, not a repair attempt. Never relabel a retry
+as a fresh baseline to reset the budget. Each real run of
 that outcome after a change meant to fix it is an attempt; a merged PR whose own checks pass while
 the outcome still fails is an attempt, not progress. Review allows at most three fix rounds after
 the initial failing review. After three attempts, or two that produced no new information, stop
@@ -85,6 +92,9 @@ that line of work and write an alternatives note in the change: what was learned
 unknown, and at least two alternatives, one managed or off-the-shelf and one relaxing or dropping
 what forces the work. Report NEEDS_DECISION through the inbox and continue other work. Only the
 owner grants further attempts, with a stated limit; a reset or a new task name does not.
+
+When a PR closes, retain unresolved outcome attempts, limits and holds on its PR/follow-up. A new
+fix change inherits them; deleting an execution record does not reset a failing product outcome.
 
 ## External systems
 

@@ -23,17 +23,26 @@ with both sides, never resolved here. -->
 
 ## Approach
 
-<Only real choices: options, pick, why.>
+<Approved design/contract references and spec/code baseline. Only real execution choices:
+options, pick, why. Unsettled material product/design choices return to Product-Kit.>
 
 ## Tasks
 
-- [ ] <...>
+- [ ] T001 <contribution/acceptance; paths; dependency outcome; check>
+
+<!-- Tiny fixes stay inline. Optional detail: .prdkit/cache/implementation/<id>.md;
+useful context/progress on the same PR. Product/programme discovery uses workflows/planning.md. -->
 
 ## Checks
 
 <Line test, consistency with L0/L1, enforcement for new Q/I. A few lines.>
 
 ## Acceptance
+
+<!-- Required PR obligations. Distinguish later non-gating runtime observations on the PR before
+execution; existing required checks cannot be demoted to finish. Live-only claims need live proof.
+Keep these five columns for status helpers, including on a parent programme. Result is exactly
+NOT_RUN/PASS/FAIL/BLOCKED/NOT_APPLICABLE; evidence/revision/environment go in Check or below the table. -->
 
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|

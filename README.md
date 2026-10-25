@@ -63,7 +63,7 @@ See [readiness and roadmap](docs/public-readiness.md), [changelog](CHANGELOG.md)
 
 [Contributing](CONTRIBUTING.md) · [Brand artwork](docs/brand/README.md) · [Product and architecture](specs/product.md) · [MIT](LICENSE)
 · [Third-party notices](THIRD-PARTY-NOTICES.md). Fork-safe GitHub-hosted CI;
-[Product-Kit 1.1.1](https://github.com/pevyhlas/product-kit) vendored, no submodule required.
+[Product-Kit 1.2.0](https://github.com/pevyhlas/product-kit) vendored, no submodule required.
 
 Blender is separately installed GPL software, never bundled here. AgentBlender is **not affiliated
 with or endorsed by the Blender Foundation**; “Blender” is its trademark, used for compatibility.
