@@ -246,6 +246,15 @@ change the network/security policy. Baseline and maintenance reviews stay separa
 
 ## Your direction
 
+### GitHub macOS CI
+
+*2026-10-25 · owner · folded: 014-macos-ci*
+
+> go ahead - we should setup github CI for mac os
+
+Updates hosted macOS CI to macOS 26 arm64 with retained diagnostics. Host and Metal
+qualification remain open under changes 008 and 009.
+
 ### Public projects, fixes and logos
 
 *2026-10-24 · owner · folded: 011-public-hardening*
