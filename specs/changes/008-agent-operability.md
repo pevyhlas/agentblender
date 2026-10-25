@@ -46,7 +46,7 @@ rule to state. Shared facts/caller migration land first; log-write/rotation hard
   `DaemonPaths.StateDir`; decide whether the state directory gets the runtime directory's
   final-component rule; open the daemon log only as a regular file the user owns (the reader
   half is built); the store-root gate moves onto the shared facts for every daemon verb.
-  Log follow-up from child 013 design review: require private existing logs before rotation;
+  Log follow-up in child015-log-safety from child013 design review: require private existing logs before rotation;
   protect directory identity against replacement by another uid, open without following final
   links and verify the opened object; validate every selected tail path, including derived and
   startup-failure paths. The existing reader predicate alone is not comprehensive protection.
@@ -97,4 +97,5 @@ guarantees. Shared-facts migration preserves discovery trust anchors and store t
 
 **Step**: build
 **Waiting on**: the owner for T074 and T075
-**Next**: after shared-facts [PR #9](https://github.com/pevyhlas/agentblender/pull/9), T021's log transaction, T040 and T056 in separate pull requests
+**Next**: T021's log transaction in child015-log-safety after shared-facts
+[PR #9](https://github.com/pevyhlas/agentblender/pull/9); T040 and T056 remain separate increments.

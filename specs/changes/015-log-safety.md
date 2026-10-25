@@ -1,0 +1,102 @@
+# Change: Validate daemon log transactions and every tail path
+
+**Opened**: 2026-10-25 · **Parts**: P1 · **Journeys**: J-06 · **Tier**: T2 · **Parent**: 008-agent-operability
+
+<!-- Past its budget, a change splits into changes that each ship on their own (Parent: <id>). -->
+
+## Intent
+
+Finish parent008/T021's log opening/rotation and reader safeguards after shared facts landed
+in013. Existing log chmod-after-open can follow links and rotate publicly readable files;
+path inspection alone cannot bind subsequent IO to the inspected directory/file. Startup/down
+tails also bypass the verb's predicate. Continue the owner's roadmap direction using native
+Linux and hosted macOS unit evidence; full host/Metal qualification stays open.
+
+## Spec edits
+
+| Level | ID | Edit | Note |
+|-------|----|------|------|
+| L2 | P1.B-11/P1.B-13 operability | fail-closed private regular log transactions and every tail open | parent008/T021 |
+
+## Bounds
+
+<!-- From `.prdkit/scripts/bash/bounds.sh <id>`: each constraint, non-goal or quality this change
+could break, with how it holds; then "Others in scope: hold". A conflict goes to the owner inbox
+with both sides, never resolved here. -->
+
+- C-03: no listener or authentication change.
+- C-04: reject unsafe logs before read/write/rotation; never chmod-repair existing paths.
+- C-08: shared C# Unix primitives, no production Python or new dependency.
+- C-12: Linux/Darwin native coverage, no host/Metal qualification claim.
+- Q-04: preserve descriptors and bound tail bytes/lines; failed validation has no filesystem effects.
+- Others in scope: hold.
+
+## Approach
+
+Proposed for independent eng-security/eng-arch design review before implementation:
+
+1. A shared Core directory-handle transaction helper walks from a root anchor using openat with
+   directory/no-follow/close-on-exec flags, validating each opened directory's UID, mode and macOS
+   ACL. Allow root/current-user owners only and no group/other write; root-owned sticky temporary
+   ancestors are a narrow exception. Only verified system aliases /tmp,/var,/etc may normalize to
+   their existing trusted targets. No arbitrary final/ancestor links. Retain the leaf-parent fd
+   through every log operation, so another UID cannot substitute a pathname ancestor after checks.
+2. Missing directories are created 0700 relative to a validated parent and opened/validated before
+   descending. Existing ancestors are not repaired. This must preserve ordinary state paths and
+   safe custom log directories; the containing directory need not be0700 when owner/mode/ACL makes
+   replacement by another UID impossible. Final files must be owned regular private files.
+3. Inspect leaf type without following before opening; use no-follow/nonblocking/close-on-exec
+   open, then inspect the opened descriptor (Linux statx empty-path, Darwin fstat/descriptor ACL).
+   Require current-user UID, no group/other permission or allow ACL, and link count1. Create new
+   logs with exclusive0600 creation. No truncation or write before descriptor validation.
+4. Rotation validates active and existing .1 entries first, checks the active descriptor's identity
+   against its parent entry, renames relative to the held parent, and exclusively creates the new
+   log. If replacement creation fails, preserve all old bytes in .1 and report the failure; this is
+   not a multi-file atomic transaction. Same-UID malicious mutation and root are outside the
+   existing local-user threat model; no lock/retry journal is introduced.
+5. Redirect duplicates only a verified append handle. Tail validates at its actual open (all paths,
+   including derived/startup/down), uses one captured length and a bounded read window, and handles
+   growth/truncation without allocating by a later unchecked length. Preserve terminal cleaning.
+   Lifecycle failure reporting returns an actionable refusal note instead of masking startup error.
+6. PathFacts remains the read-only inspection DTO for existing callers. Native fd facts share its
+   UID/mode/type/ACL semantics plus device/inode/link/size identity; no second policy based on chmod.
+
+Alternatives: pathname checks followed by FileStream are insufficient for retained other-UID
+ancestor-substitution findings. Restricting logs to the state directory would remove supported
+custom paths; prefer a reusable anchored transaction for the existing paths.
+
+## Tasks
+
+- [ ] Native syscall/ABI contracts in observed, independent security and architecture design review.
+- [ ] Anchored log open/rotate and authoritative reader path; no unsafe-path repair.
+- [ ] Native and deterministic race-seam tests, startup/derived-tail regressions on both OSes.
+- [ ] Full unit/installed checks, independent final risk reviews, exact-head CI and delivery.
+
+## Checks
+
+Design review must settle sticky/system-alias handling, opened-object ACL semantics and rotation
+failure behavior before coding. Test effects (sentinel bytes/modes and rotated files), not just
+predicate booleans. Retain Linux failures and hosted macOS results; qualification exclusions stay.
+
+## Acceptance
+
+| Item | Proves | Check | Attempts | Result |
+|------|--------|-------|----------|--------|
+| A1 | P1 operability, C-04 | create/append/rotate only private owned regular files; final links/specials/ACL/foreign/wide/hardlink cases refuse before effects | 0 | NOT_RUN |
+| A2 | Q-04 | injected ancestor/leaf substitution and opened-object mismatch cannot redirect IO; failures preserve bytes and modes | 0 | NOT_RUN |
+| A3 | P1 operability | recorded, derived and startup/down tails guard actual opened file, bounded reads and actionable refusal | 0 | NOT_RUN |
+| A4 | Delivery | Linux/macOS unit and installed behavior; independent security/architecture/code/ergonomics reviews and exact-head CI | 0 | NOT_RUN |
+
+## State
+
+**Step**: design
+**Waiting on**: independent security/architecture design review before implementation.
+**Authority**: owner roadmap continuation and “go ahead - we should setup github CI for mac os”;
+constitution feature commit/push/PR and exact-head reviewed green merge. Releases and live rollout
+remain owner-gated.
+**Branch**: 015-log-safety, based on d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41; incorporate014
+hosted macOS CI before implementation verification.
+**Attempts**: 0 acceptance attempts; 0 design fix rounds.
+**Next**: bind native contracts and review the proposed transaction before coding.
+<!-- One line per verdict (workflows/change.md, Review):
+**Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
