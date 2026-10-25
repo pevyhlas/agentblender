@@ -26,6 +26,8 @@ of conduct and issue and pull-request templates describe how to take part.
 
 ### Fixed since the initial public source
 
+- Vendored Product-Kit moves to 1.2.0 with dependency-aware planning and same-PR completion
+  guidance; project policy, acceptance gates and reviewer definitions are preserved.
 - Logs are opened and rotated through validated directory/file descriptors. Unsafe existing
   logs (wide permissions, links, special files or allow ACLs) are refused without repair.
   Every tail path uses the same private-file rule and a captured, bounded read window;

@@ -17,6 +17,10 @@ Return:
   item it lists, not only those the record names. A violated constraint or non-goal is high; a
   quality the change weakens without its check is medium.
 - Anything not verifiable from the package; never guess a pass.
+- Check the upstream intent/design references, dependency outcomes and required PR gates. Reject
+  requirements invented from implementation convenience, demoted failing checks, or unknown runtime
+  observations presented as PASS. Non-gating observations do not require a cleanup PR. Verify the
+  same PR retains useful context, evidence and explicit remaining work before temporary files go.
 
 On re-review, mark earlier findings addressed or not, inspect the behavior the fix affects, and
 keep unchanged approvals. For a design judgment between concepts you did not produce, report

@@ -90,7 +90,7 @@ guarantees. Shared-facts migration preserves discovery trust anchors and store t
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
 | A1 | R-12, C-12 | macOS arm64 qualification run (T074) | 0 | NOT_RUN |
-| A2 | P1.B-10, P1.B-13 | trust tests over the shared facts and log transactions (T021) | Linux4, native4 | PASS at9bf90fc: Linux863pass/1skip and macOS864pass/0skip; [run40240250983](https://github.com/pevyhlas/agentblender/actions/runs/40240250983), children013/015 |
+| A2 | P1.B-10, P1.B-13 | trust tests over the shared facts and log transactions (T021); at9bf90fc: Linux863pass/1skip and macOS864pass/0skip, [run40240250983](https://github.com/pevyhlas/agentblender/actions/runs/40240250983), children013/015 | Linux4, native4 | PASS |
 | A3 | R-08 | descriptor test for the provenance field (T040) | 0 | NOT_RUN |
 | A4 | P1 operability | T056 and carry-over tests in CI | 0 | NOT_RUN |
 

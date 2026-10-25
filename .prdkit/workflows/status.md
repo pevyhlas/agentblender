@@ -21,4 +21,6 @@ Answer the owner's question first, in plain words, with the title next to every 
 6. **Longest pole**: the item that most delays the current goal, and what it waits on.
 
 Merged, live and validated stay distinct. Keep what the helper observed apart from your reading of
-it; unknown stays unknown. Next actions are recommendations, never execution permission.
+it; unknown stays unknown. A closed/logged PR is not proof of runtime acceptance. Non-gating
+observations live on that PR; local status does not fetch them or infer a PASS from record deletion.
+Next actions are recommendations, never execution permission.

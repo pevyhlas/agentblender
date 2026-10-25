@@ -12,7 +12,7 @@ are separate claims.
 - Real-Blender integration on a checksummed official download, plus an advisory macOS lane.
 - Active main/release-tag rulesets. Main requires `Validate` and `Build & unit tests`;
   the Blender and macOS jobs are not required checks.
-- Public Product-Kit **1.1.1**, vendored with manifest integrity and upstream attribution.
+- Public Product-Kit **1.2.0**, vendored with manifest integrity and upstream attribution.
 - Reference SDK **10.0.113**; later SDK bands remain a contributor convenience, not CI evidence.
 
 The baseline main run passed all four lanes:
