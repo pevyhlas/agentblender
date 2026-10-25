@@ -28,7 +28,9 @@ with both sides, never resolved here. -->
 - C-04: reject unsafe logs before read/write/rotation; never chmod-repair existing paths.
 - C-08: shared C# Unix primitives, no production Python or new dependency.
 - C-12: Linux/Darwin native coverage, no host/Metal qualification claim.
-- Q-04: preserve descriptors and bound tail bytes/lines; failed validation has no filesystem effects.
+- Q-04: preserve descriptors and bound tail bytes/lines; validation refusal leaves all pre-existing
+  objects/bytes/modes untouched. Tail never creates. Exclusively created empty entries may remain
+  after later validation fails, as defined below.
 - Others in scope: hold.
 
 ## Approach
@@ -60,6 +62,15 @@ Proposed for independent eng-security/eng-arch design review before implementati
    Lifecycle failure reporting returns an actionable refusal note instead of masking startup error.
 6. PathFacts remains the read-only inspection DTO for existing callers. Native fd facts share its
    UID/mode/type/ACL semantics plus device/inode/link/size identity; no second policy based on chmod.
+7. Ownership/effects: the transaction owns every directory handle, closes each intermediate handle
+   after opening its child, and disposes all handles on failure; the caller owns a returned verified
+   log handle. Readers are strictly non-creating. After a creation followed by validation failure,
+   retain any exclusively created empty entries (including new0700 ancestors); report refusal and
+   never reuse them without validation. No compensating deletion can target a substituted entry.
+   Pre-existing files/dirs/modes/bytes remain unchanged on validation refusal. Rotation's explicit
+   rename/create failure rule is the only pre-existing-name change. Redirect first acquires all
+   resources and saved close-on-exec copies of original descriptors, restores originals on partial
+   dup/cwd failure, and never continues daemon startup after a redirection error.
 
 Alternatives: pathname checks followed by FileStream are insufficient for retained other-UID
 ancestor-substitution findings. Restricting logs to the state directory would remove supported
@@ -90,13 +101,15 @@ predicate booleans. Retain Linux failures and hosted macOS results; qualificatio
 ## State
 
 **Step**: design
-**Waiting on**: independent security/architecture design review before implementation.
+**Waiting on**: nothing for implementation; design passed, creation/cleanup advisory settled in item7.
 **Authority**: owner roadmap continuation and “go ahead - we should setup github CI for mac os”;
 constitution feature commit/push/PR and exact-head reviewed green merge. Releases and live rollout
 remain owner-gated.
 **Branch**: 015-log-safety, based on d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41; incorporate014
 hosted macOS CI before implementation verification.
-**Attempts**: 0 acceptance attempts; 0 design fix rounds.
-**Next**: bind native contracts and review the proposed transaction before coding.
+**Attempts**: 0 acceptance attempts; initial design passed; one advisory clarification, no failed fix round.
+**Next**: implement anchored primitives and log paths with the defined creation/cleanup tests.
+**Design review**: d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..a190e884ca5bc8173a57955197e89d7b3d0092f5 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6401409148
+**Design review**: d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..a190e884ca5bc8173a57955197e89d7b3d0092f5 · eng-arch · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6401409361; advisory addressed by item7 before coding.
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
