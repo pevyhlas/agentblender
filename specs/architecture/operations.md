@@ -15,7 +15,7 @@
   boundary grep, no Blender binaries, worker compile and fakes, the Product-Kit gates and the
   redacting public-text/file/link guard `scripts/check-public-repo.py`); build and
   unit tests with `-warnaserror` on exactly the reference SDK, with the vulnerable-package check
-  and a package, temp-install and doctor check; an advisory macOS arm64 unit lane; and a
+  and a package, temp-install and doctor check; an advisory `macos-26` arm64 unit lane; and a
   real-Blender integration lane on the official build, SHA-256 checked and downloaded at test
   time. The integration lane has no GPU: EEVEE runs on Mesa's software EGL drivers, checked by a
   smoke render in the install step, and the lane excludes `OptixQualification`. It has run
@@ -23,7 +23,10 @@
   after it stays green on main, the maintainer decides whether it becomes a required check
   ([inbox](../inbox.md), Hosted Blender lane and OptiX coverage). The test steps have their own timeouts below the job's, abort and name a test
   that runs over 10 minutes (`--blame-hang-timeout`) and print the test log on every outcome;
-  the integration lane also uploads its log and TRX results.
+  the integration lane also uploads its log and TRX results. The macOS lane asserts OS major and
+  architecture, uses physical temporary paths, and retains runner/image/SDK identity, console
+  and TRX artifacts for seven days on success or failure. Its summary reports the actual test
+  step outcome. Hosted unit tests are not host or Metal qualification (changes 008 and 009).
 - **Signals** (audit, 2026-10-23): every `kill` goes through `UnixIdentity.Signal`, which
   refuses 0, -1 and a real signal to the caller's own process group; .NET's
   `Process.Kill(entireProcessTree: true)` (worker, launcher, discovery and service probes)

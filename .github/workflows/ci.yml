@@ -211,9 +211,9 @@ jobs:
           retention-days: 7
 
   build-test-macos:
-    name: Build & unit tests (macOS arm64, advisory)
-    # Pinned arm64 image (not macos-latest) so a silent image roll cannot change results.
-    runs-on: macos-15
+    name: Build & unit tests (macOS 26 arm64, advisory)
+    # Pin OS major and architecture; the image revision is recorded below.
+    runs-on: macos-26
     timeout-minutes: 20
     # TODO(change 008-agent-operability; R-12, planned): macOS arm64 is not yet a qualified
     # platform. This lane is advisory (non-required) until the macOS qualification in
@@ -251,6 +251,20 @@ jobs:
           fi
           echo "SDK $sdk (reference)"
 
+      - name: Record and assert macOS runner profile
+        run: |
+          {
+            sw_vers
+            uname -m
+            printf 'ImageOS=%s\nImageVersion=%s\n' "$ImageOS" "$ImageVersion"
+            dotnet --info
+          } > macos-environment.log 2>&1
+          cat macos-environment.log
+          test "$(uname -m)" = arm64
+          test "$(sw_vers -productVersion | cut -d. -f1)" = 26
+          # Avoid the /var alias in the default macOS temporary path.
+          echo "TMPDIR=$(cd "$RUNNER_TEMP" && pwd -P)/" >> "$GITHUB_ENV"
+
       - name: Restore (locked)
         run: dotnet restore agentblender.slnx --locked-mode
 
@@ -258,16 +272,17 @@ jobs:
         run: dotnet build agentblender.slnx --no-restore -warnaserror
 
       - name: Unit tests
-        # The default macOS TMPDIR sits under the /var -> /private/var symlink, which the
-        # delivery path guard rejects (change 008-agent-operability); use the runner's real temp dir.
+        id: macos-tests
         # The tests run in their own session (setsid), so a test that signals its process group
         # can never stop or kill the runner, which would lose the log and the step timeout.
         timeout-minutes: 15
         run: |
-          TMPDIR="$RUNNER_TEMP/" python3 -c 'import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' \
+          umask 022
+          python3 -c 'import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' \
             dotnet test agentblender.slnx --no-build \
             --filter "Category!=BlenderIntegration&Category!=MetalQualification&Category!=OptixQualification" \
-            --logger "console;verbosity=normal" \
+            --logger "console;verbosity=normal" --logger trx \
+            --results-directory "$RUNNER_TEMP/macos-test-results" \
             --blame-hang-timeout 10m --blame-hang-dump-type none > testrun.log 2>&1
 
       - name: Unit test log
@@ -278,6 +293,30 @@ jobs:
           else
             echo "no unit test log (the step did not start)"
           fi
+
+      - name: Report macOS test outcome
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.macos-tests.outcome }}
+        run: |
+          {
+            echo '### macOS 26 arm64 — advisory'
+            printf 'Unit-test step outcome: **%s**.\n\n' "$TEST_OUTCOME"
+            echo 'See macos-test-results for runner identity, console log and TRX results.'
+            echo 'Host and Metal qualification remain open under changes 008 and 009.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload macOS test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: macos-test-results
+          path: |
+            macos-environment.log
+            testrun.log
+            ${{ runner.temp }}/macos-test-results
+          if-no-files-found: error
+          retention-days: 7
 
   blender-integration:
     name: Blender integration
