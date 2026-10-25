@@ -85,5 +85,9 @@ exact-head green merge policy. Existing release/deployment and qualification gat
 **Attempts**: baseline only; repair 0. Eight selected upstream regression suites pass.
 **Next**: verify/publish the uptake, finish applicable reviews and merge; refresh draft #12 and
 report its design-review prerequisite. Raw evidence: `.prdkit/cache/evidence/017-product-kit-120/`.
+**Review**: round 1 · 8bd52bb8df6a8edeb9feaed0f915b9d5c1d1902b..2ccc103879961b89b1c0a35da84242bf4149618e · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/13#issuecomment-6405013426
+**Review**: round 1 · 8bd52bb8df6a8edeb9feaed0f915b9d5c1d1902b..2ccc103879961b89b1c0a35da84242bf4149618e · eng-license · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/13#issuecomment-6405013625
+**Review**: round 1 · 8bd52bb8df6a8edeb9feaed0f915b9d5c1d1902b..2ccc103879961b89b1c0a35da84242bf4149618e · eng-ergonomics · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/13#issuecomment-6405013814
+**Review**: round 1 · 8bd52bb8df6a8edeb9feaed0f915b9d5c1d1902b..2ccc103879961b89b1c0a35da84242bf4149618e · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/13#issuecomment-6405025761
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
