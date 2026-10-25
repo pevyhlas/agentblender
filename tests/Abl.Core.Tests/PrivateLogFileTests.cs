@@ -162,6 +162,30 @@ public sealed class PrivateLogFileTests : IDisposable
         Assert.Equal("sensitive", File.ReadAllText(path));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ForeignOpenedOwnerRefusesWithoutEffectsAndFailedCreationKeepsOnlyAnEmptyEntry(bool existing)
+    {
+        var path = PathOf("log");
+        if (existing) { Write(path, "retained"); }
+        // Host-independent fd-fact seam: no privileged chown or assumption about a system file.
+        // All other facts come from the native descriptor; this isolates the owner refusal.
+        Assert.Throws<IOException>(() => PrivateLogFile.Open(path, true, 1,
+            openedFacts: facts => facts with { Uid = facts.Uid == 0 ? 1u : 0u }));
+        Assert.Equal(existing ? "retained" : "", File.ReadAllText(path));
+        Assert.Equal(Private, File.GetUnixFileMode(path));
+        Assert.False(File.Exists(path + ".1"));
+    }
+
+    [Fact]
+    public void NativeForeignOwnedSystemFileIsRefused()
+    {
+        if (UnixIdentity.EffectiveUserId == 0) { return; } // root operation is unsupported
+        Assert.NotEqual(UnixIdentity.EffectiveUserId, UnixIdentity.OwnerOf("/etc/passwd"));
+        Assert.Throws<IOException>(() => PrivateLogFile.OpenRead("/etc/passwd"));
+    }
+
     [Fact]
     public void CapturedTailWindowIgnoresGrowthAndToleratesTruncation()
     {

@@ -117,8 +117,18 @@ Full unit attempt1 found three stale pre-contract tests: two 0644 fixtures inten
 reads/rotation and one explicit chmod-repair expectation. Fixtures now use0600; the repair test
 now proves refusal preserves bytes/modes, and service failure covers both private and unsafe output.
 No production repair was needed for these failures. Partial dup/cwd restoration uses real native
-operations over isolated test descriptors; whole unit rerun pending.
+operations over isolated test descriptors. Full unit attempt2passed at9e03ce0:859passed,1skipped,
+0failed (the pre-existing read-only-filesystem fixture skips on this host).
+Review fix round1 adds foreign-owner fd-fact/native refusal and empty-created-entry checks plus
+unsafe daemon-log failure preservation in the lifecycle test. Focused tests pass. Security's
+initial final-review FAIL is tooling/evidence-only (shell denied), with no code finding; code
+review's high finding is missing completed evidence and those two regressions. Both reports
+are preserved; final exact-head evidence and scoped re-review remain required.
 **Next**: complete Linux/macOS unit/installed verification and final security/architecture/code/ergonomics reviews.
+**Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-code · FAIL · 0 critical, 1 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901141
+**Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-security · FAIL · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901333
+**Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901521
+**Review**: round 2 · 64c538a95dd95fac00b440386160a2979358dd37..9e03ce0b271b80117a65fd4308222e4cf25862d2 · eng-ergonomics · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6402901750
 **Design review**: d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..a190e884ca5bc8173a57955197e89d7b3d0092f5 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6401409148
 **Design review**: d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..a190e884ca5bc8173a57955197e89d7b3d0092f5 · eng-arch · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6401409361; advisory addressed by item7 before coding.
 <!-- One line per verdict (workflows/change.md, Review):

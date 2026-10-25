@@ -382,6 +382,10 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         File.WriteAllText(output, "You must install or update .NET to run this application.\n");
         File.SetUnixFileMode(output, UnixFileMode.UserRead | UnixFileMode.UserWrite |
             (privateOutput ? 0 : UnixFileMode.OtherRead));
+        Directory.CreateDirectory(Path.GetDirectoryName(ServiceLog)!, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        File.WriteAllText(ServiceLog, "older daemon log\n");
+        File.SetUnixFileMode(ServiceLog, UnixFileMode.UserRead | UnixFileMode.UserWrite |
+            (privateOutput ? 0 : UnixFileMode.OtherRead));
         var processes = new FakeProcesses(_events);
         var services = new FakeServices(_events, processes)
         {
@@ -403,11 +407,15 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         {
             Assert.Equal(["You must install or update .NET to run this application."], error["output"]!.AsArray().Select(l => l!.GetValue<string>()));
             Assert.Contains("You must install or update .NET", stderr);
+            Assert.Equal("older daemon log", error["logTail"]![0]!.GetValue<string>());
         }
         else
         {
             Assert.Contains("log tail refused", error["output"]![0]!.GetValue<string>());
             Assert.DoesNotContain("You must install or update .NET", stderr);
+            Assert.Contains("log tail refused", error["logTail"]![0]!.GetValue<string>());
+            Assert.DoesNotContain("older daemon log", stdout + stderr);
+            Assert.Equal("older daemon log\n", File.ReadAllText(ServiceLog));
             Assert.Equal("You must install or update .NET to run this application.\n", File.ReadAllText(output));
         }
         Assert.Equal(["service start", "service stop"], _events);

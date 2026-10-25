@@ -14,7 +14,8 @@ public static class PrivateLogFile
 
     // Local seams run only in tests, never as process-global callbacks.
     internal static SafeFileHandle Open(string path, bool write, long? rotateBytes,
-        Action<string>? afterDirectory = null, Action? beforeFileOpen = null, Action? beforeReplacement = null)
+        Action<string>? afterDirectory = null, Action? beforeFileOpen = null, Action? beforeReplacement = null,
+        Func<UnixIdentity.OpenedFacts, UnixIdentity.OpenedFacts>? openedFacts = null)
     {
         if (!OperatingSystem.IsLinux() && !OperatingSystem.IsMacOS())
         {
@@ -40,6 +41,7 @@ public static class PrivateLogFile
         try
         {
             var facts = UnixIdentity.InspectHandle(handle);
+            facts = openedFacts?.Invoke(facts) ?? facts;
             ValidateFile(facts, full);
             if (entry is not null && !entry.SameObject(facts))
             {
