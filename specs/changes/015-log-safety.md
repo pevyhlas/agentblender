@@ -81,7 +81,8 @@ custom paths; prefer a reusable anchored transaction for the existing paths.
 - [x] Native syscall/ABI contracts in observed, independent security and architecture design review.
 - [x] Anchored log open/rotate and authoritative reader path; no unsafe-path repair.
 - [x] Native and deterministic race-seam tests, startup/derived-tail regressions on both OSes.
-- [ ] Full unit/installed checks, independent final risk reviews, exact-head CI and delivery.
+- [x] Full unit/installed checks and independent final risk reviews.
+- [ ] Closing-head required CI and exact-head delivery (enforced before merge).
 
 ## Checks
 
@@ -96,12 +97,12 @@ predicate booleans. Retain Linux failures and hosted macOS results; qualificatio
 | A1 | P1 operability, C-04 | create/append/rotate only private owned regular files; final links/specials/ACL/foreign/wide/hardlink cases refuse before effects | Linux2, native4 | PASS at9bf90fc, Linux and macOS; ordinary descriptor-write oracle preserves both appended lines and private modes |
 | A2 | Q-04 | injected ancestor/leaf substitution and opened-object mismatch cannot redirect IO; failures preserve bytes and modes | Linux2, native4 | PASS at9bf90fc, Linux/native substitution, fd-owner and rollback cases |
 | A3 | P1 operability | recorded, derived and startup/down tails guard actual opened file, bounded reads and actionable refusal | Linux3, native4 | PASS source and installed behavior; all103native lifecycle integration cases pass |
-| A4 | Delivery | Linux/macOS unit and installed behavior; independent security/architecture/code/ergonomics reviews and exact-head CI | source4, native4 | Linux863pass/1skip, macOS864pass/0skip, Blender56pass/1skip in run40240250983; installed checks pass, final code review/closing-head CI pending |
+| A4 | Delivery verification | Linux/macOS unit and installed behavior; independent security/architecture/code/ergonomics reviews | source4, native4 | PASS: Linux863pass/1skip, macOS864pass/0skip, Blender56pass/1skip in run40240250983; installed checks and all four review lenses pass. Closing-head CI is the separate delivery gate below |
 
 ## State
 
-**Step**: native acceptance passed; final review and delivery
-**Waiting on**: final code/test-evidence review and closing-head CI.
+**Step**: acceptance and independent review passed; closing-head delivery
+**Waiting on**: required CI on the closing head and exact-head review gate before merge.
 **Authority**: owner roadmap continuation and “go ahead - we should setup github CI for mac os”;
 constitution feature commit/push/PR and exact-head reviewed green merge. Releases and live rollout
 remain owner-gated.
@@ -124,7 +125,8 @@ unsafe daemon-log failure preservation in the lifecycle test. Focused tests pass
 initial final-review FAIL is tooling/evidence-only (shell denied), with no code finding; code
 review's high finding is missing completed evidence and those two regressions. Both reports
 are preserved; final exact-head evidence and scoped re-review remain required.
-**Next**: finish code review, record acceptance, close the child and merge after exact-head gates.
+**Next**: commit this review record, close with a log entry, publish, verify required CI and
+`check-review.sh` on that exact head, then squash-merge with a head-match guard and verify the result.
 **Owner extension**: 2026-10-25 conversation: “what is the status and next steps? I approve the
 budget at least 5x extra”. Apply up to15additional native acceptance attempts (five times the
 original three), counted from run afterb513703. Initial3attempts remain recorded; no automatic
@@ -194,6 +196,7 @@ bytes and private modes. Production code is unchanged; native attempt4(extension
 **Review**: round 4 · 9e03ce0b271b80117a65fd4308222e4cf25862d2..e7d32be9de7c71617ba5493a7b62787a4d9aad36 · eng-ergonomics · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6403106726
 **Review**: round 5 · e7d32be9de7c71617ba5493a7b62787a4d9aad36..b5137037c397eaf4adaf9c71a236d71688f2bdf9 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6403255547
 **Review**: round 6 · 9e03ce0b271b80117a65fd4308222e4cf25862d2..9bf90fcfe83a6c2fefc34b8e0c3b3c417c58e8b3 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6404307869
+**Review**: round 7 · 9e03ce0b271b80117a65fd4308222e4cf25862d2..2c8de0ed14fa94ce8f880937aaf6012c4e48178c · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6404388782
 **Design review**: d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..a190e884ca5bc8173a57955197e89d7b3d0092f5 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6401409148
 **Design review**: d5b9ea260f60eb45dd7b57fd29df3b7a485d5c41..a190e884ca5bc8173a57955197e89d7b3d0092f5 · eng-arch · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/11#issuecomment-6401409361; advisory addressed by item7 before coding.
 <!-- One line per verdict (workflows/change.md, Review):
