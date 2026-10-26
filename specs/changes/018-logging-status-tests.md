@@ -54,7 +54,7 @@ meaning). Architecture and licence are not triggered by test-fixture-only change
   lines; explicit framework Information restores request lines. Real subprocess/config paths.
 - [x] T003 `LifecycleCoreTests`: real shared status-builder seed, literal redaction and unchanged
   lifecycle text/JSON assertions; meaningful mutations remain scenario-local.
-- [ ] T004 Update P1 test references; focused/full unit and installed log/status checks; required
+- [x] T004 Update P1 test references; focused/full unit and installed log/status checks; required
   independent reviews and exact-head CI/review gate; finalize this same PR.
 
 ## Checks
@@ -73,12 +73,12 @@ a user service. No actual GPU or desktop launcher required.
 | A1 | T056; Q-02 | focused97/full1014 passing cases include literal probe transitions; installed proof preserves token privacy | 1 | PASS |
 | A2 | observability / quiet logs | source subprocess tests and installed Information/Warning/framework-override cases match literal log expectations | 1 | PASS |
 | A3 | P1.I-06; C-04 | shared-builder source fixture plus real installed REST/CLI status parity and sentinel redaction | 1 | PASS |
-| A4 | Delivery | focused/full unit, installed checks, named independent reviews and exact-head required CI | 0 | NOT_RUN |
+| A4 | Delivery | focused/full unit and installed checks; three owning reviews plus scoped fixture review; required CI40328417307 PASS at4f7733c | baseline + 1 fixture repair | PASS |
 
 ## State
 
-**Step**: repair CI-observed lifecycle fixture startup race
-**Waiting on**: scoped fixture verification/review and exact-head gates; original three reviews PASS.
+**Step**: source acceptance/reviews PASS; same-PR closure bookkeeping
+**Waiting on**: final record-only head CI/review gate before merge.
 **Branch / PR**: 018-logging-status-tests, [draft #14](https://github.com/pevyhlas/agentblender/pull/14).
 **Authority**: owner's public-roadmap continuation and constitution continuation/feature-branch
 commit/push/PR/reviewed-green-merge policy. Parent008 explicitly names T056 next. No release or
@@ -97,16 +97,18 @@ literal redaction, one Information startup summary, zero Warning summaries and e
 request lines verified. Deliberate failed-worker stand-in proves observability, not native health.
 **Evidence**: `.prdkit/cache/evidence/018-logging-status-tests/installed-02.log`,
 `installed-proof-02/result.json`, source TRX/unit logs and bundle provenance; failed native run kept.
-**Next**: named reviews, final exact-head gates and same-PR finalization. Failed native warm remains
+**Next**: finalize this record/log on the same PR, then final exact-head gates. Failed native warm remains
 unresolved with its inherited outcome history; no native retry or qualification is claimed.
 **CI observation**: run40326318033 at4a2dee5 failed one Linux unit in fixture teardown:
 `AServiceJobThatDiesBeforeTheLockFailsFastWithItsOutput(false)` stopped its listener before queued
 `Task.Run(ServeAsync)` began accepting, raising InvalidOperationException. Mac unit lane passed.
 Retained `ci-4a2dee5-unit.log`; repair starts the async accept directly before returning fixture
 setup, without sleeps, broader exception catches or changed product expectations. First corrective
-verification: zero-warning build and all25 LifecycleCoreTests PASS/0skip/0fail; final CI pending.
+verification: zero-warning build and all25 LifecycleCoreTests PASS/0skip/0fail; scoped code review
+PASS and required Validate/Build-unit CI40328417307 PASS at4f7733c. Record-only final CI follows.
 This is separate from the unresolved native-worker outcome.
 **Review**: round 1 · c5b81424b0eaef660bce1342cca9fe2bee0a06f5..4a2dee58891ab33c661a3366dc47a2f4d3339884 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/14#issuecomment-6416607836
 **Review**: round 1 · c5b81424b0eaef660bce1342cca9fe2bee0a06f5..4a2dee58891ab33c661a3366dc47a2f4d3339884 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/14#issuecomment-6416607836
 **Review**: round 1 · c5b81424b0eaef660bce1342cca9fe2bee0a06f5..4a2dee58891ab33c661a3366dc47a2f4d3339884 · eng-ergonomics · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/14#issuecomment-6416607836
 **Review**: round 1 · 4a2dee58891ab33c661a3366dc47a2f4d3339884..609f6087541871308d876fd9ca33ad3521724bd0 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/14#issuecomment-6416654476
+**Review**: round 2 · 609f6087541871308d876fd9ca33ad3521724bd0..4f7733c9f47ac2c098616e012c185e3918a33a40 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/14#issuecomment-6416910435
