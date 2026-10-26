@@ -246,6 +246,15 @@ change the network/security policy. Baseline and maintenance reviews stay separa
 
 ## Your direction
 
+### Continue after Product-Kit uptake
+
+*2026-10-26 · owner · folded: 016-delivery-provenance*
+
+> go ahead
+
+Continues the presented next steps: provenance design review and implementation, alongside AGD's
+separate registry port. Existing independent review, qualification and release gates apply.
+
 ### Latest Product-Kit and next steps
 
 *2026-10-26 · owner · folded: 017-product-kit-120*

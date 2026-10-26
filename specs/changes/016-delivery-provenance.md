@@ -106,6 +106,7 @@ generation from the actual exporter, then reject an inconsistent policy without 
 **Waiting on**: independent architecture/security design review.
 **Authority**: owner public-roadmap continuation and “and then continue with next steps”;
 constitution feature commit/push/PR and reviewed exact-head green merge policy.
+Owner confirmed “go ahead” on 2026-10-26 after the Product-Kit uptake and next-step assessment.
 **Attempts**: design0, implementation0, acceptance0.
 **Branch / PR**: 016-delivery-provenance, [draft #12](https://github.com/pevyhlas/agentblender/pull/12).
 Product-Kit 1.2.0 is incorporated from public main `d97f545` ([uptake #13](https://github.com/pevyhlas/agentblender/pull/13));
