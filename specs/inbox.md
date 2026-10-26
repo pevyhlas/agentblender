@@ -246,6 +246,14 @@ change the network/security policy. Baseline and maintenance reviews stay separa
 
 ## Your direction
 
+### Continue startup reliability and review inputs
+
+*owner · folded: 019-worker-startup*
+
+The owner confirmed the presented next priorities: diagnose the retained native-worker warm
+timeout and then bounded service-lifecycle follow-ups, alongside AGD review inputs in its own
+repository. Existing attempt history, independent review, hardware and release gates remain.
+
 ### Latest Product-Kit and next steps
 
 *2026-10-26 · owner · folded: 017-product-kit-120*
