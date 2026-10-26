@@ -101,7 +101,8 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
             new DaemonInstance(DaemonPid, StartedAt, Path.Combine(_root, "state"), null, _port, config.EffectiveDigest, Detached: false),
             config, _pool, _sessions, desktop).Build();
         Status["version"] = "0.1.0"; // The fake record and /healthz intentionally keep this fixed version.
-        _server = Task.Run(ServeAsync);
+        // Enter the first accept before a test can stop the listener; queued startup races NoDaemonAsync.
+        _server = ServeAsync();
         _lock = StoreLock.TryAcquire(Store, TimeSpan.Zero) ?? throw new InvalidOperationException("the test could not take the store lock");
         new DaemonState(DaemonPid, _port, DaemonPaths.UrlFor(_port), "0.1.0", StartedAt, "sha256:x", null, null).Write(Store);
     }
@@ -729,7 +730,7 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         new DaemonState(DaemonPid, port, DaemonPaths.UrlFor(port), "0.1.0", StartedAt, "sha256:x", ServiceLog, null).Write(store);
         _listener = new TcpListener(IPAddress.Loopback, port);
         _listener.Start();
-        _server = Task.Run(ServeAsync);
+        _server = ServeAsync();
     }
 
     private async Task<(int Code, string Stdout, string Stderr)> RunAsync(
