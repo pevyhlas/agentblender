@@ -99,29 +99,38 @@ generation from the actual exporter, then reject an inconsistent policy without 
 
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
-| A1 | P1.B-25, T040 | new exports capture the actual version/policy in both producer files; reference, patch, unsupported and unparseable cases | 0 | NOT_RUN |
-| A2 | P1.B-26, Q-04 | offline verify rejects malformed/inconsistent policy; absence in both files remains unknown; current verifier policy cannot reclassify history | 0 | NOT_RUN |
-| A3 | P1.B-25, R-01 | deterministic receipt bytes, unchanged AGD payload shape, real exporter and installed offline verification through shared Core | 0 | NOT_RUN |
-| A4 | Delivery verification | required source/installed checks and applicable independent reviews | 0 | NOT_RUN |
+| A1 | P1.B-25, T040 | new exports capture the actual version/policy in both producer files; reference, patch, unsupported and unparseable cases | 0 | PASS — [evidence](https://github.com/pevyhlas/agentblender/pull/12#issuecomment-6413279391) |
+| A2 | P1.B-26, Q-04 | offline verify rejects malformed/inconsistent policy; absence in both files remains unknown; current verifier policy cannot reclassify history | 0 | PASS — same evidence |
+| A3 | P1.B-25, R-01 | deterministic receipt bytes, unchanged AGD payload shape, real exporter and installed offline verification through shared Core | 1 | PASS — same evidence; initial installed warm failure retained |
+| A4 | Delivery verification | required source/installed checks and applicable independent reviews | 0 | checks PASS; implementation reviews pending |
 
 ## State
 
-**Step**: source implemented; wider verification
-**Waiting on**: full unit/native/installed evidence and independent implementation reviews.
+**Step**: verified source; independent implementation review
+**Waiting on**: independent implementation reviews and final exact-head CI/review gates.
 **Authority**: owner public-roadmap continuation and “and then continue with next steps”;
 constitution feature commit/push/PR and reviewed exact-head green merge policy.
 Owner confirmed “go ahead” on 2026-10-26 after the Product-Kit uptake and next-step assessment.
 **Attempts**: design1 (both PASS; architecture medium advisory resolved in contract). Implementation
 initial compile failed (local name collision), corrected build PASS; both logs retained. Focused
-host baseline160 PASS, expanded final187 PASS/0 failed/0 skipped. Full unit/native/installed baseline
-checks pending; no repair attempt of those outcomes yet. A1–A4 remain pending wider evidence.
+host baseline160 PASS, expanded final187 PASS/0 failed/0 skipped. Full local unit baseline44 failures
+under inherited umask0002/long temp root; command-local022/short private temp setup correction yields
+1011 PASS/1 existing skip, no source change. Native delivery3 PASS/1 optional historical receiver
+skip. Installed baseline failed during concurrent cold-worker warm before authoring; attempt1
+waits for normal worker readiness and passes both flag values, offline verify/list and rebound
+semantic refusal without writes. All failed logs remain. No cold-start reliability qualification.
+Clean tracked-tree package and installed proof evaluate8df373e. [CI40302961990](https://github.com/pevyhlas/agentblender/actions/runs/40302961990)
+at that head passes all4 jobs: Linux1011/1skip, macOS1012/0skip, Blender56/1skip. Hosted macOS
+remains advisory; historical pinned AGD receiver availability remains separate. A1–A3 PASS;
+A4 awaits the four applicable implementation reviewers. No new dependency/inbound/worker change
+triggers license review.
 **Branch / PR**: 016-delivery-provenance, [draft #12](https://github.com/pevyhlas/agentblender/pull/12).
 Product-Kit 1.2.0 is incorporated from public main `d97f545` ([uptake #13](https://github.com/pevyhlas/agentblender/pull/13));
 its independent reviews and exact-head CI passed. This design's own review passed; implementation
 acceptance remains pending. Readiness assessment confirms this is the next bounded implementation outcome.
 Merged015 is incorporated from main8bd52bb; its final source/installed, native and review evidence
 is in [PR #11](https://github.com/pevyhlas/agentblender/pull/11).
-**Next**: finish full unit/native/installed verification and implementation reviews. No release, deployment or
+**Next**: resolve implementation reviews, then final exact-head gates and authorized merge. No release, deployment or
 platform-qualification approval is inferred.
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
