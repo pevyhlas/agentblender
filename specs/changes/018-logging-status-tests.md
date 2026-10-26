@@ -77,13 +77,20 @@ a user service. No actual GPU or desktop launcher required.
 
 ## State
 
-**Step**: focused verification passed
-**Waiting on**: full unit/installed evidence and independent reviews.
+**Step**: full unit verification passed; installed check incomplete
+**Waiting on**: installed log/status proof and independent reviews.
+**Branch / PR**: 018-logging-status-tests, [draft #14](https://github.com/pevyhlas/agentblender/pull/14).
 **Authority**: owner's public-roadmap continuation and constitution continuation/feature-branch
 commit/push/PR/reviewed-green-merge policy. Parent008 explicitly names T056 next. No release or
 deployment authority inferred.
 **Attempts**: initial build failed two xUnit count-assertion diagnostics; corrected to Assert.Single
 without changing expectations, then zero-warning build and97 focused tests PASS/0skip. All logs
-retained. Wider acceptance and review remain pending. PR12's cold concurrent native-worker
-warm timeout remains unresolved there; these logging tests do not qualify startup reliability.
-**Next**: full unit and installed proof, then code/security/ergonomics review and exact-head gates.
+retained. Full unit1014 PASS/1 existing filesystem skip; build0warnings. Clean archive package and
+isolated install PASS. The auxiliary installed harness using real Blender timed out warming even
+one worker; it does not establish the earlier suspected concurrency cause. Preserve this failure
+with PR12's unresolved warm observation; do not reset that outcome's history. Native reliability
+is outside this test increment. The prepared installed logging harness instead uses the intended
+bounded version-probe/failed-worker stand-in, exercising real installed daemon status, redaction,
+Warning logs and framework override without requiring native rendering; it is NOT_RUN.
+**Next**: run the prepared installed log/status proof, then code/security/ergonomics review and
+exact-head gates. The failed native warm observation remains unresolved, not an accepted result.
