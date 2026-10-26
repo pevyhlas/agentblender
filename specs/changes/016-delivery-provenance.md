@@ -40,7 +40,11 @@ with both sides, never resolved here. -->
 
 ## Approach
 
-Proposed for independent architecture/security design review before implementation:
+Architecture/security design review approved the optional extension (round2, design only).
+The persisted grammar and classification predicate are pinned in
+[`docs/still-delivery.md`](../../docs/still-delivery.md#producing-blender-policy), resolving
+architecture's medium advisory. Implementation must also align list with existing P1.B-26:
+both verify and list check the whole generation, without weakening the promise to fit old code.
 
 1. Add optional `producer.blenderPolicy` to the existing version2 producer receipt, with a matching
    `blenderPolicy` object in its hash-bound recipe snapshot. Proposed closed fields:
@@ -75,9 +79,9 @@ with the existing strict reader contract.
 
 ## Tasks
 
-- [ ] Independent architecture/security design review; resolve optional-field and historical-policy semantics.
-- [ ] Add the producer policy value/capture and bind it into receipt/snapshot verification.
-- [ ] Pin supported reference/other patch/unsupported/unknown and enabled/disabled combinations;
+- [x] Independent architecture/security design review; resolve optional-field and historical-policy semantics.
+- [x] Add the producer policy value/capture and bind it into receipt/snapshot verification.
+- [x] Pin supported reference/other patch/unsupported/unknown and enabled/disabled combinations;
   historical absence, partial/malformed objects and tampering; deterministic serialization.
 - [ ] Real-Blender export and installed offline verification evidence; code, architecture,
   security and agent-ergonomics review; exact-head CI/review and authorized delivery.
@@ -102,19 +106,25 @@ generation from the actual exporter, then reject an inconsistent policy without 
 
 ## State
 
-**Step**: bounded design draft
-**Waiting on**: independent architecture/security design review.
+**Step**: source implemented; wider verification
+**Waiting on**: full unit/native/installed evidence and independent implementation reviews.
 **Authority**: owner public-roadmap continuation and “and then continue with next steps”;
 constitution feature commit/push/PR and reviewed exact-head green merge policy.
 Owner confirmed “go ahead” on 2026-10-26 after the Product-Kit uptake and next-step assessment.
-**Attempts**: design0, implementation0, acceptance0.
+**Attempts**: design1 (both PASS; architecture medium advisory resolved in contract). Implementation
+initial compile failed (local name collision), corrected build PASS; both logs retained. Focused
+host baseline160 PASS, expanded final187 PASS/0 failed/0 skipped. Full unit/native/installed baseline
+checks pending; no repair attempt of those outcomes yet. A1–A4 remain pending wider evidence.
 **Branch / PR**: 016-delivery-provenance, [draft #12](https://github.com/pevyhlas/agentblender/pull/12).
 Product-Kit 1.2.0 is incorporated from public main `d97f545` ([uptake #13](https://github.com/pevyhlas/agentblender/pull/13));
-its independent reviews and exact-head CI passed. This design's own review and acceptance are
-still pending. Readiness assessment confirms this is the next bounded implementation outcome.
+its independent reviews and exact-head CI passed. This design's own review passed; implementation
+acceptance remains pending. Readiness assessment confirms this is the next bounded implementation outcome.
 Merged015 is incorporated from main8bd52bb; its final source/installed, native and review evidence
 is in [PR #11](https://github.com/pevyhlas/agentblender/pull/11).
-**Next**: obtain architecture/security design review, then implement. No release, deployment or
+**Next**: finish full unit/native/installed verification and implementation reviews. No release, deployment or
 platform-qualification approval is inferred.
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
+
+**Review**: round 2 · d97f545c8e3362854cb0c293fd04aa133a7b3955..6fdcda90ef470d1921c2a499701ad5e0320fd0c8 · eng-arch · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/12#issuecomment-6412922397
+**Review**: round 2 · d97f545c8e3362854cb0c293fd04aa133a7b3955..6fdcda90ef470d1921c2a499701ad5e0320fd0c8 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/12#issuecomment-6412922875

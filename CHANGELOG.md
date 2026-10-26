@@ -26,6 +26,9 @@ of conduct and issue and pull-request templates describe how to take part.
 
 ### Fixed since the initial public source
 
+- Delivery receipts and hash-bound snapshots now preserve the producing Blender support policy
+  and effective unsupported-version option. Offline verify/list check the recorded historical
+  policy and the whole generation; old generations without policy remain unknown.
 - Vendored Product-Kit moves to 1.2.0 with dependency-aware planning and same-PR completion
   guidance; project policy, acceptance gates and reviewer definitions are preserved.
 - Logs are opened and rotated through validated directory/file descriptors. Unsafe existing
@@ -65,5 +68,7 @@ of conduct and issue and pull-request templates describe how to take part.
 
 ### Upgrading
 
-This is the first public version, so there is nothing to upgrade from. Build and install from
-source as the README quick start and REFERENCE.md describe.
+No public binary release exists yet. Build and install from source as the README quick start and
+REFERENCE.md describe. The receipt-v2 policy extension requires a current verifier: older strict
+readers reject new `blenderPolicy` fields. Existing generations are not rewritten; both policy
+fields absent remain valid with unknown historical policy. See the [still contract](docs/still-delivery.md#producing-blender-policy).

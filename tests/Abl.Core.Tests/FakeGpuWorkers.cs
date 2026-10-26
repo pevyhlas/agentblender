@@ -35,6 +35,8 @@ public sealed record FakeFrame(string Worker, string Op, string? Engine)
 /// </summary>
 public sealed class FakeWorkerScript
 {
+    public string BlenderVersion { get; set; } = "5.2.1";
+
     public JsonObject Gpu { get; set; } = FakeGpu.None();
 
     public bool GpuCheckFails { get; set; }
@@ -84,7 +86,7 @@ public static class FakeGpu
 /// </summary>
 internal static class FakeWorkerProtocol
 {
-    private const string SceneDigest = "5ce4e0000000000000000000000000000000000000000000000000000000d16e";
+    internal const string SceneDigest = "5ce4e0000000000000000000000000000000000000000000000000000000d16e";
     private static readonly byte[] Png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
     private static int _saves;
 
@@ -129,7 +131,7 @@ internal static class FakeWorkerProtocol
                 return new JsonObject
                 {
                     ["ok"] = true,
-                    ["blender_version"] = "5.2.1",
+                    ["blender_version"] = script.BlenderVersion,
                     ["blender_build_hash"] = "0123456789ab",
                     ["worker_source_sha256"] = new string('a', 64),
                     ["python_version"] = "3.13.0",
@@ -142,7 +144,7 @@ internal static class FakeWorkerProtocol
                 File.WriteAllBytes(request["path"]!.GetValue<string>(), blend);
                 return new JsonObject
                 {
-                    ["ok"] = true, ["bytes"] = blend.Length, ["digest"] = SceneDigest, ["blender_version"] = "5.2.1",
+                    ["ok"] = true, ["bytes"] = blend.Length, ["digest"] = SceneDigest, ["blender_version"] = script.BlenderVersion,
                 };
             case "exec":
                 return new JsonObject

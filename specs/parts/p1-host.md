@@ -77,12 +77,15 @@ Stages one procedural still per generation for a consuming project (R-08, J-04).
   `DeliveryExportTests.StillPublishesCompleteSeparatePayloadAndPreservesPriorGeneration`.
 - **P1.B-25 Exact payload**: the payload holds exactly the AGD provided-artifact v1 descriptor
   and an 8-bit RGBA PNG; the producer receipt, recipe snapshot, replay bundle and contact sheet
-  sit beside it; the pinned AGD receiver accepts it. Test:
+  sit beside it; new receipt/snapshot pairs record the effective producing Blender support policy
+  under the [still contract](../../docs/still-delivery.md#producing-blender-policy); the pinned AGD receiver accepts it. Test:
   `DeliveryExportTests.PublicStillOutputPassesPinnedCliAndMcpReceiverAndIndependentSamples`,
   `DeliveryDescriptorTests`, `PngProfileTests`.
 - **P1.B-26 Offline verify**: `delivery_verify` and `delivery_list` run the same bounded checks
   offline; tampered, extra, missing, oversized or symlinked files fail, and a pass claims
-  integrity, never admission. Test: `DeliveryVerifyTests`.
+  integrity, never admission. Historical absent policy remains unknown; present policy must be
+  consistent with its recorded line/reference and agree across receipt/snapshot, independently of
+  today's supported Blender. Test: `DeliveryVerifyTests`.
 - **P1.B-27 No user symlinks**: a delivery path with a symlink in any component is refused,
   except a system alias whose containing directory is root-owned and writable by no one else.
   Test: `DeliveryVerifyTests.UserCreatedSymlinkInADeliveryPathIsRefused`,

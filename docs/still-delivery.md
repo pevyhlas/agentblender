@@ -81,6 +81,45 @@ and a separate replay, for the proofs they provide. Generic script external I/O 
 inspecting Blender data alone; the shared acceptance recipe is procedural. Native image/
 layer import and stronger artifact admission remain AGD's later slices.
 
+## Producing Blender policy
+
+New exports include `producer.blenderPolicy` in receipt v2 and the same `blenderPolicy` in
+snapshot v1, in this deterministic member order:
+
+```json
+{"supportedLine":"5.2.x","referenceVersion":"5.2.1","support":"reference","allowUnsupported":false}
+```
+
+This is a schema extension: older strict verifiers reject it and need upgrading. Existing
+generations are never rewritten. Both properties absent means historical policy is unknown;
+it implies neither supported production nor a disabled override. Presence in only one file,
+explicit `null` (even in both), partial objects, extra/duplicate members or wrong types fail.
+The object has exactly the four required members above; `allowUnsupported` must be a Boolean.
+
+`supportedLine` is canonical ASCII `M.m.x` (at most 15 characters); `referenceVersion` is
+canonical ASCII `M.m.p` (at most 20). Each numeric component is `0` or 1–6 decimal digits
+without a leading zero. The reference must belong to the recorded line. `support` is exactly
+`reference`, `supported`, `unsupported` or `unknown`.
+
+The producing version retains its existing nonblank/128-character bound. Interpret it with
+the worker gate's version parser: trim surrounding whitespace, accept an optional exact
+`Blender ` prefix, then three dot-separated 1–6-digit components at the start; suffix text is
+permitted. Offline checks compare those components with the **recorded** line/reference:
+
+| Producing version | Required support | Allowed override flag |
+|---|---|---|
+| Equals recorded reference | `reference` | false or true |
+| Another patch on recorded line | `supported` | false or true |
+| Another parsed line | `unsupported` | true |
+| Unparseable | `unknown` | true |
+
+The effective `blender.allowUnsupported` setting is recorded independently of whether the
+override was needed. Export captures policy once from the fresh producing-worker hello version
+written to both files, using the daemon's immutable effective options. Verification uses no
+current support constants, installed Blender or daemon settings. Policy is hash-bound through
+the snapshot and must agree in both files; unsigned consistent claims are still not authenticated
+provenance. Both verify and list apply the same bounded generation checks before returning data.
+
 ## Receiver qualification
 
 AB was qualified against one [AgentGraphicDesign](https://github.com/pevyhlas/agentgraphicdesign) receiver build, AGD 0.3.0; this

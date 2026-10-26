@@ -98,7 +98,8 @@ guarantees. Shared-facts migration preserves discovery trust anchors and store t
 
 **Step**: build
 **Waiting on**: the owner for T074 and T075
-**Next**: T040 provenance design review in child016, then implementation; T056 and bounded service
+**Next**: T040 provenance source is implemented in child016 after approved design; complete its
+unit/native/installed verification and independent implementation reviews, then T056 and bounded service
 carry-overs follow as separate reviewed increments.
 T021 shared facts landed in [PR #9](https://github.com/pevyhlas/agentblender/pull/9); log transactions
 and native acceptance are complete in [PR #11](https://github.com/pevyhlas/agentblender/pull/11).

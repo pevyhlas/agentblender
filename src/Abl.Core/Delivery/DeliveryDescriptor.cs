@@ -11,6 +11,8 @@ public sealed record DeliveryProducer(string Name, string? BlenderVersion)
     public string BlenderBuildHash { get; init; } = "";
     public string HostAssemblySha256 { get; init; } = "";
     public string WorkerSourceSha256 { get; init; } = "";
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public DeliveryBlenderPolicy? BlenderPolicy { get; init; }
 }
 
 /// <summary>The recipe that made one delivered image: the frozen artifact + the variant's params.</summary>
