@@ -82,7 +82,9 @@ How a fresh agent installs, configures, starts, checks and connects AgentBlender
   `DOTNET_ROOT`. Test: `ServiceUnitTests`.
 - **P1.I-06 Host verbs never mutate through ops**: `setup`, `doctor`, `config`, `daemon …` and
   `mcp config` are disjoint from the op verbs and have no MCP tool; runtime state reaches MCP
-  through `daemon_status`. Enforced by: `HostVerbsTests`, `DaemonStatusTests`.
+  through `daemon_status`. Enforced by: `HostVerbsTests`, `DaemonStatusTests`,
+  `LifecycleCoreTests.StatusIsTheDaemonStatusOpPlusOnlyALocalObject` (real shared builder,
+  resolved token redaction in CLI JSON/text).
 
 ## Setup, doctor and agent guidance
 

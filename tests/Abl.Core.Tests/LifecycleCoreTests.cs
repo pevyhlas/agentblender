@@ -7,6 +7,11 @@ using System.Text.RegularExpressions;
 using Abl.Cli.Host;
 using Abl.Core.Config;
 using Abl.Core.Lifecycle;
+using Abl.Core.Rendering;
+using Abl.Core.Sessions;
+using Abl.Core.Store;
+using Abl.Core.Workers;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Abl.Core.Tests;
@@ -27,6 +32,7 @@ namespace Abl.Core.Tests;
 public sealed class LifecycleCoreTests : IAsyncLifetime
 {
     private const int DaemonPid = 3_999_917;
+    private const string StatusToken = "lifecycle-token-never-printed-018";
     private const UnixFileMode Private = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
     private static readonly DateTimeOffset StartedAt = DateTimeOffset.Parse("2026-10-21T09:00:00Z", CultureInfo.InvariantCulture);
 
@@ -36,6 +42,9 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
     private TcpListener? _listener;
     private Task? _server;
     private StoreLock? _lock;
+    private WorkerPool? _pool;
+    private SessionService? _sessions;
+    private Task? _workerServer;
     private int _port;
 
     private string Store => Path.Combine(_root, "store");
@@ -46,30 +55,56 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
     /// <summary>What the stand-in daemon's session_list answers.</summary>
     private JsonArray Sessions { get; set; } = [];
 
-    /// <summary>What the stand-in daemon's daemon_status answers.</summary>
-    private JsonObject Status { get; } = new()
-    {
-        ["running"] = true,
-        ["version"] = "0.1.0",
-        ["pid"] = DaemonPid,
-        ["workers"] = new JsonObject { ["ready"] = 1, ["floor"] = 1, ["lastSpawnAt"] = null, ["lastWorkerError"] = null },
-        ["sessions"] = 0,
-        ["blender"] = new JsonObject { ["version"] = "5.2.1", ["support"] = "reference", ["allowUnsupported"] = false, ["path"] = "/opt/blender/blender" },
-    };
+    /// <summary>The real shared builder's seed; individual scenarios may deliberately mutate it.</summary>
+    private JsonObject Status { get; set; } = null!;
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
         Directory.CreateDirectory(_root, Private);
         Directory.CreateDirectory(Store, Private);
         _listener = new TcpListener(IPAddress.Loopback, 0);
         _listener.Start();
         _port = ((IPEndPoint)_listener.LocalEndpoint).Port;
-        _server = Task.Run(ServeAsync);
         File.WriteAllText(Blender, "#!/bin/sh\nprintf 'Blender 5.2.1\\n\\tbuild hash: 0123456789ab\\n'\n");
         File.SetUnixFileMode(Blender, Private);
+
+        var inputs = Inputs();
+        var config = AblConfig.Resolve(inputs with
+        {
+            Env = new Dictionary<string, string>(inputs.Env) { ["ABL_DESKTOP_TOKEN"] = StatusToken },
+            // This status fixture models a Linux daemon even when the lifecycle client is on macOS.
+            Platform = HostPlatform.Linux,
+            Blender = new BlenderSearch { Platform = HostPlatform.Linux, Home = inputs.Home },
+        });
+        Assert.Equal(StatusToken, config.Options.DesktopToken);
+        var options = config.Options;
+        var desktop = new DesktopTier(options, NullLogger<DesktopTier>.Instance);
+        _pool = new WorkerPool(options, new WorkerSupervisor(options, NullLogger<WorkerSupervisor>.Instance), NullLogger<WorkerPool>.Instance)
+        {
+            Spawner = async ct =>
+            {
+                var (handle, server) = await FakeWorkerProtocol.ConnectAsync("lifecycle", new FakeWorkerScript(), new(), prewarm: true, ct);
+                _workerServer = server;
+                return handle;
+            },
+        };
+        _sessions = new SessionService(options, _pool, new CheckpointStore(Store), new GpuLease(), desktop, NullLogger<SessionService>.Instance);
+        using var warmDeadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        _pool.Replenish();
+        while (_pool.ReadyCount < 1)
+        {
+            Assert.Null(_pool.LastWorkerError);
+            await Task.Delay(10, warmDeadline.Token);
+        }
+
+        Status = new DaemonStatus(
+            new DaemonInstance(DaemonPid, StartedAt, Path.Combine(_root, "state"), null, _port, config.EffectiveDigest, Detached: false),
+            config, _pool, _sessions, desktop).Build();
+        Status["version"] = "0.1.0"; // The fake record and /healthz intentionally keep this fixed version.
+        // Enter the first accept before a test can stop the listener; queued startup races NoDaemonAsync.
+        _server = ServeAsync();
         _lock = StoreLock.TryAcquire(Store, TimeSpan.Zero) ?? throw new InvalidOperationException("the test could not take the store lock");
         new DaemonState(DaemonPid, _port, DaemonPaths.UrlFor(_port), "0.1.0", StartedAt, "sha256:x", null, null).Write(Store);
-        return Task.CompletedTask;
     }
 
     public async Task DisposeAsync()
@@ -77,7 +112,11 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         _lock?.Dispose();
         await _stop.CancelAsync();
         _listener?.Stop();
-        await (_server ?? Task.CompletedTask).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+        await (_server ?? Task.CompletedTask).WaitAsync(TimeSpan.FromSeconds(10));
+        if (_sessions is not null) await _sessions.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10));
+        if (_pool is not null) await _pool.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10));
+        await (_workerServer ?? Task.CompletedTask).WaitAsync(TimeSpan.FromSeconds(10));
+        _stop.Dispose();
         Directory.Delete(_root, recursive: true);
     }
 
@@ -274,15 +313,22 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         var local = status["local"]!.AsObject();
         status.Remove("local");
         Assert.True(JsonNode.DeepEquals(Status, status), status.ToJsonString());
+        Assert.Equal(DaemonPid, status["pid"]!.GetValue<int>());
+        Assert.Equal("0.1.0", status["version"]!.GetValue<string>());
+        Assert.Equal("2026-10-21T09:00:00.0000000+00:00", status["startedAt"]!.GetValue<string>());
+        Assert.Equal("<redacted>", status["config"]!["effective"]!["desktop.token"]!["value"]!.GetValue<string>());
+        Assert.Equal("env", status["config"]!["effective"]!["desktop.token"]!["source"]!.GetValue<string>());
+        Assert.DoesNotContain(StatusToken, stdout + stderr);
         Assert.Equal(DaemonPaths.StateFile(Store), local["stateFile"]!.GetValue<string>());
         Assert.Equal(DaemonPaths.LockFile(Store), local["lockFile"]!.GetValue<string>());
         Assert.True(local["service"]!["runsThisDaemon"]!.GetValue<bool>());
         Assert.Empty(_events);
 
-        var (textCode, text, _) = await RunAsync(core => core.StatusAsync(json: false), processes, services);
+        var (textCode, text, textErr) = await RunAsync(core => core.StatusAsync(json: false), processes, services);
         Assert.Equal(0, textCode);
         Assert.Contains($"running pid {DaemonPid} at {DaemonPaths.UrlFor(_port)} (version 0.1.0, 1 ready worker(s), 0 session(s))", text);
-        Assert.Contains("  blender 5.2.1 (reference) at /opt/blender/blender", text);
+        Assert.Contains($"  blender 5.2.1 (reference) at {Blender}", text);
+        Assert.DoesNotContain(StatusToken, text + textErr);
     }
 
     [Fact]
@@ -670,7 +716,7 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         _lock = null;
         File.Delete(DaemonPaths.StateFile(Store));
         _listener!.Stop();
-        await (_server ?? Task.CompletedTask).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+        await (_server ?? Task.CompletedTask).WaitAsync(TimeSpan.FromSeconds(10));
     }
 
     /// <summary>What a service-run daemon does once it is up: takes the lock, writes its record and answers on the port.</summary>
@@ -684,7 +730,7 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         new DaemonState(DaemonPid, port, DaemonPaths.UrlFor(port), "0.1.0", StartedAt, "sha256:x", ServiceLog, null).Write(store);
         _listener = new TcpListener(IPAddress.Loopback, port);
         _listener.Start();
-        _server = Task.Run(ServeAsync);
+        _server = ServeAsync();
     }
 
     private async Task<(int Code, string Stdout, string Stderr)> RunAsync(
@@ -744,7 +790,7 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
                 var buffer = new byte[4096];
                 while (!IsComplete(request))
                 {
-                    var read = await stream.ReadAsync(buffer);
+                    var read = await stream.ReadAsync(buffer, _stop.Token);
                     if (read == 0)
                     {
                         break;
@@ -762,7 +808,7 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
                     _ => """{"kind":"not_found"}""",
                 };
                 var response = $"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {Encoding.UTF8.GetByteCount(json)}\r\nConnection: close\r\n\r\n{json}";
-                await stream.WriteAsync(Encoding.UTF8.GetBytes(response));
+                await stream.WriteAsync(Encoding.UTF8.GetBytes(response), _stop.Token);
             }
         }
 
