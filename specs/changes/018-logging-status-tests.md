@@ -78,7 +78,7 @@ a user service. No actual GPU or desktop launcher required.
 ## State
 
 **Step**: source and installed log/status proof passed; independent review next
-**Waiting on**: named code/security/ergonomics reviews and exact-head gates.
+**Waiting on**: final parent-record review and exact-head gates; three implementation reviews PASS.
 **Branch / PR**: 018-logging-status-tests, [draft #14](https://github.com/pevyhlas/agentblender/pull/14).
 **Authority**: owner's public-roadmap continuation and constitution continuation/feature-branch
 commit/push/PR/reviewed-green-merge policy. Parent008 explicitly names T056 next. No release or
@@ -99,3 +99,6 @@ request lines verified. Deliberate failed-worker stand-in proves observability, 
 `installed-proof-02/result.json`, source TRX/unit logs and bundle provenance; failed native run kept.
 **Next**: named reviews, final exact-head gates and same-PR finalization. Failed native warm remains
 unresolved with its inherited outcome history; no native retry or qualification is claimed.
+**Review**: round 1 · c5b81424b0eaef660bce1342cca9fe2bee0a06f5..4a2dee58891ab33c661a3366dc47a2f4d3339884 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/14#issuecomment-6416607836
+**Review**: round 1 · c5b81424b0eaef660bce1342cca9fe2bee0a06f5..4a2dee58891ab33c661a3366dc47a2f4d3339884 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/14#issuecomment-6416607836
+**Review**: round 1 · c5b81424b0eaef660bce1342cca9fe2bee0a06f5..4a2dee58891ab33c661a3366dc47a2f4d3339884 · eng-ergonomics · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/14#issuecomment-6416607836

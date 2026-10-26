@@ -53,7 +53,7 @@ acceptance are completed by015 (public PR #11).
   startup-failure paths. Native Linux/macOS behavior passed at9bf90fc in public PR #11.
 - [x] T040 (child016-delivery-provenance, PR #12) Delivery provenance records `blender.allowUnsupported` use (the producing Blender's
   version and support) as an additive descriptor field, reviewed with the descriptor schema.
-- [ ] T056 (child018-logging-status-tests) Tests: a `DesktopTier` unit test that two equal probes log one line and a changed
+- [x] T056 (child018-logging-status-tests, PR #14) Tests: a `DesktopTier` unit test that two equal probes log one line and a changed
   result a second; an integration case that `ABL_LOG_LEVEL=Warning` prints no `info:` lines
   (and decides whether the startup summary is suppressed); request lines return with
   `Logging__LogLevel__Microsoft.AspNetCore=Information`; the unit-lane `daemon_status`
@@ -92,13 +92,16 @@ guarantees. Shared-facts migration preserves discovery trust anchors and store t
 | A1 | R-12, C-12 | macOS arm64 qualification run (T074) | 0 | NOT_RUN |
 | A2 | P1.B-10, P1.B-13 | trust tests over the shared facts and log transactions (T021); at9bf90fc: Linux863pass/1skip and macOS864pass/0skip, [run40240250983](https://github.com/pevyhlas/agentblender/actions/runs/40240250983), children013/015 | Linux4, native4 | PASS |
 | A3 | R-08 | descriptor test for the provenance field (T040) | 0 | PASS — child016 source/native/installed proof on [PR12](https://github.com/pevyhlas/agentblender/pull/12#issuecomment-6413279391) |
-| A4 | P1 operability | T056 and carry-over tests in CI | 0 | NOT_RUN |
+| A4 | P1 operability | T056 source/installed logging-status checks PASS in PR #14; service carry-over tests remain | 0 | NOT_RUN |
 
 ## State
 
 **Step**: build
 **Waiting on**: the owner for T074 and T075
-**Next**: T056 and bounded service
-carry-overs follow as separate reviewed increments.
+**Next**: bounded service carry-overs follow as separate reviewed increments. T056 source and
+installed logging/status verification passed in PR #14, with code/security/ergonomics review.
+The native worker warm observation from PR #12 remains unresolved: child018's auxiliary installed
+run also timed out warming one worker (60s). No corrective native retry was made; the passing
+failed-worker stand-in proves log/status semantics only. Keep that outcome's history across follow-ups.
 T021 shared facts landed in [PR #9](https://github.com/pevyhlas/agentblender/pull/9); log transactions
 and native acceptance are complete in [PR #11](https://github.com/pevyhlas/agentblender/pull/11).
