@@ -79,8 +79,11 @@ public sealed class DeliveryService(AblOptions options, WorkerPool pool, Checkpo
                 await worker.RequestAsync("exec", new() { ["source"] = op.Script, ["params"] = merged }, options.ExecTimeout, ct);
             }
             var hello = await worker.RequestAsync("hello", null, options.ExecTimeout, ct);
-            if (artifact.BlenderVersion != hello["blender_version"]!.GetValue<string>())
+            var producingVersion = hello["blender_version"] is JsonValue helloVersion && helloVersion.TryGetValue<string>(out var version)
+                ? version : throw new AblException("worker_error", "producing worker hello has no Blender version");
+            if (artifact.BlenderVersion != producingVersion)
                 throw new AblException("bad_request", "Blender version differs from frozen source; requalify the source first");
+            var blenderPolicy = DeliveryBlenderPolicy.Capture(producingVersion, options);
             var temporaryBlend = store.TmpBlendPath();
             string digest;
             try
@@ -125,7 +128,8 @@ public sealed class DeliveryService(AblOptions options, WorkerPool pool, Checkpo
                 ["render"] = item.Render.EffectiveSettings!.DeepClone(),
                 ["renderDeclaration"] = System.Text.Json.JsonSerializer.SerializeToNode(item.Render, System.Text.Json.JsonSerializerOptions.Web),
                 ["producerBuild"] = build,
-                ["blenderVersion"] = worker.BlenderVersion,
+                ["blenderVersion"] = producingVersion,
+                ["blenderPolicy"] = System.Text.Json.JsonSerializer.SerializeToNode(blenderPolicy),
                 ["blenderBuildHash"] = hello["blender_build_hash"]!.DeepClone(),
                 ["hostAssemblySha256"] = hostHash,
                 ["workerSourceSha256"] = hello["worker_source_sha256"]!.DeepClone(),
@@ -136,8 +140,9 @@ public sealed class DeliveryService(AblOptions options, WorkerPool pool, Checkpo
             var recipeHash = AgdStillDescriptor.Hash(snapshotBytes);
             var metadata = AgdStillDescriptor.Serialize(name, item, build, recipeHash);
             await File.WriteAllTextAsync(Path.Combine(payload, AgdStillDescriptor.FileName), metadata, ct);
-            var producer = new DeliveryProducer("agentblender", worker.BlenderVersion)
+            var producer = new DeliveryProducer("agentblender", producingVersion)
             {
+                BlenderPolicy = blenderPolicy,
                 Build = build,
                 BlenderBuildHash = hello["blender_build_hash"]!.GetValue<string>(),
                 HostAssemblySha256 = hostHash,

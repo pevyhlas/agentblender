@@ -6,7 +6,9 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using Abl.Core;
 using Abl.Core.Delivery;
+using Abl.Core.Rendering;
 using Abl.Core.Workers;
+using Microsoft.Extensions.Logging.Abstractions;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using Xunit;
@@ -82,8 +84,16 @@ public class DeliveryExportTests(BlenderFixture fixture)
         var generation = Path.GetDirectoryName(first.PayloadDir)!;
         Assert.Equal(["artifact.json", "still.png"], Directory.GetFiles(first.PayloadDir).Select(Path.GetFileName).Order());
         Assert.True(DeliveryPayload.Verify(generation).Pass);
+        Assert.False(fixture.Options.AllowUnsupportedBlender, "reference qualification requires the override disabled");
+        AssertReferencePolicy(generation, false);
         var firstBytes = File.ReadAllBytes(first.Images[0]);
-        var second = await fixture.Deliveries.ExportAsync(Artifact, root, [], "cycles_cpu", 64, 16, 0, 1, default);
+        var enabledOptions = fixture.Options with { AllowUnsupportedBlender = true };
+        await using var enabledPool = new WorkerPool(enabledOptions,
+            new WorkerSupervisor(enabledOptions, NullLogger<WorkerSupervisor>.Instance), NullLogger<WorkerPool>.Instance);
+        var enabledDelivery = new DeliveryService(enabledOptions, enabledPool, fixture.Store, new GpuLease(), NullLogger<DeliveryService>.Instance);
+        var second = await enabledDelivery.ExportAsync(Artifact, root, [], "cycles_cpu", 64, 16, 0, 1, default);
+        AssertReferencePolicy(Path.GetDirectoryName(second.PayloadDir)!, true);
+        Assert.True(DeliveryPayload.Verify(Path.GetDirectoryName(second.PayloadDir)!).Pass);
         Assert.NotEqual(first.PayloadDir, second.PayloadDir);
         Assert.Equal(firstBytes, File.ReadAllBytes(first.Images[0]));
         var failed = await Assert.ThrowsAsync<AblException>(() => fixture.Deliveries.ExportAsync(Artifact, root,
@@ -112,6 +122,21 @@ public class DeliveryExportTests(BlenderFixture fixture)
         finally { await fresh.DisposeAsync(); }
         File.AppendAllText(first.Images[0], "tamper");
         Assert.False(DeliveryPayload.Verify(generation).Pass);
+    }
+
+    private static void AssertReferencePolicy(string generation, bool allow)
+    {
+        var receipt = JsonNode.Parse(File.ReadAllText(Path.Combine(generation, "delivery.json")))!;
+        var snapshot = JsonNode.Parse(File.ReadAllText(Path.Combine(generation, "recipe-snapshot.json")))!;
+        // Handwritten production oracle, not the capture helper or current classifier.
+        var expected = JsonNode.Parse("""
+            {"supportedLine":"5.2.x","referenceVersion":"5.2.1","support":"reference","allowUnsupported":false}
+            """)!;
+        expected["allowUnsupported"] = allow;
+        Assert.Equal(expected.ToJsonString(), receipt["producer"]!["blenderPolicy"]!.ToJsonString());
+        Assert.Equal(expected.ToJsonString(), snapshot["blenderPolicy"]!.ToJsonString());
+        Assert.Equal(receipt["producer"]!["blenderVersion"]!.GetValue<string>(), snapshot["blenderVersion"]!.GetValue<string>());
+        Assert.DoesNotContain("blenderPolicy", File.ReadAllText(Path.Combine(generation, "payload", "artifact.json")));
     }
 
     /// <summary>

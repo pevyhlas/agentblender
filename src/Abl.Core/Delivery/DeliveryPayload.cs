@@ -7,9 +7,10 @@ namespace Abl.Core.Delivery;
 /// <summary>Bounded host-only verification of a completed producer generation, not admission.</summary>
 public static class DeliveryPayload
 {
-    public static DeliveryVerifyResult Verify(string directory)
+    public static DeliveryVerifyResult Verify(string directory) => VerifyCore(directory, ReadDescriptor(directory));
+
+    private static DeliveryVerifyResult VerifyCore(string directory, DeliveryDescriptor descriptor)
     {
-        var descriptor = ReadDescriptor(directory);
         var item = descriptor.Items[0];
         var payload = Path.Combine(directory, DeliveryService.PayloadDirName);
         var problems = new List<string>();
@@ -34,6 +35,15 @@ public static class DeliveryPayload
                 problems.Add("preserved recipe snapshot hash mismatch");
             RejectDuplicates(recipe);
             var snapshot = JsonNode.Parse(recipe) as JsonObject ?? throw Bad("invalid recipe snapshot");
+            DeliveryBlenderPolicy? snapshotPolicy = null;
+            if (snapshot.TryGetPropertyValue("blenderPolicy", out var recordedPolicy))
+            {
+                snapshotPolicy = JsonSerializer.Deserialize<DeliveryBlenderPolicy>(recordedPolicy?.ToJsonString() ?? "null")!;
+                if (!snapshotPolicy.IsConsistent(snapshot["blenderVersion"]?.GetValue<string>()))
+                    throw Bad("recipe snapshot Blender policy is inconsistent with its producing version");
+            }
+            if (snapshotPolicy != descriptor.Producer.BlenderPolicy)
+                problems.Add("receipt/snapshot Blender policy claims disagree");
             var frozen = ReadBounded(Path.Combine(directory, DeliveryService.ReplaySourceDirName, descriptor.Name, "artifact.json"), 4 * 1024 * 1024);
             if (snapshot["profile"]?.GetValue<string>() != "abl.still-recipe-snapshot.v1" ||
                 !JsonNode.DeepEquals(snapshot["frozenArtifact"], JsonNode.Parse(frozen)) ||
@@ -63,6 +73,9 @@ public static class DeliveryPayload
     public static DeliveryListResult List(string directory)
     {
         var d = ReadDescriptor(directory);
+        var verified = VerifyCore(directory, d);
+        if (!verified.Pass)
+            throw new AblException("bad_request", "delivery generation failed verification: " + string.Join("; ", verified.Problems), hint: verified.Hint);
         return new(d.Name, d.Profile, d.Producer.BlenderVersion,
             [.. d.Items.Select(i => new DeliveryListItem(i.File, i.Framing.Width, i.Framing.Height, i.Sha256, i.SceneDigest, i.Recipe.Artifact))]);
     }
@@ -100,6 +113,8 @@ public static class DeliveryPayload
             item.Render.Samples is null or < 1 or > 4096 || item.Render.Seed < 0 ||
             item.Framing.Width != item.Render.Res || item.Framing.Height != item.Render.Res)
             throw Bad("unsupported or incomplete single-still producer receipt");
+        if (d.Producer.BlenderPolicy is { } policy && !policy.IsConsistent(d.Producer.BlenderVersion))
+            throw Bad("producer receipt Blender policy is inconsistent with its producing version");
         return d;
     }
 
