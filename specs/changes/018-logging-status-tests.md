@@ -70,15 +70,15 @@ a user service. No actual GPU or desktop launcher required.
 
 | Item | Proves | Check | Attempts | Result |
 |---|---|---|---|---|
-| A1 | T056; Q-02 | repeated equal probes log once, transition logs twice; exact Information text, no token | 0 | NOT_RUN |
-| A2 | observability / quiet logs | actual daemon Warning suppresses startup/request Information; explicit framework override emits request lines | 0 | NOT_RUN |
-| A3 | P1.I-06; C-04 | lifecycle fixture uses real status builder and configured sentinel token; expected redaction survives CLI forms | 0 | NOT_RUN |
+| A1 | T056; Q-02 | focused97/full1014 passing cases include literal probe transitions; installed proof preserves token privacy | 1 | PASS |
+| A2 | observability / quiet logs | source subprocess tests and installed Information/Warning/framework-override cases match literal log expectations | 1 | PASS |
+| A3 | P1.I-06; C-04 | shared-builder source fixture plus real installed REST/CLI status parity and sentinel redaction | 1 | PASS |
 | A4 | Delivery | focused/full unit, installed checks, named independent reviews and exact-head required CI | 0 | NOT_RUN |
 
 ## State
 
-**Step**: full unit verification passed; installed check incomplete
-**Waiting on**: installed log/status proof and independent reviews.
+**Step**: source and installed log/status proof passed; independent review next
+**Waiting on**: named code/security/ergonomics reviews and exact-head gates.
 **Branch / PR**: 018-logging-status-tests, [draft #14](https://github.com/pevyhlas/agentblender/pull/14).
 **Authority**: owner's public-roadmap continuation and constitution continuation/feature-branch
 commit/push/PR/reviewed-green-merge policy. Parent008 explicitly names T056 next. No release or
@@ -91,6 +91,11 @@ one worker; it does not establish the earlier suspected concurrency cause. Prese
 with PR12's unresolved warm observation; do not reset that outcome's history. Native reliability
 is outside this test increment. The prepared installed logging harness instead uses the intended
 bounded version-probe/failed-worker stand-in, exercising real installed daemon status, redaction,
-Warning logs and framework override without requiring native rendering; it is NOT_RUN.
-**Next**: run the prepared installed log/status proof, then code/security/ergonomics review and
-exact-head gates. The failed native warm observation remains unresolved, not an accepted result.
+Warning logs and framework override without requiring native rendering; all three installed cases
+PASS. Installed package source64e4cde; later commits change records only. REST/CLI status parity,
+literal redaction, one Information startup summary, zero Warning summaries and explicit framework
+request lines verified. Deliberate failed-worker stand-in proves observability, not native health.
+**Evidence**: `.prdkit/cache/evidence/018-logging-status-tests/installed-02.log`,
+`installed-proof-02/result.json`, source TRX/unit logs and bundle provenance; failed native run kept.
+**Next**: named reviews, final exact-head gates and same-PR finalization. Failed native warm remains
+unresolved with its inherited outcome history; no native retry or qualification is claimed.
