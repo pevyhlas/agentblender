@@ -10,4 +10,10 @@
 - **Alerts**: none in the repository; the operator's collector owns freshness and fault rules.
 - **Live site**: there is no shared service. Locally, `abl daemon status`, `abl daemon logs`,
   `abl doctor` and the `daemon_status` op are the diagnosis path; daemon logs are quiet by
-  default (Warning for framework categories, Information for `Abl.*`).
+  default (Warning for framework categories, Information for `Abl.*`). `ABL_LOG_LEVEL=Warning`
+  suppresses Information, including the startup summary; explicit
+  `Logging__LogLevel__Microsoft.AspNetCore=Information` restores framework request logs.
+  Tests: `DaemonLifecycleTests.AtTheDefaultLevelTheLogHasOneStartupSummaryAndNoRequestLines`,
+  `DaemonLifecycleTests.WarningSuppressesInformationAndStartupUnlessFrameworkRequestsAreExplicitlyEnabled`;
+  desktop first-observation/transition-only Information logs:
+  `DesktopTransportTests.ProbeLogsTheFirstObservationAndEachTransitionOnlyAtInformation`.

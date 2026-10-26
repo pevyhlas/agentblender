@@ -25,8 +25,8 @@ redaction. This is verification of already-declared behavior, not a new public c
 
 ## Approach
 
-Baseline `80377b7bef34ee205afcc25515c1a6d6e6de0ab3` (provenance PR12 final tree; rebase onto
-its merged public commit before publishing this child). Existing `DesktopTier.ProbeAvailableAsync`
+Baseline merged provenance PR12 `c5b81424b0eaef660bce1342cca9fe2bee0a06f5`, whose tree equals
+the initial implementation base `80377b7`. Existing `DesktopTier.ProbeAvailableAsync`
 logs once on the first observation and once per availability transition. Set probe TTL to zero
 in tests and use real local TCP success/refusal, proving repeated observations do not log.
 
@@ -48,11 +48,11 @@ meaning). Architecture and licence are not triggered by test-fixture-only change
 
 ## Tasks
 
-- [ ] T001 `DesktopTransportTests`: literal first/repeat/change/repeat log-count and message
+- [x] T001 `DesktopTransportTests`: literal first/repeat/change/repeat log-count and message
   assertions, including level and no token content, with bounded real loopback probes.
-- [ ] T002 `DaemonLifecycleTests.Operability`: Warning removes Information/startup-summary
+- [x] T002 `DaemonLifecycleTests.Operability`: Warning removes Information/startup-summary
   lines; explicit framework Information restores request lines. Real subprocess/config paths.
-- [ ] T003 `LifecycleCoreTests`: real shared status-builder seed, literal redaction and unchanged
+- [x] T003 `LifecycleCoreTests`: real shared status-builder seed, literal redaction and unchanged
   lifecycle text/JSON assertions; meaningful mutations remain scenario-local.
 - [ ] T004 Update P1 test references; focused/full unit and installed log/status checks; required
   independent reviews and exact-head CI/review gate; finalize this same PR.
@@ -77,11 +77,13 @@ a user service. No actual GPU or desktop launcher required.
 
 ## State
 
-**Step**: ready bounded test implementation
-**Waiting on**: T001–T004 evidence.
+**Step**: focused verification passed
+**Waiting on**: full unit/installed evidence and independent reviews.
 **Authority**: owner's public-roadmap continuation and constitution continuation/feature-branch
 commit/push/PR/reviewed-green-merge policy. Parent008 explicitly names T056 next. No release or
 deployment authority inferred.
-**Attempts**: baseline0; no review or acceptance result yet. PR12's cold concurrent native-worker
+**Attempts**: initial build failed two xUnit count-assertion diagnostics; corrected to Assert.Single
+without changing expectations, then zero-warning build and97 focused tests PASS/0skip. All logs
+retained. Wider acceptance and review remain pending. PR12's cold concurrent native-worker
 warm timeout remains unresolved there; these logging tests do not qualify startup reliability.
-**Next**: implement existing logging/status expectations; carry source evidence into its own PR.
+**Next**: full unit and installed proof, then code/security/ergonomics review and exact-head gates.

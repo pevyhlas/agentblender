@@ -139,6 +139,94 @@ public sealed partial class DaemonLifecycleTests
         Assert.True(lines.Length < 40, log);
     }
 
+    [Theory(Timeout = 120_000)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WarningSuppressesInformationAndStartupUnlessFrameworkRequestsAreExplicitlyEnabled(bool frameworkOverride)
+    {
+        var logFile = Path.Combine(_root, "warning.log");
+        var start = Prepare(["daemon", "run", "--log-file", logFile], new() { ["ABL_LOG_LEVEL"] = "Warning" });
+        // Only this case's explicit framework setting may override the quiet-log defaults.
+        foreach (var name in start.Environment.Keys.Where(k => k.StartsWith("Logging__", StringComparison.OrdinalIgnoreCase)).ToList())
+        {
+            start.Environment.Remove(name);
+        }
+
+        if (frameworkOverride)
+        {
+            start.Environment["Logging__LogLevel__Microsoft.AspNetCore"] = "Information";
+        }
+
+        using var daemon = Process.Start(start)!;
+        var stdout = daemon.StandardOutput.ReadToEndAsync();
+        var stderr = daemon.StandardError.ReadToEndAsync();
+        try
+        {
+            Assert.Equal(daemon.Id, (await HealthAsync())["pid"]!.GetValue<int>());
+            using var http = new HttpClient
+            {
+                BaseAddress = new Uri($"http://127.0.0.1:{_port}"),
+                Timeout = TimeSpan.FromSeconds(10),
+            };
+            using var status = await http.PostAsync("/api/ops/daemon_status", Json([]));
+            var statusText = await status.Content.ReadAsStringAsync();
+            Assert.True(status.IsSuccessStatusCode, statusText);
+            Assert.Equal("warning", JsonNode.Parse(statusText)!["config"]!["effective"]!["daemon.logLevel"]!["value"]!.GetValue<string>());
+
+            using var opened = await http.PostAsync("/api/ops/session_open", Json(new JsonObject { ["project"] = "warning" }));
+            var openedText = await opened.Content.ReadAsStringAsync();
+            Assert.True(opened.IsSuccessStatusCode, openedText);
+            var session = JsonNode.Parse(openedText)!["id"]!.GetValue<string>();
+            using var closed = await http.PostAsync("/api/ops/session_close", Json(new JsonObject { ["session"] = session }));
+            Assert.True(closed.IsSuccessStatusCode, await closed.Content.ReadAsStringAsync());
+
+            // A positive Warning control proves an empty/misdirected log cannot pass the test.
+            using var rejected = new HttpRequestMessage(HttpMethod.Get, "/healthz");
+            rejected.Headers.Add("Origin", "null");
+            using var refusal = await http.SendAsync(rejected);
+            Assert.Equal(System.Net.HttpStatusCode.Forbidden, refusal.StatusCode);
+        }
+        finally
+        {
+            if (!daemon.HasExited) UnixIdentity.Signal(daemon.Id, UnixIdentity.SigTerm);
+            try
+            {
+                await daemon.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            }
+            catch (TimeoutException)
+            {
+                daemon.Kill(entireProcessTree: true);
+                await daemon.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
+                throw;
+            }
+
+            // Process exit includes logger disposal; drain the original pipes before inspecting bytes.
+            await Task.WhenAll(stdout, stderr).WaitAsync(TimeSpan.FromSeconds(10));
+        }
+
+        Assert.True(daemon.ExitCode == 0, await stderr);
+        Assert.DoesNotContain(Processes(), p => p.Args.Contains(RuntimeDir + "/", StringComparison.Ordinal));
+        var lines = await File.ReadAllLinesAsync(logFile);
+        Assert.Contains(lines, line => line.Contains(" warn: Abl.Daemon.HostGuard", StringComparison.Ordinal)
+            && line.Contains("host guard rejected a request with 403", StringComparison.Ordinal));
+        Assert.DoesNotContain(lines, line => line.Contains(" info: Abl.", StringComparison.Ordinal));
+        Assert.DoesNotContain(lines, line => line.Contains($"daemon {AblVersion.Current} started:", StringComparison.Ordinal));
+
+        if (frameworkOverride)
+        {
+            Assert.Contains(lines, line => line.Contains(" info: Microsoft.AspNetCore.Hosting.Diagnostics", StringComparison.Ordinal)
+                && line.Contains($"Request starting HTTP/1.1 POST http://127.0.0.1:{_port}/api/ops/daemon_status", StringComparison.Ordinal));
+            Assert.Contains(lines, line => line.Contains(" info: Microsoft.AspNetCore.Hosting.Diagnostics", StringComparison.Ordinal)
+                && line.Contains($"Request finished HTTP/1.1 POST http://127.0.0.1:{_port}/api/ops/daemon_status", StringComparison.Ordinal));
+        }
+        else
+        {
+            Assert.DoesNotContain(lines, line => line.Contains(" info: ", StringComparison.Ordinal));
+            Assert.DoesNotContain(lines, line => line.Contains("Request starting", StringComparison.Ordinal)
+                || line.Contains("Request finished", StringComparison.Ordinal));
+        }
+    }
+
     [Fact(Timeout = 60_000)]
     public async Task InstallServiceDryRunWritesNothingAndItsExecStartRunsUnderAnEmptyEnvironment()
     {

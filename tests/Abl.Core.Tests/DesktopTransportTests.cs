@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Abl.Core;
 using Abl.Core.Workers;
 using Abl.Launcher;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -210,6 +211,46 @@ public class DesktopTransportTests
         }
     }
 
+    [Fact]
+    public async Task ProbeLogsTheFirstObservationAndEachTransitionOnlyAtInformation()
+    {
+        const string token = "probe-token-never-logged-018";
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var logger = new ProbeLogger();
+        var tier = new DesktopTier(new AblOptions
+        {
+            DesktopEndpoint = $"127.0.0.1:{port}",
+            DesktopToken = token,
+            DesktopProbeTtl = TimeSpan.Zero, // Every call really observes the socket, not the cache.
+            DesktopProbeTimeout = TimeSpan.FromSeconds(1),
+        }, logger);
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
+        Assert.Empty(logger.Entries);
+        Assert.True(await tier.ProbeAvailableAsync(deadline.Token));
+        using (await listener.AcceptSocketAsync(deadline.Token)) { }
+        Assert.Equal((LogLevel.Information, $"desktop 127.0.0.1:{port} reachable"), Assert.Single(logger.Entries));
+
+        Assert.True(await tier.ProbeAvailableAsync(deadline.Token));
+        using (await listener.AcceptSocketAsync(deadline.Token)) { }
+        Assert.Single(logger.Entries);
+
+        listener.Stop();
+        Assert.False(await tier.ProbeAvailableAsync(deadline.Token));
+        Assert.Equal(2, logger.Entries.Count);
+        Assert.Equal((LogLevel.Information, $"desktop 127.0.0.1:{port} unreachable"), logger.Entries[1]);
+
+        Assert.False(await tier.ProbeAvailableAsync(deadline.Token));
+        Assert.Equal(2, logger.Entries.Count);
+        Assert.All(logger.Entries, entry =>
+        {
+            Assert.Equal(LogLevel.Information, entry.Level);
+            Assert.DoesNotContain(token, entry.Message);
+        });
+    }
+
     /// <summary>
     /// 009 T004: the desktop handle's GPU capability comes from its own hello, through the
     /// same validator and parser as a local worker. A fake launcher authenticates, then
@@ -318,5 +359,14 @@ public class DesktopTransportTests
         {
             listener.Stop();
         }
+    }
+
+    private sealed class ProbeLogger : ILogger<DesktopTier>
+    {
+        public List<(LogLevel Level, string Message)> Entries { get; } = [];
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter) => Entries.Add((logLevel, formatter(state, exception)));
     }
 }

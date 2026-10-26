@@ -53,7 +53,7 @@ acceptance are completed by015 (public PR #11).
   startup-failure paths. Native Linux/macOS behavior passed at9bf90fc in public PR #11.
 - [x] T040 (child016-delivery-provenance, PR #12) Delivery provenance records `blender.allowUnsupported` use (the producing Blender's
   version and support) as an additive descriptor field, reviewed with the descriptor schema.
-- [ ] T056 Tests: a `DesktopTier` unit test that two equal probes log one line and a changed
+- [ ] T056 (child018-logging-status-tests) Tests: a `DesktopTier` unit test that two equal probes log one line and a changed
   result a second; an integration case that `ABL_LOG_LEVEL=Warning` prints no `info:` lines
   (and decides whether the startup summary is suppressed); request lines return with
   `Logging__LogLevel__Microsoft.AspNetCore=Information`; the unit-lane `daemon_status`
