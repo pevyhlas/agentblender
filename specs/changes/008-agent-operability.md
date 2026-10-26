@@ -103,5 +103,9 @@ installed logging/status verification passed in PR #14, with code/security/ergon
 The native worker warm observation from PR #12 remains unresolved: child018's auxiliary installed
 run also timed out warming one worker (60s). No corrective native retry was made; the passing
 failed-worker stand-in proves log/status semantics only. Keep that outcome's history across follow-ups.
+Child019/PR15 retained that history and reproduced the single-floor timeout. Its third, phase-marked
+observation reached readiness with36s inside native render/write; this does not establish the cause
+of the failed run or first-session health. Three diagnostic observations are retained, no product
+repair is selected, and the owner inbox holds the next bounded profiling/requirement decision.
 T021 shared facts landed in [PR #9](https://github.com/pevyhlas/agentblender/pull/9); log transactions
 and native acceptance are complete in [PR #11](https://github.com/pevyhlas/agentblender/pull/11).

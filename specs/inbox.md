@@ -19,6 +19,26 @@ Name roles, never people. Delete a folded item once its change has landed. -->
 
 ## Waiting for you
 
+### Next bounded investigation for intermittent native warm startup
+
+*2026-10-26 · agent · open*
+
+[Change019](changes/019-worker-startup.md) retained the earlier PR12/14 failures and completed
+three bounded observations. One again timed out at60s; two reached readiness. The phase-marked
+success spent36s inside Blender's native render/write and less than1ms restoring state, resetting
+the journal and replying. The actual failing subphase and EEVEE graphics implementation remain
+unknown. No production correction or first-session/render acceptance is established.
+
+1. **Controlled profiling (Recommended)**: authorize a maximum2-execution increment using the
+   official Blender binary's built-in render diagnostics on a controlled host, retaining the60s
+   warm contract. Use it to identify the native failure before choosing a source or environment fix.
+2. **Change the warm requirement**: independently design lazy first-render preparation or an
+   explicit longer cold-start allowance. This trades the present no-cold-render latency promise.
+3. **Defer native investigation**: continue the independent service-lifecycle carry-overs; retain
+   the failure and hardware/release gates.
+
+**If no answer**: option3; no further native retry or production warm-policy change.
+
 ### Confirm the restructured spec
 
 *2026-10-20 · agent · open*
