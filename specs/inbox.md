@@ -19,25 +19,6 @@ Name roles, never people. Delete a folded item once its change has landed. -->
 
 ## Waiting for you
 
-### Native startup after the approved profiling increment
-
-*2026-10-27 · agent · open*
-
-[Change019](changes/019-worker-startup.md) consumed the approved2/2 runs: ready58.315s and20.664s,
-with most time inside native render/preparation. The second established NVIDIA OpenGL; neither
-reproduced the timeout. Shader log gaps narrowed the investigation but do not separate compiler,
-driver/cache and shared-host scheduling. Cleanup passed; the inherited failure remains unresolved.
-
-1. **Pause profiling; continue service hardening (Recommended)**: deliver independent parent008
-   lifecycle work while019 stays open. Avoid a speculative warm-policy/source repair.
-2. **Allocate a quiet-host comparison**: at most2 new executions with off-the-shelf Blender/vendor
-   diagnostics and explicit cold/warm-cache/load control. Requires a suitable isolated window;
-   no existing live service, driver or shared-cache changes are included.
-3. **Change the warm requirement**: independently design lazy preparation or a longer explicit
-   cold-start allowance, trading the current eager-warm latency promise.
-
-**If no answer**: no further native execution or contract change; retain the open acceptance.
-
 ### Confirm the restructured spec
 
 *2026-10-20 · agent · open*
@@ -264,6 +245,15 @@ were identified by that bounded text review.
 change the network/security policy. Baseline and maintenance reviews stay separate.
 
 ## Your direction
+
+### Pause native profiling and continue service hardening
+
+*owner · folded: [change019](changes/019-worker-startup.md), [parent008](changes/008-agent-operability.md)*
+
+The owner selected the recommendation to pause native profiling and deliver independent service
+lifecycle hardening. The approved2/2 profiling executions are exhausted;019 stays open with its
+inherited failures, blocked native acceptance and unchanged warm contract. Further native
+investigation requires a new bounded owner allocation.
 
 ### Approved bounded profiling for intermittent native warm startup
 

@@ -60,13 +60,15 @@ may replace a diagnosed correction. Use actual loopback/private fixtures, never 
 
 ## State
 
-**Step**: NEEDS_DECISION — approved2-execution profiling increment complete; no supported repair
-**Waiting on**: next scope selection; further native execution is stopped at the allocated limit.
+**Step**: BLOCKED — native investigation paused by owner; service hardening continues separately
+**Waiting on**: any future bounded owner allocation for native diagnosis; no supported repair.
 **Authority**: owner accepted the proposed AGD input/AgentBlender startup priorities on2026-10-26;
 constitution permits bounded feature commit/push/PR and reviewed green merge. No live deployment.
 The owner's subsequent approval on2026-10-27 selects the original profiling proposal: at most2 controlled
 profiling executions, unchanged60s warm contract. This extends diagnostics only; inherited failures
 and the original three observations remain. No production repair or runtime acceptance is implied.
+The owner subsequently selected pause-and-service-hardening on2026-10-27. Native allocation
+remains exhausted; this choice authorizes independent parent008 lifecycle increments only.
 **Inherited outcome history**: PR12 installed baseline failed warm with overlapping cold workers;
 harness correction1 waited for a ready floor after the source suite and passed delivery, but did
 not clear concurrent-start reliability. PR14's separate installed run failed a single floor warm
@@ -138,7 +140,7 @@ Raw evidence, private source hashes/diffs, reviews and analysis are retained und
 3. Relax the eager-render readiness requirement: design lazy first-render preparation or an
    explicitly longer configured cold-start allowance. This changes the warm/latency promise and
    needs owner intent plus architecture review; it is not a tactical fix.
-**Next**: owner inbox selection; no further native execution by default. Draft PR15 preserves
+**Next**: independent parent008 service hardening; no further native execution. Draft PR15 preserves
 source availability, observations and blockers; no qualification, release or merge readiness.
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
