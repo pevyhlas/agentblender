@@ -39,7 +39,7 @@ This is a reviewed upstream maintenance uptake, not a newly designed product cap
 
 - [x] T001 Upgrade pinned copy, provenance and notices; prove customized policy/projections preserved.
 - [x] T002 Reconcile resolved inbox entries with a destination map, preserving open questions and limits.
-- [ ] T003 Exercise changed kit helpers and adoption/doctor/status, independent code/security/license
+- [x] T003 Exercise changed kit helpers and adoption/doctor/status, independent code/security/license
   reviews and exact-head required CI; finalize on this PR.
 
 ## Checks
@@ -54,13 +54,16 @@ shell/report path is recorded and does not require an impossible action from the
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
 | A1 | C-01; operations | source589589ae, manifestc26db47e;72 installed files byte-identical, both MIT notices verbatim, install/adoption8groups and policy hashes PASS | 1 | PASS |
-| A2 | owner authority; C-04/C-05 | destination map below and upstream9suites/804assertions PASS; actual review package preflight pending commit | 1 | NOT_RUN |
-| A3 | C-09; constitution | independent required concerns, Product-Kit gates and exact-head required CI | 0 | NOT_RUN |
+| A2 | owner authority; C-04/C-05 | destination map, upstream804assertions, actual package preflight and7synchronized race scenarios PASS; fixture failure preserved | 1 | PASS |
+| A3 | C-09; constitution | code/security/license PASS0; source1f2c8d2 requiredCI PASS in40570680960; final metadata-head CI remains a merge condition | 1 | PASS |
 
 ## State
 
-**Step**: review preparation
-**Waiting on**: revision-bound package, required reviews and CI
+**Step**: finalization
+**Waiting on**: final metadata-head required CI and matched-head merge
+**Review**: round 1 · 379be62568a28355a12fe6cb3fcf2661a1be1d7f..1f2c8d26fa7642523d4e061ec3338d38d2a85362 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/17#issuecomment-6453388933
+**Review**: round 1 · 379be62568a28355a12fe6cb3fcf2661a1be1d7f..1f2c8d26fa7642523d4e061ec3338d38d2a85362 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/17#issuecomment-6451862027
+**Review**: round 1 · 379be62568a28355a12fe6cb3fcf2661a1be1d7f..1f2c8d26fa7642523d4e061ec3338d38d2a85362 · eng-license · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/17#issuecomment-6451862779
 **Authority**: explicit owner uptake request; constitution branch/PR/green-reviewed merge authority.
 Native019 stays paused, five diagnostics, extra2/2 allocation exhausted, A1 BLOCKED/A3 FAIL; this
 workflow change grants no additional diagnostic or warm-contract change. Desktop/release owner gates hold.
@@ -72,8 +75,13 @@ their original dates were not recorded and are not invented. All14 unanswered qu
 **Evidence**: `.prdkit/cache/evidence/021-product-kit-121/`: initial install check reports expected1.2.0
 drift; upgrade/check-after, adoption8groups, doctor/status, policy hashes and upstream9suites PASS.
 Doctor retains only existing archive/open-question advisories. Application source/CI/projections are
-unchanged. Backend:none is unchanged; no external telemetry enabled. Actual package preflight and
-required CI remain delivery gates, not inferred from upstream tests.
-**Next**: commit/publish, package completed evidence, run required independent concerns and CI.
-<!-- One line per verdict (workflows/change.md, Review):
-**Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
+unchanged. Backend:none is unchanged; no external telemetry enabled. Actual round1 package preflight
+passed inventory byte/hash and accessible input checks. Supplemental7synchronized race scenarios
+include2guard-bypass negative controls, unchanged helper/driver hashes and environment. The initial
+driver stdin-EOF fixture error after5cases is retained; bounded harness repair passed all7, no product fix.
+Initial eng-code session cancelled without verdict; replacement named review completed PASS0 over the
+same source and completed supplementary evidence. Security/license PASS0 remain applicable.
+**CI**: source1f2c8d2 required Validate and Build/unit PASS in40570680960; macOS and Blender advisory
+jobs also passed, without qualifying native019 or desktop/Metal. Final metadata-head CI remains required.
+Durable evidence: https://github.com/pevyhlas/agentblender/pull/17#issuecomment-6451919567.
+**Next**: finalize record/log on PR17, verify final-head required CI and review gate, then matched-head merge.
