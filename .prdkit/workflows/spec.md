@@ -194,9 +194,34 @@ A line that only describes how the code currently does something is deleted: the
   one managed or off-the-shelf) with why each was rejected, and when to revisit.
 - **Interfaces**: L2 states guarantees (owner, compatibility promise, failure meaning); the schema
   stays in code and is linked.
-- **Left open**: each level ends with what it deliberately does not decide; agents choose there
-  without asking. Anything that needs the owner goes to the inbox instead. The executive page
+- **Left open**: each level ends with deliberately unresolved details or deferred opportunities.
+  Agents choose technical details within existing bounds; owner deferrals keep their limits and
+  revisit triggers. Anything that needs the owner goes to the inbox instead. The executive page
   (`product.md`) has no Left open; its Left open items live in the detail files.
+
+## Resolve owner answers
+
+`specs/inbox.md` is an open-items queue. Process an answer in the same change that incorporates
+it; implementation or merge need not be complete before the answered item leaves the inbox.
+
+1. Read the question and answer together. A number selects that item's option; preserve its
+   meaning and any qualifications. An ambiguous, conflicting or partial answer leaves only the
+   unresolved question open, linked to the resolved portion.
+2. Apply the decision to its canonical home: product intent in L0, design in L1/L2, authority in
+   the constitution's Action policy, holds/waivers in `specs/records.md`. Record the disposition,
+   operative owner words verbatim, date and source (conversation reference, PR/comment URL or
+   recorded git path). Relayed words keep their original source. A bare option number also needs
+   the selected option's meaning. The canonical entry is the record; do not duplicate a transcript
+   or create a second decision journal. Agent defaults must be labeled as agent decisions.
+3. Transfer remaining work to a change's Tasks/State and link it with `planned: <change>` for
+   unbuilt intent. Preserve acceptance, attempt/fix-round limits and explicit holds; an answered
+   question does not grant implementation, promotion or delivery authority. An owner decline or
+   deferral lives at the relevant non-goal, decision or Left open item, with its reason and revisit
+   trigger; a proposal to decline is still open until decided under the applicable authority.
+4. Verify the destination contains the full decision and provenance and the remaining obligations
+   have a durable home, then remove the answered item and stale links to it in the same edit.
+   If folding is blocked, keep the item open with that blocker. Never delete solely because an
+   old item says `folded`, `declined` or `deferred`; reconcile those legacy items the same way.
 
 ## One-way doors
 

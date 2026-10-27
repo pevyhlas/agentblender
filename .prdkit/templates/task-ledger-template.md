@@ -15,6 +15,9 @@ network access.
 `.prdkit/scripts/bash/ledger-spool-adapter.sh` mirrors events into a per-host spool that
 survives worktree deletion. `events` filters delivery; `mode: strict` returns adapter failure to
 the caller; `operator: git` adds the Git identity. Events are diagnostics, never approval.
+The emitter captures observed repository/head/branch and kit manifest version/blob IDs separately
+from declared project/change/session tags. Validate that assignment at dispatch and event boundaries;
+preserve conflicts for collector diagnosis. Replay stored events through the adapter, not the emitter.
 
 ## Vocabulary: prdkit.ledger.v1
 

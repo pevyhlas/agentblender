@@ -2,7 +2,11 @@
 # Portable JSON object validation/injection for local ledger envelopes. No jq dependency.
 # Existing fields/content are preserved; only absent top-level metadata is appended.
 json_object_normalize() {
-    LC_ALL=C PRDKIT_JSON_EVENT="${1:-}" PRDKIT_JSON_OPERATOR="${2:-}" PRDKIT_JSON_PROJECT="${3:-}" awk '
+    local context="${4:-}"
+    if [ -n "$context" ]; then
+        context="$(printf '%s\n' "$context" | json_object_normalize)" || return 1
+    fi
+    LC_ALL=C PRDKIT_JSON_EVENT="${1:-}" PRDKIT_JSON_OPERATOR="${2:-}" PRDKIT_JSON_PROJECT="${3:-}" PRDKIT_JSON_CONTEXT="$context" awk '
         BEGIN { for(byte=0;byte<256;byte++) ordinal[sprintf("%c",byte)]=byte }
         function whitespace(   c) { while((c=substr(doc,pos,1)) != "" && index(" \t\r\n",c)) pos++ }
         function hex_value(h,   n,i) {
@@ -151,6 +155,11 @@ json_object_normalize() {
             inject("event",ENVIRON["PRDKIT_JSON_EVENT"])
             inject("operator",ENVIRON["PRDKIT_JSON_OPERATOR"])
             inject("project",ENVIRON["PRDKIT_JSON_PROJECT"])
+            if(ENVIRON["PRDKIT_JSON_CONTEXT"] != "") {
+                # Fresh observations belong to the emitter, never a caller or stale session tag.
+                if(ascii_identity("observed_context") in seen) exit 1
+                added=added (fields++ ? ", " : "") "\"observed_context\": " ENVIRON["PRDKIT_JSON_CONTEXT"]
+            }
             if(invalid) exit 1
             line=substr(doc,1,root_end-1) added substr(doc,root_end)  # awk-bytes-ok: root_end is the closing brace, and this program runs under LC_ALL=C
             gsub(/[\r\n]/," ",line); sub(/[[:space:]]+$/,"",line)

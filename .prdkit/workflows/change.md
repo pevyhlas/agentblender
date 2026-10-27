@@ -51,7 +51,8 @@ Sections of one file; skip a section that has nothing real.
    never demote a failing check to finish. Put non-gating observations and their next check on the PR.
 8. **State**: step, attempts per item and blocker, what blockers wait on, holds with their source,
    branch and PR, authority per action, next action. Update it before every stop; it is the only
-   status prose an agent writes.
+   status source an agent maintains; the PR's Current status is a concise projection, refreshed
+   after a material gate, hold, limit or next-action change and before handover.
 
 ## While building
 
@@ -64,31 +65,50 @@ Sections of one file; skip a section that has nothing real.
 - Evidence stays in CI, the PR or `.prdkit/cache/evidence/`; Acceptance links it. The cache is
   local to one machine: link a CI run or PR comment for evidence anyone else needs. A green PR
   does not pass an acceptance item.
-- Emit the ledger events `.prdkit/memory/task-ledger.md` lists, at their boundaries.
+- Emit the ledger events `.prdkit/memory/task-ledger.md` lists, at their boundaries. Validate the
+  declared project/change/session assignment against the actual checkout and work at dispatch and
+  emission; retain session/parent IDs and reviewed range in payload when available. A stale session
+  tag is not event-time provenance; the emitter's observed context stays separate.
 
 ## Review
 
 Pick the tier ([protocol.md](protocol.md)). The reviewer is a fresh context that did not implement
 the change. Send `.prdkit/templates/review-prompt-template.md`, the change record, the spec
-sections it touches, the PR's context and the full diff, never only the implementer's summary. The reviewer runs
-`bounds.sh` itself and checks the diff against every item it lists. For committed work
-run `.prdkit/scripts/bash/build-review-package.sh <change-id> <base>`: it captures BASE..HEAD into
-`.prdkit/cache/evidence/<change-id>/reviews/round-N/` and the reviewer writes its report there.
+sections it touches, the PR's context and the full diff, never only the implementer's summary.
+Before dispatch, confirm the reviewer's allowed read paths, shell/network access and report channel.
+The reviewer runs `bounds.sh` when permitted; otherwise supply its captured output with input
+revision/hashes. It checks every bound, not only those the implementer selected. For committed work
+run `.prdkit/scripts/bash/build-review-package.sh <change-id> <base> [head]`, adding `--context <path>`
+for selected tracked canon/policy/record files and `--evidence <path>` for completed local results
+(repeatable, repo-relative regular files). It captures BASE..HEAD, immutable HEAD context and copied
+evidence with a byte/hash inventory and index under `.prdkit/cache/evidence/<change-id>/reviews/round-N/`.
+The helper checks structural accessibility, not semantic completeness. Verify the index covers each
+review obligation, prior findings, acceptance results and unknowns. Every result names its command,
+revision, environment, completion/exit status and limits; running logs are not completed evidence.
+Copy required sibling/remote evidence into the checkout first with original source provenance, then
+attach or place the package inside the reviewer's actual access boundary. Verify access before a
+costly review round. A reviewer without write access returns report text for verbatim persistence.
 For uncommitted work send the tracked diff plus the untracked file contents, with their hashes.
 Without a trustworthy package, review is pending. Critical and high findings block, medium blocks
 under `Rigor: full`, low is advisory. A failed tool run is not a product FAIL and an absent
 reviewer is not approval. Post each report on the PR once one exists: it is the durable review
 record, since the record is deleted on close and the cache is local. Append one State line per
 verdict, never editing an earlier one except to correct a range to the printed hashes; a later
-line supersedes the same reviewer's earlier one, whatever its round. The range is the `BASE_SHA..HEAD_SHA` the package printed, never a name that
+line supersedes the same reviewer's earlier one, whatever its round. The range uses the package's
+resolved hashes (`BASE_SHA..HEAD_SHA`, or `SINCE_SHA..HEAD_SHA` for a scoped verdict), never a name that
 moves (`HEAD`, a branch); the first round's base is where the change leaves the default branch:
 
 ```text
 **Review**: round 2 · <base sha>..<reviewed head sha> · <reviewer or concern> · PASS · 0 critical, 0 high, 1 medium, 0 low · <report link>
 ```
 
-A scoped re-review's range starts at or before the head the earlier round reviewed, so the
-rounds chain. A T3 change also records the owner's verdict, reviewer `owner`, with the head
+A scoped re-review adds `--since <previous-reviewed-head>` to keep a focused delta alongside the
+full diff. Map findings to fixes and affected obligations, preserving unaffected approvals and
+evidence; re-open a concern only when its source, bounds or evidence applicability changed. The
+recorded review range is the range actually inspected, starting at or before that reviewer's prior
+head so the rounds chain; the full package range alone is not a new full-review claim. No source
+change means no new review round. Required reviewers and final-head `check-review.sh` still apply.
+A T3 change also records the owner's verdict, reviewer `owner`, with the head
 the owner approved and a link to their words in place of counts; a later L0 or L1 edit needs
 the owner again.
 

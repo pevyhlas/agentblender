@@ -17,6 +17,9 @@ Already-ready work goes straight to [implementation.md](implementation.md): do n
 2. Walk the journeys and their meaningful states, failures and recovery paths. Apply current-stage
    qualities, constraints and non-goals. Trace these through the design's responsibilities, contracts,
    data ownership, invariants and cross-part interactions; inspect gaps in both behavior and design.
+   For touched persistent state, follow creation, reading, update, deletion/forgetting and recovery
+   across every relevant reader/writer. Record which part owns each transition and how old/new
+   versions coexist; inspect current guarantees rather than inventing new lifecycle requirements.
 3. Group the missing work into useful, verifiable outcomes, preferably vertical across parts.
    Include necessary integration, migration or other enabling work justified by those outcomes and
    the approved design. A part is not a feature list; neither a quota of features nor every possible
@@ -59,6 +62,10 @@ Use the existing change record, not another readiness document. Its scope is rea
 Readiness is not authorization. Continue within standing policy without re-approval; holds and
 required capabilities still apply. Check dependencies against actual evidence, not a checkbox or
 tracker status. Note shared interface/data writers and sequence overlapping work until compatible.
+Check for circular proof: if A needs B deployed but B's merge needs A, name the permissible premerge
+proof and the separate integration/live gate with its owner and trigger. Use an approved intermediate
+state or change sequencing; changing an existing required gate needs owner authority. An unresolved
+cycle blocks that dependency, not independent ready work. Resolve it before implementation review.
 For several PRs, give each a bounded outcome and its own change; use a programme only when useful
 for integrated outcomes or coordination, not as a cleanup vehicle. Changes can ship intermediate
 behavior only when it preserves all applicable hard bounds and states remaining intent honestly.

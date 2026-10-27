@@ -17,7 +17,8 @@ Answer the owner's question first, in plain words, with the title next to every 
 3. **Live**: the latest `DEPLOY` record per app and environment (`rev=none`: nothing deployed);
    merged but not deployed.
 4. **Holds and waivers** with owner, scope and expiry; expired ones flagged.
-5. **Owner queue**: open inbox items with age and conflicting directions.
+5. **Owner queue**: open inbox items with age and conflicting directions. Legacy resolved items
+   are reconciliation work (spec.md), not unanswered owner questions.
 6. **Longest pole**: the item that most delays the current goal, and what it waits on.
 
 Merged, live and validated stay distinct. Keep what the helper observed apart from your reading of

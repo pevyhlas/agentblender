@@ -327,17 +327,19 @@ while IFS="$SEP" read -r line type name who _ _ _ date until _ reason; do
             fi ;;
     esac
 done < <(spec_records "$root")
-open_count=0; oldest=""; undisposed=0; unparsed=""; oneline=0
+open_count=0; oldest=""; undisposed=0; unparsed=""; oneline=0; resolved=0
 while IFS="$SEP" read -r line date who state _; do
     [ -n "$line" ] || continue
     [ "$state" = unparsed ] || [ "$(sed -n "${line}p" "$root/specs/inbox.md" | cut -c1-4)" = "### " ] || oneline=$((oneline + 1))
     case "$state" in
         open) open_count=$((open_count + 1)); { [ -n "$oldest" ] && [[ ! "$date" < "$oldest" ]]; } || oldest="$date" ;;
         unknown) undisposed=$((undisposed + 1)) ;;
+        folded|declined|deferred) resolved=$((resolved + 1)) ;;
         unparsed) unparsed="${unparsed:+$unparsed, }$line" ;;
     esac
 done < <(spec_inbox "$root")
 [ "$open_count" -eq 0 ] || advisories+=("Owner inbox: $open_count open item(s), oldest from $oldest ($(spec_days_between "$oldest" "$today") days)")
+[ "$resolved" -eq 0 ] || advisories+=("Owner inbox: $resolved resolved-state item(s) retained; verify canonical decisions, provenance and remaining obligations, then remove them (spec.md, Resolve owner answers)")
 [ "$undisposed" -eq 0 ] || advisories+=("Owner inbox: $undisposed item(s) without an open, folded, declined or deferred disposition")
 [ -z "$unparsed" ] || advisories+=("Owner inbox: specs/inbox.md line(s) $unparsed are not inbox items (a '### <title>' heading, then '*<YYYY-MM-DD> · <owner|agent> · <disposition>*'), so status skips them")
 [ "$oneline" -eq 0 ] || advisories+=("Owner inbox: $oneline item(s) in the one-line form; rewrite each as a heading with its meta line and options (.prdkit/templates/inbox-template.md)")

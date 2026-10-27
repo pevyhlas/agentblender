@@ -102,6 +102,45 @@ if [ "$OPERATOR" = "git" ]; then
     fi
 fi
 
+# --- Capture observed work context once, separate from declared session/feature attribution ---
+# No origin credentials or machine-local paths enter the envelope. Local origins stay unknown.
+# BSD awk requires slash delimiters escaped even inside bracket expressions.
+origin="$(git -C "$REPO_ROOT" config --get remote.origin.url 2>/dev/null || true)"
+repository="$(printf '%s\n' "$origin" | LC_ALL=C awk '
+    NR > 1 { invalid=1 }
+    NR == 1 {
+        s=$0
+        if (s ~ /^(https?|ssh):\/\//) {
+            sub(/^[^:]*:\/\//, "", s); sub(/^[^\/]*@/, "", s)
+        } else if (s ~ /^[^\/@:]+@[^\/:]+:/) {
+            sub(/^[^@]*@/, "", s); sub(/:/, "/", s)
+        } else { invalid=1; next }
+        sub(/\.git$/, "", s)
+        if (s !~ /^[A-Za-z0-9.-]+(:[0-9]+)?\/[A-Za-z0-9_.\/-]+$/ || s ~ /\/\.\.?($|\/)/) invalid=1
+    }
+    END { if (!invalid && s != "") print s; else print "unknown" }
+')"
+head="$(git -C "$REPO_ROOT" rev-parse --verify HEAD 2>/dev/null || printf unknown)"
+branch="$(git -C "$REPO_ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null || printf detached-or-unknown)"
+kit_version=unknown; manifest_blob=unknown
+manifest="$REPO_ROOT/.prdkit/.manifest"
+if [ -f "$manifest" ] && [ ! -L "$manifest" ]; then
+    manifest_blob="$(git -C "$REPO_ROOT" hash-object --no-filters "$manifest" 2>/dev/null || printf unknown)"
+    # A malformed or ambiguous version must not become a version cohort.
+    kit_version="$(awk '/^version: / { n++; v=$2 } END { if(n == 1 && v ~ /^[0-9]+\.[0-9]+\.[0-9]+$/) print v; else print "unknown" }' "$manifest")"
+    if [ "$manifest_blob" != "$(git -C "$REPO_ROOT" hash-object --no-filters "$manifest" 2>/dev/null || printf unknown)" ]; then
+        # An upgrade raced this observation; do not bind one version to another manifest.
+        kit_version=unknown; manifest_blob=unknown
+    fi
+fi
+emitter_blob="$(git -C "$REPO_ROOT" hash-object --no-filters "$SCRIPT_DIR/ledger-emit.sh" 2>/dev/null || printf unknown)"
+context="$(printf '{"captured_at":"%s","repository":"%s","head":"%s","branch":"%s","kit_version":"%s","manifest_blob":"%s","emitter_blob":"%s"}' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$repository" "$head" "$(json_escape "$branch")" "$kit_version" "$manifest_blob" "$emitter_blob")"
+if ! EVENT_JSON="$(printf '%s\n' "$EVENT_JSON" | json_object_normalize '' '' '' "$context")"; then
+    echo 'Error: observed_context is emitter-owned; replay stored events through the adapter, not ledger-emit.sh.' >&2
+    exit 1
+fi
+
 # --- Append to the local spool (always, before any backend dispatch) ---
 # Every event is recorded as one JSON line in .prdkit/ledger/events.jsonl,
 # regardless of backend configuration. This is the durable, replayable local

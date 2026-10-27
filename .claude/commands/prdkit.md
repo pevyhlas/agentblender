@@ -11,7 +11,8 @@ $ARGUMENTS
 ```
 
 Read `.prdkit/workflows/protocol.md`, then route the request: owner direction goes to
-`specs/inbox.md` and into a change or the spec; bounded work opens or continues a change
+the spec or policy with provenance, clearing resolved items from `specs/inbox.md` per spec.md;
+pending direction stays in the inbox; bounded work opens or continues a change
 (`.prdkit/workflows/change.md`); product-to-feature decomposition uses
 `.prdkit/workflows/planning.md`, ready work uses `.prdkit/workflows/implementation.md`;
 questions are answered from the spec and code; overflow, drift
