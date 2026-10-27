@@ -398,6 +398,13 @@ public static class DaemonVerbs
     /// <summary><c>abl daemon uninstall-service [--json]</c>: removes the unit or plist; refuses while the service runs.</summary>
     public static int UninstallService(IReadOnlyList<string> rest, TextWriter stdout, TextWriter stderr)
     {
+        var inputs = ConfigInputs.FromProcess();
+        return UninstallService(rest, stdout, stderr, ServiceManagers.ForService(inputs.Home, inputs.Env));
+    }
+
+    internal static int UninstallService(IReadOnlyList<string> rest, TextWriter stdout, TextWriter stderr,
+        IServiceManager services)
+    {
         var json = false;
         foreach (var arg in rest)
         {
@@ -409,8 +416,6 @@ public static class DaemonVerbs
             json = true;
         }
 
-        var inputs = ConfigInputs.FromProcess();
-        var services = ServiceManagers.ForService(inputs.Home, inputs.Env);
         var state = services.Query();
         if (state.Active)
         {

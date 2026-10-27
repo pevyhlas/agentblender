@@ -74,12 +74,23 @@ How a fresh agent installs, configures, starts, checks and connects AgentBlender
   `abl daemon start` detaches, returns once a worker is warm or fails fast with a check ID, and
   hands off to an installed user service that serves this store and port. Test:
   `DaemonLifecycleTests`, `DaemonLifecycleUnitTests`, `LifecycleCoreTests`.
+  When a selected service's start fails, the CLI requests manager Stop and preserves the original
+  check/cause, manager output or journal guidance, and any secondary cleanup failure. A bounded
+  lock/record/health observation protects a concurrently ready daemon or responsive other-port
+  holder from cleanup after an immediate manager rejection; no new PID signal is used. Tests:
+  `LifecycleCoreTests.RejectedServiceStartRequestsStopAndNamesTheJournal`,
+  `LifecycleCoreTests.FailedServiceCleanupRetainsThePrimaryFailure`,
+  `LifecycleCoreTests.RejectedServiceStartLeavesAConfirmedConcurrentDaemonRunning`.
 - **P1.B-15 Stop is safe**: stop refuses active sessions unless forced and leaves no orphan
   workers; a forced stop never signals a process that is not the recorded daemon. Test:
-  `DaemonLifecycleTests`.
+  `DaemonLifecycleTests`. If manager Stop fails, non-forced stop falls back to SIGTERM only for
+  the confirmed daemon after session refusal, verifies exit/workers, and preserves the manager
+  warning. Test: `LifecycleCoreTests.FailedManagerStopFallsBackToSigtermAndRetainsTheWarning`.
 - **P1.B-16 User services**: `install-service` writes a systemd user unit or launchd agent that
   starts this `abl` through `/usr/bin/env -i` with only its identity variables and
-  `DOTNET_ROOT`. Test: `ServiceUnitTests`.
+  `DOTNET_ROOT`. Uninstall refuses an active job, including one whose PID is unavailable, before
+  any manager mutation or definition removal. Tests: `ServiceUnitTests`,
+  `ServiceUnitTests.ActiveServiceUninstallChangesNeitherManagerNorDefinition`.
 - **P1.I-06 Host verbs never mutate through ops**: `setup`, `doctor`, `config`, `daemon …` and
   `mcp config` are disjoint from the op verbs and have no MCP tool; runtime state reaches MCP
   through `daemon_status`. Enforced by: `HostVerbsTests`, `DaemonStatusTests`,

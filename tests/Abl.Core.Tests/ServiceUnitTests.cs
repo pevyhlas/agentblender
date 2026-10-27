@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.Json.Nodes;
 using Abl.Cli.Host;
 using Abl.Core.Config;
 using Xunit;
@@ -343,6 +345,57 @@ public sealed class ServiceUnitTests : IDisposable
         var outcome = systemd.Start();
         Assert.False(outcome.Ok);
         Assert.Equal("systemctl --user start abl-daemon.service exited with code 1: Failed to connect to bus: No medium found", outcome.Error);
+    }
+
+    [Theory]
+    [InlineData("systemd", 4242, true)]
+    [InlineData("systemd", 0, true)]
+    [InlineData("launchd", 4242, true)]
+    [InlineData("systemd", 4242, false)]
+    [InlineData("launchd", 4242, false)]
+    public void ActiveServiceUninstallChangesNeitherManagerNorDefinition(string kind, int pid, bool json)
+    {
+        var path = Path.Combine(_root, kind == "systemd" ? "unit.service" : "agent.plist");
+        var contents = kind == "systemd" ? ServiceUnits.Systemd(HomeDotnet) : ServiceUnits.Launchd(HomeDotnet);
+        File.WriteAllText(path, contents);
+        File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        var calls = new List<string>();
+        (int, string, string)? Run(string _, IReadOnlyList<string> args)
+        {
+            calls.Add(string.Join(' ', args));
+            if (kind == "systemd")
+            {
+                Assert.Equal("show", args[1]); // No disable, stop, reload or other manager mutation.
+                return (0, $"LoadState=loaded\nActiveState=active\nMainPID={pid.ToString(CultureInfo.InvariantCulture)}\n", "");
+            }
+
+            Assert.Equal("print", args[0]); // No bootout, even for a loaded launchd job.
+            return (0, $"state = running\n\tpid = {pid.ToString(CultureInfo.InvariantCulture)}\n", "");
+        }
+        IServiceManager service = kind == "systemd"
+            ? new SystemdUserService(path, Run)
+            : new LaunchdAgent(path, Path.Combine(_root, "not-installed.plist"), 501, Run);
+        using var stdout = new StringWriter();
+        using var stderr = new StringWriter();
+
+        var code = DaemonVerbs.UninstallService(json ? ["--json"] : [], stdout, stderr, service);
+
+        Assert.Equal(1, code);
+        Assert.Single(calls);
+        Assert.Equal(contents, File.ReadAllText(path));
+        Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(path));
+        Assert.Contains("it was not removed", stderr.ToString());
+        Assert.Contains("`abl daemon stop` first", stderr.ToString());
+        if (json)
+        {
+            var error = JsonNode.Parse(stdout.ToString())!["error"]!;
+            Assert.Equal("service.state", error["check"]!.GetValue<string>());
+            Assert.Contains(pid == 0 ? "pid ?" : $"pid {pid}", error["message"]!.GetValue<string>());
+        }
+        else
+        {
+            Assert.Equal("", stdout.ToString());
+        }
     }
 
     [Theory]

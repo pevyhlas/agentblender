@@ -1,5 +1,7 @@
 # Closed changes
 
+- 2026-10-27 020-service-failure-cleanup: request manager cleanup after rejected service starts, retain primary/secondary errors, and protect concurrent healthy holders; prove active-uninstall refusal and SIGTERM fallback — P1.B-14–16, Q-04, 008 service carry-overs — source/unit checks and four independent reviews passed; live-manager and native warm qualification remain open — [PR #16](https://github.com/pevyhlas/agentblender/pull/16)
+
 - 2026-10-26 018-logging-status-tests: pin quiet-log thresholds, transition-only probes and real redacted daemon status; repair fixture startup sequencing — P1.I-06, Q-02, C-04, 008/T056 — source/installed stand-in checks and independent reviews passed; native warm failure and parent service/hardware outcomes remain open — [PR #14](https://github.com/pevyhlas/agentblender/pull/14)
 
 - 2026-10-24 010-public-readiness: concise public onboarding, Product-Kit 1.1.1, SDK 10.0.113 and bounded repository hygiene — J-06, C-01, C-04, C-09, D-16 — [PR #6](https://github.com/pevyhlas/agentblender/pull/6)
