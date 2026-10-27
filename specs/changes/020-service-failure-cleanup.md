@@ -68,9 +68,9 @@ or actual service manager, and do not claim native or live-service acceptance.
 
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
-| A1 | P1.B-14, P1.B-16 | failed manager start requests cleanup, preserves primary and secondary errors plus journal/output guidance | 0 | NOT_RUN |
-| A2 | P1.B-15, P1.B-16; Q-04 | protected holder, active uninstall/session and SIGTERM fallback regression proofs | 0 | NOT_RUN |
-| A3 | C-03/C-04; delivery | owning reviews, zero-warning build, full unit lane, exact-head required CI and Product-Kit gates | 0 | NOT_RUN |
+| A1 | P1.B-14, P1.B-16 | failed-start and log-tail tests pass in unit-01 at5ff8713; primary/secondary causes and journal/output guidance | 1 | PASS |
+| A2 | P1.B-15, P1.B-16; Q-04 | protected-holder, active-uninstall/session and SIGTERM fallback tests pass in unit-01 at5ff8713 | 1 | PASS |
+| A3 | C-03/C-04; delivery | build0 warnings; unit-01 has43 failures outside changed tests under umask0002; normalized-environment run/reviews/exact-head CI pending | 1 | FAIL |
 
 ## State
 
@@ -81,10 +81,16 @@ bounded branch commit/push/PR and reviewed green merge. No release/deployment or
 mutation. Native019 has5 diagnostics,1 reproduced timeout,0 product corrections; extra2/2 used,
 A1 BLOCKED/A3 FAIL and first-session/render unproved. This change does not reset those outcomes.
 **Evidence**: `.prdkit/cache/evidence/020-service-failure-cleanup/`: design-review PASS0 before
-implementation; regression-before6 FAIL on uncorrected source (expected). Focused run116 PASS/1 FAIL
+implementation; regression-before6 FAIL on uncorrected source (expected). Focused run137 PASS/1 FAIL
 at the existing private-log fixture: parent `state/` inherited group-write under umask0002. Diagnostic
 run confirmed the refused parent; fixture now creates both levels privately, without weakening the
-reader. These failed outputs are retained. Build/unit verification follows that fixture correction.
-**Next**: finish verification, publish the checkpoint/PR, and obtain applicable exact-source reviews.
+reader. These failed outputs are retained. Unit-01 at5ff8713: Core890 PASS/34 FAIL/1 SKIP,
+Integration96 PASS/9 FAIL (stand-ins only); all changed tests pass. The failures cluster in discovery,
+doctor/setup and process fixtures that inherit writable directories under umask0002. Unit-02 uses
+the CI-like umask0022, same binaries, to verify that diagnosis; no production retry or native run.
+Build0 warnings/errors; adoption7 groups, doctor (advisories), CI policy and diff checks PASS.
+**Delivery**: [PR16](https://github.com/pevyhlas/agentblender/pull/16) OPEN/DRAFT; checkpoint5ff8713
+pushed and delivery helper confirmed matching remote SHA. Required CI/reviews remain pending.
+**Next**: finish verification and obtain applicable exact-source reviews before finalization.
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->

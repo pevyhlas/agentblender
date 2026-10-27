@@ -248,12 +248,13 @@ change the network/security policy. Baseline and maintenance reviews stay separa
 
 ### Pause native profiling and continue service hardening
 
-*owner · folded: [change020](changes/020-service-failure-cleanup.md), [parent008](changes/008-agent-operability.md)*
+*owner · folded: [parent008](changes/008-agent-operability.md)*
 
 The owner selected independent service lifecycle hardening after the approved two-run native
 profiling increment. [PR15](https://github.com/pevyhlas/agentblender/pull/15) retains019's five
 observations, unresolved timeout and blocked native acceptance. Further native investigation
-requires a new bounded allocation;020 begins with failed-start cleanup and stop/uninstall proof.
+requires a new bounded allocation; [PR16](https://github.com/pevyhlas/agentblender/pull/16) implements
+the failed-start cleanup and stop/uninstall source proof.
 
 ### Latest Product-Kit and next steps
 

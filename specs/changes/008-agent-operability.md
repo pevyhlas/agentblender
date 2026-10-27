@@ -58,16 +58,17 @@ acceptance are completed by015 (public PR #11).
   (and decides whether the startup summary is suppressed); request lines return with
   `Logging__LogLevel__Microsoft.AspNetCore=Information`; the unit-lane `daemon_status`
   stand-in builds from a real `DaemonStatus.Build()` with a redacted token.
-- [ ] Service carry-overs from the lifecycle reviews: `IServiceManager` gains `Install`,
+- [x] Child020-service-failure-cleanup: rejected service starts request manager Stop with journal/output
+  guidance and secondary cleanup failures retained; concurrent ready/other-port holders are protected.
+  Regression tests prove active-uninstall refusal and the existing SIGTERM fallback. Source/unit
+  scope only; no live service-manager or native warm qualification.
+- [ ] Remaining service carry-overs from the lifecycle reviews: `IServiceManager` gains `Install`,
   `Uninstall` and `UnitPath`; a distinct refusal exit code with `RestartPreventExitStatus=` so
   a login job that refuses before the lock does not restart forever, doctor reporting a stuck
   job, and `daemon.out` rotation (tail only this start's bytes); one `desktop.tcpAvailable`
   encoding for `/healthz` and `daemon_status`; doctor `service.state` reports a job this shell
   cannot identify; a post-install systemd `LoadState` check with roll-back and a launchd
-   definition comparison on reinstall (qualified with T074); tests that `uninstall-service`
-   refuses an active job and that `stop` falls back to SIGTERM; stop the unit when
-   `systemctl --user start` fails, with a journal hint (these three in child020-service-failure-cleanup);
-   one "as the service sees it" resolver
+   definition comparison on reinstall (qualified with T074); one "as the service sees it" resolver
   for `install-service` and `start`; write units 0600 or record why 0644; move the manager-kind
   output branch behind `IServiceManager`.
 - [ ] T074 (owner) macOS arm64 qualification by an agent through its harness: every
@@ -99,8 +100,8 @@ guarantees. Shared-facts migration preserves discovery trust anchors and store t
 
 **Step**: build
 **Waiting on**: the owner for T074 and T075
-**Next**: child020 handles failed service startup cleanup and stop/uninstall regression proof.
-Other bounded service carry-overs follow as separate reviewed increments. T056 source and
+**Next**: other bounded service carry-overs follow as separate reviewed increments after child020
+failed-start cleanup and stop/uninstall source proof. T056 source and
 installed logging/status verification passed in PR #14, with code/security/ergonomics review.
 The native worker warm observation from PR #12 remains unresolved: child018's auxiliary installed
 run also timed out warming one worker (60s). No corrective native retry was made; the passing
