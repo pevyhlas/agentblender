@@ -246,6 +246,33 @@ change the network/security policy. Baseline and maintenance reviews stay separa
 
 ## Your direction
 
+### Pause native profiling and continue service hardening
+
+*owner · folded: [change019](changes/019-worker-startup.md), [parent008](changes/008-agent-operability.md)*
+
+The owner selected the recommendation to pause native profiling and deliver independent service
+lifecycle hardening. The approved2/2 profiling executions are exhausted;019 stays open with its
+inherited failures, blocked native acceptance and unchanged warm contract. Further native
+investigation requires a new bounded owner allocation.
+
+### Approved bounded profiling for intermittent native warm startup
+
+*owner · folded: [change019](changes/019-worker-startup.md)*
+
+The owner approved the recommended maximum2-execution profiling increment using the official
+Blender binary's built-in diagnostics, retaining the60s warm contract. The earlier PR12/14
+failures and three019 observations remain evidence. Identify the EEVEE graphics implementation
+and native subphase before choosing a supported correction; no changed warm requirement,
+additional native allocation, qualification or release is implied.
+
+### Continue startup reliability and review inputs
+
+*owner · folded: 019-worker-startup*
+
+The owner confirmed the presented next priorities: diagnose the retained native-worker warm
+timeout and then bounded service-lifecycle follow-ups, alongside AGD review inputs in its own
+repository. Existing attempt history, independent review, hardware and release gates remain.
+
 ### Latest Product-Kit and next steps
 
 *2026-10-26 · owner · folded: 017-product-kit-120*
