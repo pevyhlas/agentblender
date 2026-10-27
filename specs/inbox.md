@@ -19,25 +19,24 @@ Name roles, never people. Delete a folded item once its change has landed. -->
 
 ## Waiting for you
 
-### Next bounded investigation for intermittent native warm startup
+### Native startup after the approved profiling increment
 
-*2026-10-26 · agent · open*
+*2026-10-27 · agent · open*
 
-[Change019](changes/019-worker-startup.md) retained the earlier PR12/14 failures and completed
-three bounded observations. One again timed out at60s; two reached readiness. The phase-marked
-success spent36s inside Blender's native render/write and less than1ms restoring state, resetting
-the journal and replying. The actual failing subphase and EEVEE graphics implementation remain
-unknown. No production correction or first-session/render acceptance is established.
+[Change019](changes/019-worker-startup.md) consumed the approved2/2 runs: ready58.315s and20.664s,
+with most time inside native render/preparation. The second established NVIDIA OpenGL; neither
+reproduced the timeout. Shader log gaps narrowed the investigation but do not separate compiler,
+driver/cache and shared-host scheduling. Cleanup passed; the inherited failure remains unresolved.
 
-1. **Controlled profiling (Recommended)**: authorize a maximum2-execution increment using the
-   official Blender binary's built-in render diagnostics on a controlled host, retaining the60s
-   warm contract. Use it to identify the native failure before choosing a source or environment fix.
-2. **Change the warm requirement**: independently design lazy first-render preparation or an
-   explicit longer cold-start allowance. This trades the present no-cold-render latency promise.
-3. **Defer native investigation**: continue the independent service-lifecycle carry-overs; retain
-   the failure and hardware/release gates.
+1. **Pause profiling; continue service hardening (Recommended)**: deliver independent parent008
+   lifecycle work while019 stays open. Avoid a speculative warm-policy/source repair.
+2. **Allocate a quiet-host comparison**: at most2 new executions with off-the-shelf Blender/vendor
+   diagnostics and explicit cold/warm-cache/load control. Requires a suitable isolated window;
+   no existing live service, driver or shared-cache changes are included.
+3. **Change the warm requirement**: independently design lazy preparation or a longer explicit
+   cold-start allowance, trading the current eager-warm latency promise.
 
-**If no answer**: option3; no further native retry or production warm-policy change.
+**If no answer**: no further native execution or contract change; retain the open acceptance.
 
 ### Confirm the restructured spec
 
@@ -265,6 +264,16 @@ were identified by that bounded text review.
 change the network/security policy. Baseline and maintenance reviews stay separate.
 
 ## Your direction
+
+### Approved bounded profiling for intermittent native warm startup
+
+*owner · folded: [change019](changes/019-worker-startup.md)*
+
+The owner approved the recommended maximum2-execution profiling increment using the official
+Blender binary's built-in diagnostics, retaining the60s warm contract. The earlier PR12/14
+failures and three019 observations remain evidence. Identify the EEVEE graphics implementation
+and native subphase before choosing a supported correction; no changed warm requirement,
+additional native allocation, qualification or release is implied.
 
 ### Continue startup reliability and review inputs
 

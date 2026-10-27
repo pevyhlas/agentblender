@@ -67,17 +67,20 @@ NOT_RUN/PASS/FAIL/BLOCKED/NOT_APPLICABLE; evidence/revision/environment go in Ch
 
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
-| A1 | P3.B-02; R-11 | observations01/02 plus private phase-instrumented03: native render dominates successful warm; timed-out cause remains unknown | inherited plus3 diagnostic observations | BLOCKED |
+| A1 | P3.B-02; R-11 | observations01–05: successful warm dominated by native render/preparation;05 confirms NVIDIA OpenGL; timed-out cause remains unknown | inherited plus5 diagnostic observations | BLOCKED |
 | A2 | P1/P3 lifecycle; Q-04 | supported correction plus independent cleanup/cancel/isolation regression or evidence-based no-code disposition | 0 corrective source attempts | NOT_RUN |
-| A3 | R-11; P3.B-02 | observation01 reached ready;02 failed warm before first session/render | inherited plus2 unchanged-source observations | FAIL |
+| A3 | R-11; P3.B-02 | 01 reached ready;02 failed warm;03–05 instrumented readiness does not clear failure or prove first session/render | inherited plus2 unchanged-source and3 instrumented observations | FAIL |
 | A4 | Delivery | applicable named reviews, unit/native selections and exact-head required CI | 0 | NOT_RUN |
 
 ## State
 
-**Step**: NEEDS_DECISION — bounded diagnostic sequence finished; no supported production repair
-**Waiting on**: owner selection of a controlled profiling increment or a changed warm requirement.
+**Step**: NEEDS_DECISION — approved2-execution profiling increment complete; no supported repair
+**Waiting on**: next scope selection; further native execution is stopped at the allocated limit.
 **Authority**: owner accepted the proposed AGD input/AgentBlender startup priorities on2026-10-26;
 constitution permits bounded feature commit/push/PR and reviewed green merge. No live deployment.
+The owner's subsequent approval on2026-10-27 selects the original profiling proposal: at most2 controlled
+profiling executions, unchanged60s warm contract. This extends diagnostics only; inherited failures
+and the original three observations remain. No production repair or runtime acceptance is implied.
 **Inherited outcome history**: PR12 installed baseline failed warm with overlapping cold workers;
 harness correction1 waited for a ready floor after the source suite and passed delivery, but did
 not clear concurrent-start reliability. PR14's separate installed run failed a single floor warm
@@ -109,19 +112,47 @@ host scheduling pressure was present, not established as the cause. No first ses
 attempted. This intermittent success identifies the dominant phase in this run, not the cause of
 the earlier timeout; it cannot pass A1/A3. Original package SHA256dc1b171f…18d5; private worker
 SHA2563bad8654…b98. Full identities/raw results live in ignored019 evidence and the PR summary.
-**Attempts and stop**: inherited outcome history remains above;019 has3 diagnostic observations,
-one reproduced timeout and two readiness observations (one instrumented), zero production repairs.
-Stop native reruns here: another uninstrumented success/failure would not settle the cause. No
-further execution allocation is inferred from a reviewer recommendation.
+**Approved profiling outcome**: observations04/05 consumed both additional executions. Private
+exec wrappers added official native logging/GPU profiling to the installed binary; product source,
+installed package,60s warm,64px/one-sample EEVEE, pool and environment policy stayed unchanged.
+04 reached ready58.315s; render/write53.458s wall/123.665s CPU. 05 reached ready20.664s;
+render/write18.363s wall/55.476s CPU. Both retained75 shader-start log messages. The largest gaps
+between default-surface dependency and world-shader markers were28.960s and10.362s; these are
+logged intervals, not measured individual shader durations or proof of a compiler defect.
+05 used supported read-only getters inside its private worker to establish EEVEE's actual
+OpenGL/NVIDIA implementation (driver595.71.05), excluding software rendering for that observation
+only. 04's logs establish OpenGL but not its vendor/device. Both GPU traces are incomplete;
+their recoverable CPU spans cover less than1s, not the full warm operation.
+**Environment and cleanup**: both isolated workers exited, their private process groups were empty,
+and daemons exited0. Desktop/telemetry remained off; no sessions opened. Shared-host pressure was
+present. Separate long-lived workers were idle at preflight but activity occurred before04's
+post-run sample; temporal overlap was not measured. 05's per-sample ambient Blender CPU counters
+showed no increase. Visible cgroup counters showed no quota throttling/OOM. These are controlled
+private workloads on a shared host, not an idle-host benchmark or causal load comparison.
+**Profiling reviews**: initial architecture design FAIL (1 high/1 medium) exposed the false
+assumption that daemon shutdown flushes Blender's profiler and incomplete helper cleanup scope.
+One revision made CLOG/flushed phases primary, GPU traces opportunistic, and descendant/group
+cleanup identity-bound; architecture re-review PASS (0 findings). Run05's getter/sampling delta
+then received architecture and license/provenance PASS (0 findings each). These verdicts cover
+private diagnostic design/source only, not a production correction or native acceptance.
+**Attempts and stop**:019 now has5 diagnostics: one reproduced timeout and four readiness
+observations (three instrumented); zero production repairs. The owner-approved extra2/2 are used.
+No additional native run, changed deadline/readiness policy or source correction is inferred.
+Failure evidence from02 and PR12/14 remains. A1/A3 stay blocked/failed: successful native
+initialization intervals narrow the investigation, but no failed native subphase was captured.
+Raw evidence, private source hashes/diffs, reviews and analysis are retained under ignored
+`.prdkit/cache/evidence/019-worker-startup/`; scrubbed findings stay on draft PR15.
 **Alternatives**:
-1. Recommended: one controlled official-Blender profiling increment, using its built-in render
-   diagnostics and existing standard host observations, capped at2 executions. Identify the actual
-   EEVEE graphics implementation and failing native subphase before any repair; preserve60s warm.
-2. Relax the eager-render readiness requirement: design lazy first-render preparation or an
+1. Recommended: pause native investigation and continue independent service-lifecycle hardening
+   from parent008. Keep019 open and native readiness/first-session acceptance unresolved.
+2. Owner-allocated quiet-host investigation using off-the-shelf Blender/vendor diagnostics,
+   explicitly controlled cold/warm caches and timestamped ambient load, capped at2 new executions.
+   It could distinguish compiler/cache/scheduling contributions; it cannot guarantee reproduction.
+   No shared driver/cache/service changes are authorized by the completed profiling increment.
+3. Relax the eager-render readiness requirement: design lazy first-render preparation or an
    explicitly longer configured cold-start allowance. This changes the warm/latency promise and
    needs owner intent plus architecture review; it is not a tactical fix.
-3. Defer native investigation and continue independent service-lifecycle hardening while this
-   failing outcome remains open. Default until an owner selection; no qualification or release.
-**Next**: owner inbox decision; draft PR15 preserves source availability, observations and blockers.
+**Next**: owner inbox selection; no further native execution by default. Draft PR15 preserves
+source availability, observations and blockers; no qualification, release or merge readiness.
 <!-- One line per verdict (workflows/change.md, Review):
 **Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
