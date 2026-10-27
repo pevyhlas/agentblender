@@ -110,5 +110,9 @@ Child019/PR15 now retains5 diagnostics (four ready, one timeout),0 product corre
 extra2/2 profiling runs reached ready58.315s/20.664s, and the latter confirmed NVIDIA OpenGL.
 No failed native subphase or first-session health is established. The owner selected
 pause-and-service-hardening; native acceptance remains blocked/failed and no further run is allocated.
+Owner direction2026-10-27 is preserved in [PR15](https://github.com/pevyhlas/agentblender/pull/15)
+and [PR16](https://github.com/pevyhlas/agentblender/pull/16), and `379be625:specs/inbox.md`,
+Pause native profiling and continue service hardening. Removing that resolved inbox item does
+not extend the exhausted allocation or close019's A1 BLOCKED/A3 FAIL.
 T021 shared facts landed in [PR #9](https://github.com/pevyhlas/agentblender/pull/9); log transactions
 and native acceptance are complete in [PR #11](https://github.com/pevyhlas/agentblender/pull/11).

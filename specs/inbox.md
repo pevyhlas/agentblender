@@ -1,9 +1,7 @@
 # Owner inbox
 
-<!-- Sections: open agent questions, then the owner's direction, then deferred and declined agent
-items; oldest first within each. Each item is a `###` heading, then one line
-*<YYYY-MM-DD> · <owner|agent> · <disposition>*: open, folded: <where>, declined: <why> or
-deferred: <until>.
+<!-- Open items only: questions, then owner direction awaiting incorporation; oldest first within
+each. Each item is a `###` heading, then `*<YYYY-MM-DD> · <owner|agent> · open*`.
 
 An agent question: a heading that names the decision, a sentence or two of context with links,
 numbered options as `**<label>**: <what it means>`, the recommended one first and marked
@@ -15,7 +13,9 @@ verbatim by another session), and one line on what it answers. In this public re
 direction is recorded paraphrased and its meta line has no date (`*owner · <disposition>*`), so
 doctor lists it as an advisory and status skips it.
 
-Name roles, never people. Delete a folded item once its change has landed. -->
+Name roles, never people. Incorporate resolved answers and provenance in canonical spec/policy,
+transfer remaining work/holds, then remove the item in the same edit. Partial answers remain open;
+deferrals belong at their canonical destination with a revisit trigger. -->
 
 ## Waiting for you
 
@@ -220,82 +220,4 @@ hashes AB was qualified against.
 
 **If no answer**: option 1.
 
-### Public baseline security and packaging findings
-
-*2026-10-23 · agent · folded: 011-public-hardening*
-
-Independent review of the public baseline found three pre-existing issues; the documentation/
-CI maintenance does not fix or waive them. No credentials or accidental private identifiers
-were identified by that bounded text review.
-
-- **High, C-03**: `LauncherOptions.ResolveBind` rejects wildcard binds but accepts a public
-  address. Enforce the approved private/loopback ranges, including resolved hostnames and
-  mapped addresses, before every listener starts; add rejection tests.
-- **Medium, C-04**: desktop Blender children inherit unrelated credentials from the launcher
-  environment. Apply a minimal environment and credential/token/Python-variable canary tests.
-- **Medium, release hygiene**: recursive worker-content globs can package ignored diagnostic
-  files. Use tracked-only release inputs and restricted content, with an ignored-file canary.
-
-1. **A separate bounded hardening change** (Recommended): address these findings and obtain
-   security, licence and package verification before a packaged release or desktop rollout.
-2. **Keep source-only preview**: document the outstanding findings; do not approve a packaged
-   release or desktop rollout until the same boundaries are enforced and re-reviewed.
-
-**If no answer**: leave release/rollout blocked; do not widen this documentation/CI change or
-change the network/security policy. Baseline and maintenance reviews stay separate.
-
 ## Your direction
-
-### Pause native profiling and continue service hardening
-
-*owner · folded: [parent008](changes/008-agent-operability.md)*
-
-The owner selected independent service lifecycle hardening after the approved two-run native
-profiling increment. [PR15](https://github.com/pevyhlas/agentblender/pull/15) retains019's five
-observations, unresolved timeout and blocked native acceptance. Further native investigation
-requires a new bounded allocation; [PR16](https://github.com/pevyhlas/agentblender/pull/16) implements
-the failed-start cleanup and stop/uninstall source proof.
-
-### Latest Product-Kit and next steps
-
-*2026-10-26 · owner · folded: 017-product-kit-120*
-
-> please uptake the latest product kit and then see what are the next steps
-
-Updates the public vendored kit and assesses roadmap readiness under the existing action policy.
-
-### GitHub macOS CI
-
-*2026-10-25 · owner · folded: 014-macos-ci*
-
-> go ahead - we should setup github CI for mac os
-
-Updates hosted macOS CI to macOS 26 arm64 with retained diagnostics. Host and Metal
-qualification remain open under changes 008 and 009.
-
-### Public projects, fixes and logos
-
-*2026-10-24 · owner · folded: 011-public-hardening*
-
-> so both repos are now public and the app should have access to it to merge PRs - I have added both - so lets work on the public repos now - also here is what we need to do - 1. make sure we have very succint and to the point readme for both - also that public product kit is adopted - see product kit readme for inspiration it is quite to the point (not that much but not bad) - next we should identify any issues in both AGD and AB and then fix them, next proceed with roadmap - next we want to generate logos for AGD and AB via their respective workflows - please proceed with all of that
-
-Answers the baseline-hardening scope; roadmap and original artwork follow the existing gates.
-
-### Delivery lanes beyond the first
-
-*owner · deferred: owner input for a named consumer*
-
-Paraphrased: consumer delivery lanes beyond the first still need the owner's input per consumer
-before they are built. Answers what follows the single-still lane (R-08).
-
-### Desktop rollout
-
-*owner · deferred: live desktop evidence*
-
-Paraphrased: live desktop evidence (a `tier=desktop` render) and an always-on launcher service
-with a GPU-yield policy are deferred. Answers when the desktop tier gets live evidence (R-07):
-renders were observed once historically, and the current launcher is not re-verified.
-
-## Deferred and declined
-
-None.

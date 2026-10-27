@@ -29,8 +29,9 @@ A clear request needs no re-approval; an uncertain suggestion is not an executio
 only when an interpretation materially changes scope, behavior, investment or authority. Every
 question to the owner carries a recommendation; when the choice is reversible, state the default
 you will apply if no answer arrives and continue other work. A one-way door ([spec.md](spec.md))
-waits for the answer. Owner direction and open questions go in `specs/inbox.md`, never only in
-harness memory or a session log.
+waits for the answer. Pending owner direction and open questions go in `specs/inbox.md`, never
+only in harness memory or a session log. On an answer, apply [spec.md](spec.md), Resolve owner
+answers: incorporate and record it, transfer obligations, then remove the resolved inbox item.
 
 ## Where things live
 
@@ -46,7 +47,7 @@ harness memory or a session log.
 | Decisions (L1) | `specs/architecture/decisions.md`, or `specs/architecture/decisions/<area>.md` once split; a long one in `specs/decisions/D-NN.md` |
 | Parts (L2): why each exists, components, behaviors, invariants | `specs/parts/<part>.md`, components in `specs/parts/<part>/` once split |
 | Facts observed about the outside world | `specs/observed.md`, or `specs/observed/<area>.md` once split |
-| Owner direction and open questions | `specs/inbox.md` |
+| Pending owner direction and open questions only | `specs/inbox.md` |
 | Holds, waivers, attestations, deployments | `specs/records.md` |
 | Open change (deleted when it closes) | `specs/changes/<id>.md` |
 | Optional execution scratch (never the sole handover) | gitignored `.prdkit/cache/implementation/<id>.md`; useful context on the same PR |

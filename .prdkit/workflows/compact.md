@@ -44,8 +44,9 @@
    current spec, and history questions at `specs/archive.md`. Repoint links into them to where
    their content went, or drop them; links in history stay. Raw evidence elsewhere under
    `specs/` is untracked (`git rm --cached`) and kept under `.prdkit/cache/evidence/`.
-6. Copy owner direction found in agent memory, plans and worklogs into `specs/inbox.md` as
-   headed items (`inbox-template.md`); replace an older prose preamble with the template's comment.
+6. Fold owner direction found in agent memory, plans and worklogs using spec.md, Resolve owner
+   answers. Only unresolved items remain in `specs/inbox.md` as headed items (`inbox-template.md`);
+   replace an older prose preamble with the template's comment.
 7. Read every file once more for the reader: crisp wording, roles not names, repo-relative paths.
    Run doctor and status. The owner reads L0 and L1 and confirms or corrects.
 
@@ -77,8 +78,8 @@
    main, with the main commit the Restructure starts from as the base. A part that links an
    archived document as `legacy` takes in what still binds; agent context, harness memory and
    agent instructions that name `specs/archive/` point at `specs/archive.md`.
-6. Rewrite the inbox as headed items with options; replace personal names with roles and local
-   paths with repo-relative ones. Run doctor and status.
+6. Resolve answered inbox items per spec.md; rewrite remaining items as headings with options.
+   Replace personal names with roles and local paths with repo-relative ones. Run doctor and status.
 
 ## Compaction (on overflow, and every ten closed changes)
 

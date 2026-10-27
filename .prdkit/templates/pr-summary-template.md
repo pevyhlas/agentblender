@@ -1,5 +1,12 @@
 # <Bounded outcome>
 
+## Current status
+
+<As of <time>, head <sha>: ready/blocked and why; required gates and actual results; remaining
+attempts and fix-round limits separately; active holds; next action and owner. Update this block
+when any of these changes, including after a review fix or owner answer. Link the latest durable
+evidence; older comments retain history but are not the current status.>
+
 ## Intent and design
 
 <Change ID/title; canonical IDs and design references; approved delta or Spec impact: none;

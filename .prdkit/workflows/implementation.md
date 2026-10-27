@@ -30,7 +30,12 @@ An already-specified fix may need no canonical edit: use `Spec impact: none — 
 4. Analyze before execution: scope and design consistency, outcome/check coverage, valid non-cyclic
    dependencies, shared touches, and meaningful negative/cross-part checks. Use the project's real
    verification commands and testing policy; no universal TDD requirement. Do not demand future
-   runtime proof at planning time or mistake completed checkboxes for proof.
+    runtime proof at planning time or mistake completed checkboxes for proof.
+5. Preflight verification using the repository's documented commands, CI and actual discovery:
+   confirm working directory, supported flags, tool versions, test count/selection and required
+   environment. Distinguish zero tests, incomplete logs and unavailable tools from PASS. Capture
+   command, revision, environment and completed result once; reuse it while its inputs stay valid.
+   Routine invocation repairs follow protocol.md; they do not reset substantive attempt limits.
 
 No routine research dossier, data-model copy or duplicate contract. If a consequential uncertainty
 needs investigation, collect only what resolves it and route the finding below.

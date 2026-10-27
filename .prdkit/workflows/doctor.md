@@ -8,7 +8,7 @@ Run `.prdkit/scripts/bash/doctor.sh` (`--json`, `--strict`): 0.x layout or two c
 `specs/archive/` folder on main, a `specs/archive.md` whose base commit or last 0.x feature
 cannot be read, agent context naming removed 0.x paths, files over their reading budgets, cited
 IDs that are undefined or retired, malformed records, a closed change without its `specs/log.md`
-line, expired holds and waivers, open inbox items by age, one-line inbox items, local machine
+line, expired holds and waivers, open inbox items by age, retained resolved and one-line inbox items, local machine
 paths, links to missing files in the spec and `specs/archive.md`, spec files no summary links
 (1.1 layout), `observed/` pieces `observed.md` does not link, a lifecycle stage naming no
 environment the environments topic lists, raw evidence under `specs/`, oversized agent context

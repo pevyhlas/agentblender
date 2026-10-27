@@ -50,9 +50,25 @@
   starts the daemon through `/usr/bin/env -i` with only its identity variables and
   `DOTNET_ROOT`; `deploy/README.md` describes it.
 - **Desktop launcher**: installed and started by hand on the GPU workstation, with the
-  `worker/` matching the host; upgraded together with the host.
-- **Product-Kit**: v1.2.0 vendored in copy mode under `.prdkit/` (no kit submodule); CI checks
-  the install against its manifest hash. Upgrade path: `.prdkit/memory/config.md`.
+  `worker/` matching the host; upgraded together with the host. Owner-deferred: current live
+  `tier=desktop` evidence and an always-on service with GPU-yield policy; historical renders do
+  not qualify the current launcher. Revisit only on owner selection of a bounded live trial/service
+  scope (D-15). Undated owner direction preserved from `379be625:specs/inbox.md`, Desktop rollout;
+  reconciled2026-10-27, without changing deploy authority.
+- **Further delivery lanes**: beyond the first still, require owner input for each named consumer
+  before implementation (D-12); revisit when that consumer is named. Undated owner direction from
+  `379be625:specs/inbox.md`, Delivery lanes beyond the first; reconciled2026-10-27.
+- **Product-Kit**: v1.2.1 vendored in copy mode under `.prdkit/` (no kit submodule); CI checks
+  the install against its manifest hash. Upgrade path: `.prdkit/memory/config.md`. Owner requested
+  uptake2026-10-27; supersedes the2026-10-26 latest-kit request in `379be625:specs/inbox.md`.
+- **Public-workflow direction**: the owner selected public-repository work, concise READMEs,
+  public Product-Kit, reviewed fixes/roadmap continuation and original artwork through the native
+  workflows on2026-10-24 (`379be625:specs/inbox.md`, Public projects, fixes and logos). The existing
+  README, notices, [change log](../log.md) PRs6–8 and constitution enact this; artwork adoption and
+  release/deploy authority are not inferred. PR7 closed the baseline specific-bind, child-environment
+  and tracked-packaging findings (P5.I-01/P5.I-05 and Delivery above); the release/deploy owner gates
+  remain. The2026-10-25 hosted macOS CI choice is implemented
+  by PR10 above; changes008/009 retain host/Metal qualification and owner release gates.
 - **Scripts**: `scripts/install-local.sh`, `scripts/uninstall-local.sh`,
   `scripts/release-bundle.sh`, the opt-in `scripts/claude-with-telemetry.sh` and its
   `scripts/test-claude-with-telemetry.sh`,
