@@ -212,6 +212,36 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         Assert.Equal(["service stop"], _events);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task FailedManagerStopFallsBackToSigtermAndRetainsTheWarning(bool json)
+    {
+        var processes = new FakeProcesses(_events);
+        var services = new FakeServices(_events, processes)
+        {
+            RunsDaemon = true, StopOutcome = ServiceOutcome.Failed("manager unavailable"),
+        };
+
+        var (code, stdout, stderr) = await RunAsync(core => core.StopAsync(json, force: false), processes, services);
+
+        Assert.Equal(0, code);
+        Assert.Equal(["service stop", $"signal {DaemonPid} 15"], _events);
+        Assert.False(processes.Alive);
+        Assert.Contains("warning: service.state: manager unavailable", stderr);
+        if (json)
+        {
+            var stopped = JsonNode.Parse(stdout)!;
+            Assert.True(stopped["stopped"]!.GetValue<bool>());
+            Assert.True(stopped["workersVerified"]!.GetValue<bool>());
+            Assert.False(stopped["forced"]!.GetValue<bool>());
+        }
+        else
+        {
+            Assert.Contains($"stopped pid {DaemonPid}", stdout);
+        }
+    }
+
     [Fact]
     public async Task AForcedStopBootsTheServiceOutBeforeAnySignal()
     {
@@ -418,6 +448,93 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
+    public async Task RejectedServiceStartRequestsStopAndNamesTheJournal(bool json)
+    {
+        await NoDaemonAsync();
+        var processes = new FakeProcesses(_events);
+        var services = new FakeServices(_events, processes)
+        {
+            ServiceKind = "systemd", LogFile = ServiceLog,
+            StartOutcome = ServiceOutcome.Failed("start request rejected"),
+        };
+
+        var (code, stdout, stderr) = await RunAsync(core => core.StartAsync(json, TimeSpan.FromSeconds(30)), processes, services);
+
+        Assert.Equal(1, code);
+        Assert.Equal(["service start", "service stop"], _events);
+        Assert.Contains("start request rejected", stderr);
+        Assert.Contains("journalctl --user -u abl-daemon.service", stderr);
+        if (json)
+        {
+            var error = JsonNode.Parse(stdout)!["error"]!;
+            Assert.Equal("service.state", error["check"]!.GetValue<string>());
+            Assert.Contains("start request rejected", error["message"]!.GetValue<string>());
+            Assert.Contains("journalctl --user -u abl-daemon.service", error["hint"]!.GetValue<string>());
+        }
+        else
+        {
+            Assert.Empty(stdout);
+        }
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    public async Task FailedServiceCleanupRetainsThePrimaryFailure(bool rejectedStart, bool throws)
+    {
+        await NoDaemonAsync();
+        var processes = new FakeProcesses(_events);
+        var services = new FakeServices(_events, processes)
+        {
+            LogFile = ServiceLog,
+            StartOutcome = rejectedStart ? ServiceOutcome.Failed("start request rejected") : new ServiceOutcome(true),
+            StopOutcome = ServiceOutcome.Failed("stop request rejected"),
+            ThrowOnStop = throws,
+        };
+
+        var (code, stdout, stderr) = await RunAsync(core => core.StartAsync(json: true, TimeSpan.FromMilliseconds(30)), processes, services);
+
+        Assert.Equal(1, code);
+        var error = JsonNode.Parse(stdout)!["error"]!;
+        Assert.Equal(rejectedStart ? "service.state" : "daemon.reachable", error["check"]!.GetValue<string>());
+        Assert.Contains(rejectedStart ? "start request rejected" : "started no daemon on this store", error["message"]!.GetValue<string>());
+        Assert.Contains("cleanup stop failed: stop request rejected", error["message"]!.GetValue<string>());
+        Assert.Contains("cleanup stop failed: stop request rejected", stderr);
+        Assert.Equal(["service start", "service stop"], _events);
+        Assert.True(processes.Alive); // The failed fake Stop must not simulate successful cleanup.
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task RejectedServiceStartLeavesAConfirmedConcurrentDaemonRunning(bool otherPort)
+    {
+        await NoDaemonAsync();
+        var port = otherPort ? FreePort() : _port;
+        var processes = new FakeProcesses(_events);
+        var services = new FakeServices(_events, processes)
+        {
+            LogFile = ServiceLog, RunsDaemon = true,
+            StartOutcome = ServiceOutcome.Failed("start request rejected"),
+            OnStart = () => BecomeDaemon(port),
+        };
+
+        var (code, stdout, stderr) = await RunAsync(core => core.StartAsync(json: true, TimeSpan.FromSeconds(30)), processes, services);
+
+        Assert.Equal(1, code); // A concurrent daemon is not a successful manager action.
+        var error = JsonNode.Parse(stdout)!["error"]!;
+        Assert.Equal("service.state", error["check"]!.GetValue<string>());
+        Assert.Contains("start request rejected", error["message"]!.GetValue<string>());
+        Assert.Contains("left running", stdout + stderr);
+        Assert.Equal(["service start"], _events);
+        Assert.True(processes.Alive);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     public async Task AServiceJobThatDiesBeforeTheLockFailsFastWithItsOutput(bool privateOutput)
     {
         // eng-code MEDIUM-1: a daemon that exits before its own redirect (a moved ExecStart, a
@@ -428,6 +545,9 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         File.WriteAllText(output, "You must install or update .NET to run this application.\n");
         File.SetUnixFileMode(output, UnixFileMode.UserRead | UnixFileMode.UserWrite |
             (privateOutput ? 0 : UnixFileMode.OtherRead));
+        // Create both levels explicitly: CreateDirectory's mode applies only to its leaf,
+        // and a group-writable parent from umask 0002 correctly makes the log unreadable.
+        Directory.CreateDirectory(Path.Combine(_root, "state"), UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         Directory.CreateDirectory(Path.GetDirectoryName(ServiceLog)!, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         File.WriteAllText(ServiceLog, "older daemon log\n");
         File.SetUnixFileMode(ServiceLog, UnixFileMode.UserRead | UnixFileMode.UserWrite |
@@ -869,6 +989,14 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
     /// <summary>An installed service that runs the daemon (or another pid) and records each call.</summary>
     private sealed class FakeServices(List<string> events, FakeProcesses processes) : IServiceManager
     {
+        public string ServiceKind { get; init; } = "fake";
+
+        public ServiceOutcome StartOutcome { get; init; } = new(true);
+
+        public ServiceOutcome StopOutcome { get; init; } = new(true);
+
+        public bool ThrowOnStop { get; init; }
+
         public bool RunsDaemon { get; init; }
 
         /// <summary>A boot-out that leaves the process to the forced kill that follows.</summary>
@@ -889,7 +1017,7 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         /// <summary>The unit's whole <c>ExecStart</c> (null: <c>/fake/abl daemon run</c>, with <see cref="LogFile"/>, and no <c>env -i</c>).</summary>
         public IReadOnlyList<string>? ExecStart { get; init; }
 
-        public string Kind => "fake";
+        public string Kind => ServiceKind;
 
         public ServiceState Query() => new(
             Kind, "/fake/unit", true, true, RunsDaemon ? DaemonPid : DaemonPid + 1,
@@ -903,14 +1031,21 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         {
             events.Add("service start");
             OnStart?.Invoke();
-            return new ServiceOutcome(true);
+            return StartOutcome;
         }
 
         public ServiceOutcome Stop()
         {
             events.Add("service stop");
-            processes.Alive = false;
-            return new ServiceOutcome(true);
+            if (ThrowOnStop)
+            {
+                throw new IOException("stop request rejected");
+            }
+            if (StopOutcome.Ok)
+            {
+                processes.Alive = false;
+            }
+            return StopOutcome;
         }
 
         public ServiceOutcome BootOut()

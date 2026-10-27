@@ -64,9 +64,10 @@ acceptance are completed by015 (public PR #11).
   job, and `daemon.out` rotation (tail only this start's bytes); one `desktop.tcpAvailable`
   encoding for `/healthz` and `daemon_status`; doctor `service.state` reports a job this shell
   cannot identify; a post-install systemd `LoadState` check with roll-back and a launchd
-  definition comparison on reinstall (qualified with T074); tests that `uninstall-service`
-  refuses an active job and that `stop` falls back to SIGTERM; stop the unit when
-  `systemctl --user start` fails, with a journal hint; one "as the service sees it" resolver
+   definition comparison on reinstall (qualified with T074); tests that `uninstall-service`
+   refuses an active job and that `stop` falls back to SIGTERM; stop the unit when
+   `systemctl --user start` fails, with a journal hint (these three in child020-service-failure-cleanup);
+   one "as the service sees it" resolver
   for `install-service` and `start`; write units 0600 or record why 0644; move the manager-kind
   output branch behind `IServiceManager`.
 - [ ] T074 (owner) macOS arm64 qualification by an agent through its harness: every
@@ -98,10 +99,15 @@ guarantees. Shared-facts migration preserves discovery trust anchors and store t
 
 **Step**: build
 **Waiting on**: the owner for T074 and T075
-**Next**: bounded service carry-overs follow as separate reviewed increments. T056 source and
+**Next**: child020 handles failed service startup cleanup and stop/uninstall regression proof.
+Other bounded service carry-overs follow as separate reviewed increments. T056 source and
 installed logging/status verification passed in PR #14, with code/security/ergonomics review.
 The native worker warm observation from PR #12 remains unresolved: child018's auxiliary installed
 run also timed out warming one worker (60s). No corrective native retry was made; the passing
 failed-worker stand-in proves log/status semantics only. Keep that outcome's history across follow-ups.
+Child019/PR15 now retains5 diagnostics (four ready, one timeout),0 product corrections; the approved
+extra2/2 profiling runs reached ready58.315s/20.664s, and the latter confirmed NVIDIA OpenGL.
+No failed native subphase or first-session health is established. The owner selected
+pause-and-service-hardening; native acceptance remains blocked/failed and no further run is allocated.
 T021 shared facts landed in [PR #9](https://github.com/pevyhlas/agentblender/pull/9); log transactions
 and native acceptance are complete in [PR #11](https://github.com/pevyhlas/agentblender/pull/11).

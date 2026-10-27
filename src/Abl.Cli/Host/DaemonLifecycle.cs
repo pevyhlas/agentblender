@@ -264,10 +264,22 @@ public sealed class DaemonLifecycle(LifecycleHost host)
         var outcome = services.Start();
         if (!outcome.Ok)
         {
-            return Fail(json, new ConfigException(
+            var rejected = new ConfigException(
                 "service.state",
                 $"the {services.Kind} service did not start: {outcome.Error}",
-                "see `abl daemon logs`; `abl daemon uninstall-service` makes `abl daemon start` run the daemon itself"));
+                "see `abl daemon logs`; `abl daemon uninstall-service` makes `abl daemon start` run the daemon itself");
+            // Another starter may have won while the manager command ran. One bounded probe
+            // (no readiness wait/retry) protects a ready holder or a responsive other-port holder.
+            var (existing, _) = await AwaitExistingAsync(
+                options, TimeSpan.Zero, Stopwatch.StartNew(), began, waitForLock: false, watch: null);
+            if (existing is not null)
+            {
+                return Fail(json, new ConfigException(rejected.Check,
+                    $"{rejected.Message}; daemon pid {existing.Pid} was confirmed at port {existing.Port} and left running",
+                    "inspect `abl daemon status` before retrying; stop the daemon explicitly only if intended"));
+            }
+
+            return FailServiceStart(json, rejected, logFile);
         }
 
         var (state, problem) = await AwaitExistingAsync(options, timeout, Stopwatch.StartNew(), began, waitForLock: true, watch: services);
@@ -287,11 +299,36 @@ public sealed class DaemonLifecycle(LifecycleHost host)
                 $"use daemon.port {state.Port} in this shell (unset ABL_PORT), or make daemon.port agree in the config file the {services.Kind} service reads, then `abl daemon stop` and `abl daemon start`"));
         }
 
-        // Not left behind (the manager would keep restarting it). A daemon that failed before
-        // its own redirect wrote to the manager's output, not the store log (AC-18: the cause,
-        // not a bare timeout): show launchd's output file, or name the journal.
+        return FailServiceStart(json, problem, logFile);
+    }
+
+    private int FailServiceStart(bool json, ConfigException problem, string logFile)
+    {
+        var services = host.Services;
+        // Request cleanup even when Start itself was rejected: a failed systemctl start can
+        // leave an auto-restart queued. A secondary refusal must not replace the primary cause.
         var down = services.Query();
-        _ = services.Stop();
+        ServiceOutcome stopped;
+        try
+        {
+            stopped = services.Stop();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            stopped = ServiceOutcome.Failed(DaemonLog.Clean(ex.Message.ReplaceLineEndings(" ")));
+        }
+
+        if (!stopped.Ok)
+        {
+            problem = new ConfigException(problem.Check,
+                $"{problem.Message}; cleanup stop failed: {stopped.Error ?? "no detail reported"}",
+                $"stop the {services.Kind} job before retrying; {problem.Hint}");
+        }
+
+        // A daemon that failed before its own redirect wrote to the manager's output,
+        // not the store log (AC-18: the cause,
+        // not a bare timeout): show launchd's output file, or name the journal.
         var output = down.OutputFile is { } file ? DaemonLog.FailureTail(file, FailureTailLines) : [];
         var where = down.OutputFile is { } outputFile
             ? $"its output before the daemon's own log is in {outputFile}"
