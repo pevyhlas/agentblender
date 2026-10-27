@@ -54,7 +54,8 @@ native warm correction. These remain parent008 carry-overs, not satisfied by thi
 - [x] T001 Review the bounded cleanup design and add immediate-failure/secondary-failure regressions.
 - [x] T002 Implement shared cleanup/reporting and the uninstall test seam; preserve healthy-holder
   protection and prove active-uninstall refusal plus SIGTERM fallback.
-- [ ] T003 Build/unit verification, applicable reviews, exact-head CI and same-PR finalization.
+- [x] T003 Build/unit verification and applicable reviews; required reviewed-head CI passed.
+  Same-PR finalization retains the exact-final-head CI/review gate before merge.
 
 ## Checks
 
@@ -70,12 +71,12 @@ or actual service manager, and do not claim native or live-service acceptance.
 |------|--------|-------|----------|--------|
 | A1 | P1.B-14, P1.B-16 | failed-start and log-tail tests pass in unit-01 at5ff8713; primary/secondary causes and journal/output guidance | 1 | PASS |
 | A2 | P1.B-15, P1.B-16; Q-04 | protected-holder, active-uninstall/session and SIGTERM fallback tests pass in unit-01 at5ff8713 | 1 | PASS |
-| A3 | C-03/C-04; delivery | build0 warnings; unit-01 has43 failures outside changed tests under umask0002; normalized-environment run/reviews/exact-head CI pending | 1 | FAIL |
+| A3 | C-03/C-04; delivery | build0 warnings; unit-03 passes1029/0fail/1existing skip; four reviews PASS0; required CI at reviewed headf017c45 in run40487604518 PASS; final metadata head must pass again before merge | 1 source, 2 environment corrections | PASS |
 
 ## State
 
-**Step**: verification
-**Waiting on**: full unit lane and implementation reviews
+**Step**: finalization
+**Waiting on**: final metadata-head CI and review gate before merge
 **Authority**: owner selected pause-profiling/service-hardening on2026-10-27; constitution permits
 bounded branch commit/push/PR and reviewed green merge. No release/deployment or live user-service
 mutation. Native019 has5 diagnostics,1 reproduced timeout,0 product corrections; extra2/2 used,
@@ -87,10 +88,24 @@ run confirmed the refused parent; fixture now creates both levels privately, wit
 reader. These failed outputs are retained. Unit-01 at5ff8713: Core890 PASS/34 FAIL/1 SKIP,
 Integration96 PASS/9 FAIL (stand-ins only); all changed tests pass. The failures cluster in discovery,
 doctor/setup and process fixtures that inherit writable directories under umask0002. Unit-02 uses
-the CI-like umask0022, same binaries, to verify that diagnosis; no production retry or native run.
+the CI-like umask0022, same source: Core891 PASS/33 FAIL/1 SKIP, Integration105 PASS/0 FAIL.
+The remaining cause was proved with isolated fixture helpers: long temp paths selected the shared
+runtime fallback, whose existing0775 mode correctly failed the0700 rule. No shared path was changed.
+Unit-03 used a short private temp root plus umask0022: Core924 PASS/0 FAIL/1 existing skip,
+Integration105 PASS/0 FAIL. No product source changed after5ff8713 and no native diagnostic ran.
+These are verification-environment corrections, not native/product repair attempts. The diagnostic
+helper's initial analyzer refusal and corrected isolated report are retained too.
 Build0 warnings/errors; adoption7 groups, doctor (advisories), CI policy and diff checks PASS.
+Public hygiene and CI-policy negative tests PASS. Required Validate and Build/unit CI passed at
+reviewed headf017c45 in [run40487604518](https://github.com/pevyhlas/agentblender/actions/runs/40487604518);
+macOS26 arm64 advisory Build/unit also passed. Hosted Blender was still running at that observation
+and is not native019 repair evidence. All four independent reviews PASS0, with their earlier
+verification caveats retained in the reports below. First check-review invocation atf017c45 failed
+because verdicts were not yet committed; the final gate must read the committed metadata.
 **Delivery**: [PR16](https://github.com/pevyhlas/agentblender/pull/16) OPEN/DRAFT; checkpoint5ff8713
-pushed and delivery helper confirmed matching remote SHA. Required CI/reviews remain pending.
-**Next**: finish verification and obtain applicable exact-source reviews before finalization.
-<!-- One line per verdict (workflows/change.md, Review):
-**Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
+pushed and delivery helper confirmed matching remote SHA; reviewed checkpointf017c45 also pushed.
+**Next**: commit results/review metadata, finalize on PR16, and merge only the exact final green head.
+**Review**: round 1 · 38d3db8544e675dbcb0d54c90bc3a633076ed0e9..f017c4504a8e29f9e91ac770f368b3954079ce45 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/16#issuecomment-6439352057
+**Review**: round 1 · 38d3db8544e675dbcb0d54c90bc3a633076ed0e9..f017c4504a8e29f9e91ac770f368b3954079ce45 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/16#issuecomment-6439352421
+**Review**: round 1 · 38d3db8544e675dbcb0d54c90bc3a633076ed0e9..f017c4504a8e29f9e91ac770f368b3954079ce45 · eng-ergonomics · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/16#issuecomment-6439352814
+**Review**: round 1 · 38d3db8544e675dbcb0d54c90bc3a633076ed0e9..f017c4504a8e29f9e91ac770f368b3954079ce45 · eng-arch · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/16#issuecomment-6439353337
