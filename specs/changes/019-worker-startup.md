@@ -2,8 +2,6 @@
 
 **Opened**: 2026-10-26 · **Parts**: P1, P3 · **Journeys**: J-01, J-06 · **Tier**: T2 · **Parent**: 008-agent-operability
 
-<!-- Past its budget, a change splits into changes that each ship on their own (Parent: <id>). -->
-
 ## Intent
 
 Continue the owner's selected startup-reliability priority after child018 merged. Installed real
@@ -17,10 +15,6 @@ Establish the cause and restore bounded real-worker startup under the existing c
 | L2 | P1 worker startup / P3.B-02 | diagnosis first; correction follows established cause and reviewed contract | no timeout or warm-bypass decision assumed |
 
 ## Bounds
-
-<!-- From `.prdkit/scripts/bash/bounds.sh <id>`: each constraint, non-goal or quality this change
-could break, with how it holds; then "Others in scope: hold". A conflict goes to the owner inbox
-with both sides, never resolved here. -->
 
 - C-01/C-02/C-08: existing Blender binary and project-owned worker only; no new dependency,
   host-side bpy or redistributed Blender.
@@ -48,9 +42,6 @@ scheduling, warm contract or process policy receive independent design review fi
 - [ ] T003 Verify real installed startup and first session/render, source regressions, owning-domain
   reviews and exact-head CI. Keep unrelated service carry-overs/hardware/release outcomes open.
 
-<!-- Tiny fixes stay inline. Optional detail: .prdkit/cache/implementation/<id>.md;
-useful context/progress on the same PR. Product/programme discovery uses workflows/planning.md. -->
-
 ## Checks
 
 Native proof must execute actual Blender through an isolated installed tool and retain first-failure
@@ -59,11 +50,6 @@ typed stage diagnostics, source identity and ready-worker semantics. No sleep or
 may replace a diagnosed correction. Use actual loopback/private fixtures, never the user's daemon.
 
 ## Acceptance
-
-<!-- Required PR obligations. Distinguish later non-gating runtime observations on the PR before
-execution; existing required checks cannot be demoted to finish. Live-only claims need live proof.
-Keep these five columns for status helpers, including on a parent programme. Result is exactly
-NOT_RUN/PASS/FAIL/BLOCKED/NOT_APPLICABLE; evidence/revision/environment go in Check or below the table. -->
 
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
