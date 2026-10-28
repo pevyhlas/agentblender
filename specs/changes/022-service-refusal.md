@@ -54,8 +54,8 @@ Proposed design for independent review:
 ## Tasks
 
 - [x] T001 Independent design review; record external manager contracts and review disposition.
-- [ ] T002 Implement exit classification and generated policies; update P1 and agent guidance.
-- [ ] T003 Unit/golden and built-CLI stand-in proof for refusal, ordinary failure, diagnostic,
+- [x] T002 Implement exit classification and generated policies; update P1 and agent guidance.
+- [x] T003 Unit/golden and built-CLI stand-in proof for refusal, ordinary failure, diagnostic,
   health/state/lock safety, and existing cleanup. Run required source gates.
 - [ ] T004 Independent code, security, architecture/operations and ergonomics review; publish and
   merge only after exact-head required CI and review gate pass.
@@ -69,20 +69,23 @@ Every refusal category has process-level proof; retryable failures have a negati
 
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
-| A1 | P1.B-14, P1.B-16 | built-CLI refusal exits and diagnostics; generated manager policies | 0 | NOT_RUN |
-| A2 | P1.B-14, Q-04 | non-refusal failure still retryable; no worker/listener on refusal; lock and cleanup regressions | 0 | NOT_RUN |
-| A3 | P1 operability | warning-free build, non-Blender lane, Product-Kit and required exact-head CI | 0 | NOT_RUN |
+| A1 | P1.B-14, P1.B-16 | built-CLI refusal exits/diagnostics; generated policies, source25c0967; evidence summary below | 1 fixture correction | PASS |
+| A2 | P1.B-14, Q-04 | retryable log failure, no worker/listener on refusal, lock and cleanup regressions; source25c0967 | 0 | PASS |
+| A3 | P1 operability | source25c0967: warning-free build, non-Blender1048PASS/1existing skip, Product-Kit and required [CI40668049514](https://github.com/pevyhlas/agentblender/actions/runs/40668049514) PASS; final-head CI still gates merge | 1 old-assertion correction | PASS |
+
+Evidence: `.prdkit/cache/evidence/022-service-refusal/verification/summary.md` and adjacent logs.
 
 Live systemd/launchd behavior and macOS qualification stay unverified under008/T074. No019
 acceptance is claimed or rerun.
 
 ## State
 
-**Step**: implementation
-**Branch**: `022-service-refusal`; PR not opened yet.
+**Step**: source and required CI verified; implementation reviews pending
+**Branch**: `022-service-refusal`; [PR18](https://github.com/pevyhlas/agentblender/pull/18), draft.
 **Authority**: owner continuation; constitution permits commit, branch push/PR and green reviewed
 merge. Release, deployment and live qualification require their separate authority.
 **Design review**: architecture PASS (0 critical/high,2 advisory medium), security PASS0 at306343e;
   fail-fast stopped-zero observation and safe unload/reload instructions incorporate both advisories.
-**Attempts**: baseline107 tests PASS; inherited019 hold unchanged.
-**Next**: implementation and focused refusal proof, then full non-Blender checks/reviews.
+**Attempts**: baseline107PASS; focused86PASS/4fixture-expectation FAIL; full1045PASS/3old-exit-assertion
+  FAIL/1skip; corrected full1048PASS/0FAIL/1skip. No production correction after initial implementation.
+**Next**: required CI, four owning implementation reviews, exact-head review gate and authorized merge.
