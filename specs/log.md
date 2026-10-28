@@ -1,5 +1,7 @@
 # Closed changes
 
+- 2026-10-28 022-service-refusal: classify intentional startup refusals and suppress systemd/launchd restart loops while preserving readiness checks and genuine-failure recovery — P1.B-14, P1.B-16, Q-04 — source/stand-in proof and four independent reviews passed; live-manager qualification and native019 remain open, unload-failure propagation stays008 — [PR #18](https://github.com/pevyhlas/agentblender/pull/18)
+
 - 2026-10-27 021-product-kit-121: adopt pinned Product-Kit 1.2.1, preserve project policy and reconcile resolved inbox direction — operations, C-01/C-04/C-09, J-06 — adoption/helper/race-guard proof and required reviews passed; native019 pause, platform qualification and release gates remain — [PR #17](https://github.com/pevyhlas/agentblender/pull/17)
 
 - 2026-10-27 020-service-failure-cleanup: request manager cleanup after rejected service starts, retain primary/secondary errors, and protect concurrent healthy holders; prove active-uninstall refusal and SIGTERM fallback — P1.B-14–16, Q-04, 008 service carry-overs — source/unit checks and four independent reviews passed; live-manager and native warm qualification remain open — [PR #16](https://github.com/pevyhlas/agentblender/pull/16)
