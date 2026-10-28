@@ -43,6 +43,9 @@ public sealed record ServiceState(
     /// </summary>
     public string? Failure { get; init; }
 
+    /// <summary>A launchd job explicitly not running after exit zero; not a readiness signal.</summary>
+    internal bool StoppedAfterExit { get; init; }
+
     /// <summary>Where the manager writes the job's own output (launchd's <c>StandardOutPath</c>), or null (systemd: the journal).</summary>
     public string? OutputFile { get; init; }
 
@@ -325,6 +328,8 @@ public sealed partial class LaunchdAgent(string statePlist, string loginPlist, u
                 return new ServiceState(Kind, file, true, pid is not null, pid, Exec(text), Root(text), domain)
                 {
                     Failure = pid is null ? LastFailure(printed) : null,
+                    StoppedAfterExit = pid is null && StoppedLine().IsMatch(printed)
+                        && LastExitLine().Match(printed) is { Success: true } exit && exit.Groups[1].Value == "0",
                     OutputFile = output,
                 };
             }
@@ -414,6 +419,9 @@ public sealed partial class LaunchdAgent(string statePlist, string loginPlist, u
 
     [GeneratedRegex(@"(?m)^\s*pid = (\d+)\s*$")]
     private static partial Regex PidLine();
+
+    [GeneratedRegex(@"(?m)^\s*state = not running\s*$")]
+    private static partial Regex StoppedLine();
 
     [GeneratedRegex(@"(?m)^\s*last exit code = (-?\d+)([^\n]*)$")]
     private static partial Regex LastExitLine();

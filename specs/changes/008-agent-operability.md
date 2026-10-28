@@ -62,9 +62,12 @@ acceptance are completed by015 (public PR #11).
   guidance and secondary cleanup failures retained; concurrent ready/other-port holders are protected.
   Regression tests prove active-uninstall refusal and the existing SIGTERM fallback. Source/unit
   scope only; no live service-manager or native warm qualification.
+- [x] Child022-service-refusal: explicit pre-host refusal exit78 with systemd restart exclusion;
+  launchd adapter suppresses those retries without claiming readiness, with stopped-zero fail-fast
+  observation and safe definition-upgrade instructions. Source/stand-in proof only.
 - [ ] Remaining service carry-overs from the lifecycle reviews: `IServiceManager` gains `Install`,
-  `Uninstall` and `UnitPath`; a distinct refusal exit code with `RestartPreventExitStatus=` so
-  a login job that refuses before the lock does not restart forever, doctor reporting a stuck
+  `Uninstall` and `UnitPath`; launchd uninstall must propagate failed bootout without removing
+  definitions (022's upgrade instructions require explicit unload confirmation meanwhile); doctor reporting a stuck
   job, and `daemon.out` rotation (tail only this start's bytes); one `desktop.tcpAvailable`
   encoding for `/healthz` and `daemon_status`; doctor `service.state` reports a job this shell
   cannot identify; a post-install systemd `LoadState` check with roll-back and a launchd
@@ -100,8 +103,8 @@ guarantees. Shared-facts migration preserves discovery trust anchors and store t
 
 **Step**: build
 **Waiting on**: the owner for T074 and T075
-**Next**: other bounded service carry-overs follow as separate reviewed increments after child020
-failed-start cleanup and stop/uninstall source proof. T056 source and
+**Next**: manager interface/status and install rollback follow as separate reviewed increments after
+child020 failed-start cleanup and child022 refusal/restart source proof. T056 source and
 installed logging/status verification passed in PR #14, with code/security/ergonomics review.
 The native worker warm observation from PR #12 remains unresolved: child018's auxiliary installed
 run also timed out warming one worker (60s). No corrective native retry was made; the passing

@@ -210,7 +210,7 @@ public sealed partial class DaemonLifecycleTests : IAsyncLifetime
 
         // `daemon run` itself cannot take the lock either (after its ~2 s retry).
         var (runCode, _, runErr) = await RunAsync(["daemon", "run"], other);
-        Assert.Equal(1, runCode);
+        Assert.Equal(78, runCode);
         Assert.Contains("daemon.port", runErr);
         Assert.False(PortAnswers(otherPort), "the refused daemon never bound its port");
 
@@ -674,7 +674,7 @@ public sealed partial class DaemonLifecycleTests : IAsyncLifetime
 
             // The lock is held here, so without the gate `run` would refuse with daemon.port.
             var (runCode, _, runErr) = await RunAsync(["daemon", "run"]);
-            Assert.Equal(1, runCode);
+            Assert.Equal(78, runCode);
             Assert.Contains("abl: paths.store:", runErr);
             Assert.Equal(victim.Id, DaemonState.Read(Store)?.Pid);
 

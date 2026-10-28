@@ -613,6 +613,30 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AStoppedLaunchdZeroExitFailsReadinessPromptlyAndRetainsRefusalOutput()
+    {
+        await NoDaemonAsync();
+        var output = Path.Combine(_root, "daemon.out");
+        File.WriteAllText(output, "abl: config.file: refused\n  hint: repair configuration\n");
+        File.SetUnixFileMode(output, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        var processes = new FakeProcesses(_events);
+        var services = new FakeServices(_events, processes)
+        {
+            ServiceKind = "launchd", LogFile = ServiceLog, StoppedAfterExit = true, OutputFile = output,
+        };
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var (code, stdout, stderr) = await RunAsync(core => core.StartAsync(json: true, TimeSpan.FromSeconds(60)), processes, services);
+        Assert.Equal(1, code);
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(15), $"took {clock.Elapsed}");
+        var body = JsonNode.Parse(stdout)!;
+        Assert.Equal("service.state", body["error"]!["check"]!.GetValue<string>());
+        Assert.Contains("not running after exit 0", body["error"]!["message"]!.GetValue<string>());
+        Assert.Contains("config.file: refused", stderr);
+        Assert.Contains("repair configuration", stderr);
+        Assert.Equal(["service start", "service stop"], _events);
+    }
+
+    [Fact]
     public async Task AServiceWhoseConfigFileNamesAnotherPortIsRefusedBeforeItStarts()
     {
         // T035 review rounds 2 and 3 (eng-code MEDIUM, eng-test MEDIUM-1): the unit's log
@@ -1011,6 +1035,8 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
         /// <summary>What the manager reports about a job that is down after a failure.</summary>
         public string? Failure { get; init; }
 
+        public bool StoppedAfterExit { get; init; }
+
         /// <summary>Where the manager writes the job's own output.</summary>
         public string? OutputFile { get; init; }
 
@@ -1024,6 +1050,7 @@ public sealed class LifecycleCoreTests : IAsyncLifetime
             ExecStart ?? (LogFile is null ? ["/fake/abl", "daemon", "run"] : ["/fake/abl", "daemon", "run", "--log-file", LogFile]), "/fake/dotnet", null)
         {
             Failure = Failure,
+            StoppedAfterExit = StoppedAfterExit,
             OutputFile = OutputFile,
         };
 

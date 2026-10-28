@@ -11,7 +11,8 @@ namespace Abl.Cli.Host;
 /// The daemon host verbs (008 FR-007, FR-008, plan B3): argument parsing for
 /// <c>start</c>, <c>stop</c> and <c>status</c>, which run in <see cref="DaemonLifecycle"/>,
 /// plus <c>run</c> (the daemon itself), <c>logs</c>, <c>install-service</c> and
-/// <c>uninstall-service</c>. Exit codes: 0 ok, 1 failed, 2 usage, 3 not running. Unix only:
+/// <c>uninstall-service</c>. Exit codes: 0 ok, 1 failed, 2 usage, 3 not running,
+/// 78 intentional run refusal (launchd adapter: 0 to suppress restart, not readiness). Unix only:
 /// Blender's CPython has no AF_UNIX on Windows (D-15). This is the only CLI type that names
 /// <c>Abl.Daemon</c> (<c>run</c> hosts it in-process); op verbs only post to <c>/api/ops</c>.
 /// </summary>
@@ -23,6 +24,9 @@ namespace Abl.Cli.Host;
 [System.Runtime.Versioning.UnsupportedOSPlatform("windows")]
 public static class DaemonVerbs
 {
+    /// <summary>Intentional pre-host refusal; systemd must not retry this exit.</summary>
+    internal const int RefusedExitCode = 78;
+
     /// <summary>The verbs this class runs: the lifecycle host verbs and <c>status</c> (the CLI form of <c>daemon_status</c>).</summary>
     public static bool Handles(string verb) => verb == "status" || HostVerbs.Verbs.Contains(("daemon", verb));
 
@@ -53,6 +57,7 @@ public static class DaemonVerbs
     {
         // Own flags only (plan A6): nothing else can steer Kestrel.
         var detached = false;
+        var launchd = false;
         string? logFile = null;
         for (var i = 0; i < rest.Count; i++)
         {
@@ -61,17 +66,25 @@ public static class DaemonVerbs
                 case "--detached":
                     detached = true;
                     break;
+                case "--launchd":
+                    launchd = true;
+                    break;
                 case "--log-file" when i + 1 < rest.Count:
                     logFile = Path.GetFullPath(rest[++i]);
                     break;
                 default:
-                    return Usage($"daemon run takes only --detached and --log-file FILE (got '{rest[i]}')");
+                    return Usage($"daemon run takes only --detached, --launchd and --log-file FILE (got '{rest[i]}')");
             }
         }
 
         if (detached && logFile is null)
         {
             return Usage("daemon run --detached needs --log-file FILE");
+        }
+
+        if (launchd && (detached || logFile is null))
+        {
+            return Usage("daemon run --launchd needs --log-file FILE and cannot use --detached");
         }
 
         // Until the redirect, stderr is still the starter's pipe, which reports it.
@@ -84,7 +97,7 @@ public static class DaemonVerbs
         catch (ConfigException error)
         {
             HostVerbs.WriteError(Console.Error, error);
-            return 1;
+            return Refused(launchd);
         }
 
         var options = config.Options;
@@ -92,14 +105,14 @@ public static class DaemonVerbs
         if (DaemonLifecycle.PrepareDirs(stateDir, options.StoreDir) is { } dirProblem)
         {
             HostVerbs.WriteError(Console.Error, dirProblem);
-            return 1;
+            return Refused(launchd);
         }
 
         using var storeLock = StoreLock.TryAcquire(options.StoreDir, DaemonLifecycle.LockRetry);
         if (storeLock is null)
         {
             HostVerbs.WriteError(Console.Error, DaemonLifecycle.HeldBy(options.StoreDir, DaemonState.Read(options.StoreDir), options.Port));
-            return 1;
+            return Refused(launchd);
         }
 
         if (detached)
@@ -135,6 +148,19 @@ public static class DaemonVerbs
             Environment.ProcessId, DateTimeOffset.UtcNow, stateDir, logFile, options.Port, config.EffectiveDigest, detached);
         instance.ToState().Write(options.StoreDir);
         return await DaemonHost.RunAsync(config, instance, CancellationToken.None);
+    }
+
+    private static int Refused(bool launchd)
+    {
+        if (!launchd)
+        {
+            return RefusedExitCode;
+        }
+
+        // launchd has no per-code restart exclusion. Only these explicit refusals map to zero;
+        // manager exit success is never evidence of readiness for `daemon start`.
+        Console.Error.WriteLine("abl: startup refused; launchd job stopped without retry (exit 0 is not daemon readiness)");
+        return 0;
     }
 
     // ---- start, stop, status -----------------------------------------------------------
