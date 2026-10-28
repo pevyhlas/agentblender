@@ -45,11 +45,15 @@ Proposed design for independent review:
 - Alternatives: disable restarts entirely (loses crash recovery); add a supervisor wrapper or
   durable sentinel (adds lifecycle/state machinery). The explicit adapter is bounded and keeps
   one process under the manager. Live manager qualification remains parent008.
-- Existing services adopt the new policy by rerunning `install-service`; no automatic installation.
+- A confirmed launchd `state = not running` after exit0 participates in the existing two-observation
+  pre-lock fail-fast check. Pending/unobserved states do not. No manager exit establishes readiness.
+- Existing launchd jobs retain loaded argv: safe upgrade stops the daemon (respecting active-session
+  refusal), uninstalls/unloads the inactive job, installs the replacement and starts it. A rewritten
+  plist alone does not activate policy. No automatic installation or loaded-definition reconciliation.
 
 ## Tasks
 
-- [ ] T001 Independent design review; record external manager contracts and review disposition.
+- [x] T001 Independent design review; record external manager contracts and review disposition.
 - [ ] T002 Implement exit classification and generated policies; update P1 and agent guidance.
 - [ ] T003 Unit/golden and built-CLI stand-in proof for refusal, ordinary failure, diagnostic,
   health/state/lock safety, and existing cleanup. Run required source gates.
@@ -74,9 +78,11 @@ acceptance is claimed or rerun.
 
 ## State
 
-**Step**: design review pending
+**Step**: implementation
 **Branch**: `022-service-refusal`; PR not opened yet.
 **Authority**: owner continuation; constitution permits commit, branch push/PR and green reviewed
 merge. Release, deployment and live qualification require their separate authority.
-**Attempts**: no implementation or verification runs; inherited019 hold unchanged.
-**Next**: independent design review, then bounded implementation.
+**Design review**: architecture PASS (0 critical/high,2 advisory medium), security PASS0 at306343e;
+  fail-fast stopped-zero observation and safe unload/reload instructions incorporate both advisories.
+**Attempts**: baseline107 tests PASS; inherited019 hold unchanged.
+**Next**: implementation and focused refusal proof, then full non-Blender checks/reviews.

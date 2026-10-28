@@ -91,6 +91,14 @@ How a fresh agent installs, configures, starts, checks and connects AgentBlender
   `DOTNET_ROOT`. Uninstall refuses an active job, including one whose PID is unavailable, before
   any manager mutation or definition removal. Tests: `ServiceUnitTests`,
   `ServiceUnitTests.ActiveServiceUninstallChangesNeitherManagerNorDefinition`.
+  Intentional `daemon run` config, state/store-directory and held-lock refusals return78;
+  systemd excludes78 from automatic restarts. Generated launchd argv selects `--launchd`,
+  mapping only these refusals to0 with an explicit refusal diagnostic to suppress KeepAlive.
+  This is manager control, never readiness: a confirmed stopped-zero launchd job fails startup
+  after two pre-lock observations; pending/unknown jobs keep waiting. Ordinary run failures
+  remain retryable. Tests: `IntentionalRunRefusalStopsBeforeLogRecordWorkerOrListener`,
+  `LogOpenFailureRemainsRetryableInBothRunModes`, `LaunchdOnlyReportsConfirmedStoppedZeroExits`,
+  `AStoppedLaunchdZeroExitFailsReadinessPromptlyAndRetainsRefusalOutput`.
 - **P1.I-06 Host verbs never mutate through ops**: `setup`, `doctor`, `config`, `daemon …` and
   `mcp config` are disjoint from the op verbs and have no MCP tool; runtime state reaches MCP
   through `daemon_status`. Enforced by: `HostVerbsTests`, `DaemonStatusTests`,

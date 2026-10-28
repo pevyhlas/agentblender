@@ -556,7 +556,9 @@ public sealed class DaemonLifecycle(LifecycleHost host)
                 {
                     nextServiceCheck = clock.Elapsed + ServiceCheckInterval;
                     var job = watch.Query();
-                    var failure = job.Failure;
+                    var failure = job.Failure ?? (job.StoppedAfterExit
+                        ? "job is not running after exit 0; startup may have been refused; see the service output"
+                        : null);
                     failedChecks = failure is null ? 0 : failedChecks + 1;
                     if (failedChecks >= 2)
                     {

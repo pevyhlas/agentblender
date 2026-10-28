@@ -32,7 +32,7 @@ public sealed class ConfigStartupTests : IDisposable
         WriteConfig("""{"version":1,"daemon":{"prot":7811}}""");
         var (code, _, stderr) = await RunAsync(CliDll, DaemonRun, TimeSpan.FromSeconds(30));
 
-        Assert.Equal(1, code);
+        Assert.Equal(78, code);
         Assert.Contains("config.file", stderr);
         Assert.Contains(ConfigPath, stderr);
         Assert.Contains("unknown key 'daemon.prot'", stderr);
@@ -44,7 +44,7 @@ public sealed class ConfigStartupTests : IDisposable
         WriteConfig("{\n  \"version\": 1 // pinned\n}");
         var (code, _, stderr) = await RunAsync(CliDll, DaemonRun, TimeSpan.FromSeconds(30));
 
-        Assert.Equal(1, code);
+        Assert.Equal(78, code);
         Assert.Contains($"config.file: config file {ConfigPath}: not strict JSON at line 2", stderr);
     }
 
@@ -55,7 +55,7 @@ public sealed class ConfigStartupTests : IDisposable
         File.SetUnixFileMode(ConfigPath, (UnixFileMode)0b110_110_110);
 
         var (daemonCode, _, daemonErr) = await RunAsync(CliDll, DaemonRun, TimeSpan.FromSeconds(30));
-        Assert.Equal(1, daemonCode);
+        Assert.Equal(78, daemonCode);
         Assert.Contains("refusing to load", daemonErr);
         Assert.Contains("writable by group or others (mode 0666)", daemonErr);
 

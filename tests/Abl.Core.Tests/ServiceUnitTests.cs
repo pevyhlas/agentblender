@@ -56,6 +56,7 @@ public sealed class ServiceUnitTests : IDisposable
             ExecStart=/usr/bin/env -i HOME=/home/u USER=u LOGNAME=u PATH=/usr/bin:/bin DOTNET_ROOT=/home/u/.dotnet /home/u/.dotnet/dotnet /home/u/.local/share/agentblender/cli/abl.dll daemon run --log-file /home/u/.local/state/agentblender/daemon-0123456789ab.log
             WorkingDirectory=/home/u/.local/state/agentblender
             Restart=on-failure
+            RestartPreventExitStatus=78
             RestartSec=5
             # Blender workers are children: stopping takes the whole control group.
             KillMode=control-group
@@ -107,6 +108,7 @@ public sealed class ServiceUnitTests : IDisposable
                 <string>run</string>
                 <string>--log-file</string>
                 <string>/Users/u/.local/state/agentblender/daemon-0123456789ab.log</string>
+                <string>--launchd</string>
               </array>
               <key>WorkingDirectory</key>
               <string>/Users/u/.local/state/agentblender</string>
@@ -153,7 +155,7 @@ public sealed class ServiceUnitTests : IDisposable
             ServiceUnits.CommandOf(ServiceUnits.ReadSystemdExecStart(unit)));
 
         var plist = ServiceUnits.Launchd(awkward);
-        Assert.Equal(awkward.ExecStart, ServiceUnits.ReadLaunchdExecStart(plist));
+        Assert.Equal(awkward.ExecStart.Append("--launchd"), ServiceUnits.ReadLaunchdExecStart(plist));
         Assert.Equal("/opt/my tools/100%$$x", ServiceUnits.ReadLaunchdDotnetRoot(plist));
         Assert.Equal("/s/$HOME/x&<y>.log", ServiceUnits.LogFileOf(ServiceUnits.ReadLaunchdExecStart(plist)));
         Assert.Equal("/s/state dir/launchd/daemon.out", ServiceUnits.ReadLaunchdOutput(plist));
@@ -428,6 +430,21 @@ public sealed class ServiceUnitTests : IDisposable
         var state = launchd.Query();
         Assert.Equal(failure, state.Failure);
         Assert.Equal(ServiceUnits.LaunchdOutput(State), state.OutputFile);
+    }
+
+    [Theory]
+    [InlineData("state = not running\nlast exit code = 0\n", true)]
+    [InlineData("state = not running\nlast exit code = (never exited)\n", false)]
+    [InlineData("state = waiting\nlast exit code = 0\n", false)]
+    [InlineData("state = spawn scheduled\nlast exit code = 0\n", false)]
+    [InlineData("last exit code = 0\n", false)]
+    [InlineData("state = not running\npid = 777\nlast exit code = 0\n", false)]
+    public void LaunchdOnlyReportsConfirmedStoppedZeroExits(string printed, bool stopped)
+    {
+        var launchd = new LaunchdAgent(Path.Combine(_root, "absent.plist"), Path.Combine(_root, "login.plist"), 501,
+            (_, _) => (0, printed, ""));
+        Assert.Equal(stopped, launchd.Query().StoppedAfterExit);
+        Assert.Null(launchd.Query().Failure); // Normal shutdown is not a service failure.
     }
 
     [Fact]

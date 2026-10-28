@@ -114,6 +114,7 @@ public static partial class ServiceUnits
             ExecStart={string.Join(' ', service.ExecStart.Select(SystemdExecWord))}
             WorkingDirectory={service.StateDir.Replace("%", "%%", StringComparison.Ordinal)}
             Restart=on-failure
+            RestartPreventExitStatus=78
             RestartSec=5
             # Blender workers are children: stopping takes the whole control group.
             KillMode=control-group
@@ -153,7 +154,7 @@ public static partial class ServiceUnits
             """);
         builder.Append('\n').Append(CultureInfo.InvariantCulture, $"  <string>{LaunchdLabel}</string>\n");
         builder.Append("  <key>ProgramArguments</key>\n  <array>\n");
-        foreach (var word in service.ExecStart)
+        foreach (var word in service.ExecStart.Append("--launchd"))
         {
             builder.Append(CultureInfo.InvariantCulture, $"    <string>{Xml(word)}</string>\n");
         }

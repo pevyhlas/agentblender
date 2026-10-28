@@ -107,6 +107,19 @@ work (placement, type, recolouring, icon kits) happens in AGD.
 
 ## When something goes wrong
 
+User services stop retrying explicit configuration, private-directory and occupied-store-lock
+refusals. Ordinary `abl daemon run` returns78 for these; systemd suppresses automatic retries.
+The generated launchd job uses `--launchd --log-file FILE` and exits0 on refusal solely to stop
+KeepAlive, with the original error in the job's output. Exit0 here does **not** mean ready:
+`abl daemon start` still requires a warm worker and reports a stopped job as failure. Fix the
+reported check, then start again. Other startup failures retain the manager's restart policy.
+
+To update an existing service definition, run `abl daemon stop` first. Proceed only when it
+succeeds or reports not running (exit3); active-session refusal must be resolved first. Then
+run `abl daemon uninstall-service`, require success, run `abl daemon install-service` (include
+`--enable-at-login` if wanted), and `abl daemon start`. This unloads an old launchd job before
+loading the new argv; merely rewriting its plist does not activate the new policy.
+
 - **The CLI cannot reach the daemon.** It prints
   `abl: cannot reach the daemon at <url> — start it with 'abl daemon start' (diagnose: 'abl doctor')`.
   Do what it says. `abl doctor --json` returns a `doctor.v1` report in which each failed
