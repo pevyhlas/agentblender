@@ -116,9 +116,13 @@ reported check, then start again. Other startup failures retain the manager's re
 
 To update an existing service definition, run `abl daemon stop` first. Proceed only when it
 succeeds or reports not running (exit3); active-session refusal must be resolved first. Then
-run `abl daemon uninstall-service`, require success, run `abl daemon install-service` (include
-`--enable-at-login` if wanted), and `abl daemon start`. This unloads an old launchd job before
-loading the new argv; merely rewriting its plist does not activate the new policy.
+run `abl daemon uninstall-service`. On macOS, its exit0 alone does not prove that unloading
+succeeded: confirm the old job is absent with `launchctl print gui/$(id -u)/dev.agentblender.daemon`
+and `launchctl print user/$(id -u)/dev.agentblender.daemon` in the applicable domains. Require an
+explicit service-not-found result; a permission or manager error is not confirmation. If it is
+still loaded or cannot be checked, resolve the unload failure before continuing. Once removal
+and unloading are confirmed, run `abl daemon install-service` (include `--enable-at-login` if
+wanted) and `abl daemon start`. Merely rewriting a plist does not activate the new argv.
 
 - **The CLI cannot reach the daemon.** It prints
   `abl: cannot reach the daemon at <url> — start it with 'abl daemon start' (diagnose: 'abl doctor')`.

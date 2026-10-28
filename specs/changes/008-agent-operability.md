@@ -66,7 +66,8 @@ acceptance are completed by015 (public PR #11).
   launchd adapter suppresses those retries without claiming readiness, with stopped-zero fail-fast
   observation and safe definition-upgrade instructions. Source/stand-in proof only.
 - [ ] Remaining service carry-overs from the lifecycle reviews: `IServiceManager` gains `Install`,
-  `Uninstall` and `UnitPath`; doctor reporting a stuck
+  `Uninstall` and `UnitPath`; launchd uninstall must propagate failed bootout without removing
+  definitions (022's upgrade instructions require explicit unload confirmation meanwhile); doctor reporting a stuck
   job, and `daemon.out` rotation (tail only this start's bytes); one `desktop.tcpAvailable`
   encoding for `/healthz` and `daemon_status`; doctor `service.state` reports a job this shell
   cannot identify; a post-install systemd `LoadState` check with roll-back and a launchd

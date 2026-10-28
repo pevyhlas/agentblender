@@ -48,8 +48,10 @@ Proposed design for independent review:
 - A confirmed launchd `state = not running` after exit0 participates in the existing two-observation
   pre-lock fail-fast check. Pending/unobserved states do not. No manager exit establishes readiness.
 - Existing launchd jobs retain loaded argv: safe upgrade stops the daemon (respecting active-session
-  refusal), uninstalls/unloads the inactive job, installs the replacement and starts it. A rewritten
-  plist alone does not activate policy. No automatic installation or loaded-definition reconciliation.
+  refusal), uninstalls and explicitly confirms absence in the applicable launchd domains before
+  installing the replacement and starting it. Existing uninstall ignores failed bootout, so exit0
+  alone is not confirmation; failure propagation remains008. A rewritten plist does not activate
+  policy. No automatic installation or loaded-definition reconciliation.
 
 ## Tasks
 
@@ -88,4 +90,12 @@ merge. Release, deployment and live qualification require their separate authori
   fail-fast stopped-zero observation and safe unload/reload instructions incorporate both advisories.
 **Attempts**: baseline107PASS; focused86PASS/4fixture-expectation FAIL; full1045PASS/3old-exit-assertion
   FAIL/1skip; corrected full1048PASS/0FAIL/1skip. No production correction after initial implementation.
+**Implementation review**: all four lenses PASS at efc7ff9; architecture/ergonomics each retained
+  one advisory medium about uninstall discarding bootout failure. Docs now require actual unload
+  confirmation; failure propagation is explicitly carried by008. Scoped review follows.
 **Next**: required CI, four owning implementation reviews, exact-head review gate and authorized merge.
+
+**Review**: round 2 · 2704470aad6c111652a8eddbc3be3536191a730e..efc7ff902b7766f05e572efece059c80017651a2 · eng-code · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/18#issuecomment-6466130069
+**Review**: round 2 · 2704470aad6c111652a8eddbc3be3536191a730e..efc7ff902b7766f05e572efece059c80017651a2 · eng-security · PASS · 0 critical, 0 high, 0 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/18#issuecomment-6466130577
+**Review**: round 2 · 2704470aad6c111652a8eddbc3be3536191a730e..efc7ff902b7766f05e572efece059c80017651a2 · eng-arch · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/18#issuecomment-6466131420
+**Review**: round 2 · 2704470aad6c111652a8eddbc3be3536191a730e..efc7ff902b7766f05e572efece059c80017651a2 · eng-ergonomics · PASS · 0 critical, 0 high, 1 medium, 0 low · https://github.com/pevyhlas/agentblender/pull/18#issuecomment-6466132106
