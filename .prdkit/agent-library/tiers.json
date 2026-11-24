@@ -1,0 +1,6 @@
+{
+  "verydeep": { "claude": { "model": "claude-fable-5-2" },  "opencode": { "model": "openai/gpt-6.2-astra", "variant": "xhigh" } },
+  "deep":     { "claude": { "model": "claude-opus-5-5" },   "opencode": { "model": "openai/gpt-6.2-astra", "variant": "high" } },
+  "standard": { "claude": { "model": "claude-sonnet-5-5" }, "opencode": { "model": "openai/gpt-6.2-sol", "variant": "high" } },
+  "light":    { "claude": { "model": "claude-sonnet-5-5" }, "opencode": { "model": "openai/gpt-6.2-sol", "variant": "medium" } }
+}

@@ -3,7 +3,7 @@
 name: eng-code
 description: AgentBlender code + test-evidence reviewer. Use to review recently written/modified code (unstaged diff or a PR) — host C# and worker/ Python — against this project's conventions and constitution before commit/PR/merge.
 mode: all
-model: openai/gpt-6.1-sol
+model: openai/gpt-6.2-sol
 variant: high
 permission:
   '*': deny

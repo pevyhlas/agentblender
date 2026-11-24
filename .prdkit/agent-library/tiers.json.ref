@@ -1,0 +1,3 @@
+source: agent-library tiers.json
+library-ref: 9c1aea7b0bf92ed2d4aee1faabb4d07f9ac37031
+sha256: 2a56396e769c93a1387183fddeb9cf82fb884ec2b4067413636daabf835604bd

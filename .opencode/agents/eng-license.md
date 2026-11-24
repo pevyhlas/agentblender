@@ -3,8 +3,8 @@
 name: eng-license
 description: AgentBlender license/provenance reviewer. REQUIRED for any new dependency (NuGet/PyPI), any code borrowed from another project, any bundled asset, or changes near the worker/ GPL boundary. MIT open-source target makes this legal risk.
 mode: all
-model: openai/gpt-6.1-sol
-variant: xhigh
+model: openai/gpt-6.2-astra
+variant: high
 permission:
   '*': deny
   read: { '*': allow, '*.env': deny, '*.env.*': deny, '*.env.example': allow }
