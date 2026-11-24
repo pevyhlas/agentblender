@@ -38,7 +38,7 @@ projections change (Claude ids were already current).
 ## Tasks
 
 - [x] T001 Vendor snapshot, rewrite tier map, re-render, run agent/adoption checks.
-- [ ] T002 Independent review, required CI, finalize and merge.
+- [x] T002 Independent review, required CI, finalize and merge.
 
 ## Checks
 
@@ -49,11 +49,13 @@ No new Q or I. `render-agents.sh --check` enforces the resolved projections agai
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
 | A1 | agents.md tier policy | `render-agents.sh --check` PASS; `--resolve` shows every projection from `baseline <tier>`; sync.py model findings cleared | 1 | PASS |
-| A2 | C-09; constitution | `check-adoption.sh` (7 groups) and `doctor.sh` PASS locally; required CI on the merge head | 1 | NOT_RUN |
+| A2 | C-09; constitution | `check-adoption.sh` (7 groups) and `doctor.sh` PASS locally; source 1856cdb required Validate, Build & unit tests and Blender integration PASS in run 45383905786; final metadata-head CI remains a merge condition | 1 | PASS |
 
 ## State
 
-**Step**: review
-**Waiting on**: independent eng-code review
+**Step**: finalization
+**Waiting on**: final metadata-head required CI and matched-head merge
+**Review**: round 1 · af6e3be970dabbc43bc2faf1e964efddc8b86f99..1856cdbd23df809f1a956b12be998329cc2c796d · eng-code · PASS · 0 critical, 0 high, 0 medium, 1 low · https://github.com/pevyhlas/agentblender/pull/20#issuecomment-7130281312
 **Authority**: owner direction 2026-11-24 (estate tier refresh, merge=yes); constitution branch/PR/green-reviewed merge.
-**Next**: review, then finalize record/log and matched-head merge.
+**CI**: advisory macOS job failed one unrelated daemon-lifecycle test (`StopForceKillsAStoppedForegroundDaemonAndItsWorkers`, 116/117); continue-on-error, not required.
+**Next**: finalize record/log, verify final-head required CI and `check-review.sh`, then matched-head merge.
