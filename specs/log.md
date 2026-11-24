@@ -1,5 +1,7 @@
 # Closed changes
 
+- 2026-11-24 023-agents-tier-fable52: adopt the agent-library tier baseline tiers.json@9c1aea7b (planning tier Fable 5.2; OpenCode GPT-6.2 astra/sol), replacing the hand-written literal tier table; eng-license override kept — operations, J-06, C-09 — render/adoption/doctor checks and independent eng-code review passed; neutral-body library sync remains out of scope — [PR #20](https://github.com/pevyhlas/agentblender/pull/20)
+
 - 2026-10-28 022-service-refusal: classify intentional startup refusals and suppress systemd/launchd restart loops while preserving readiness checks and genuine-failure recovery — P1.B-14, P1.B-16, Q-04 — source/stand-in proof and four independent reviews passed; live-manager qualification and native019 remain open, unload-failure propagation stays008 — [PR #18](https://github.com/pevyhlas/agentblender/pull/18)
 
 - 2026-10-27 021-product-kit-121: adopt pinned Product-Kit 1.2.1, preserve project policy and reconcile resolved inbox direction — operations, C-01/C-04/C-09, J-06 — adoption/helper/race-guard proof and required reviews passed; native019 pause, platform qualification and release gates remain — [PR #17](https://github.com/pevyhlas/agentblender/pull/17)
