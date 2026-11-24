@@ -3,7 +3,7 @@
 name: eng-ergonomics
 description: AgentBlender agent-ergonomics reviewer. Use for changes to the public surface (MCP tools/CLI verbs), output formats, state/delta forms, previews/contact sheets, or error shapes — token economy and CLI≡MCP parity are product quality.
 mode: all
-model: openai/gpt-6.1-sol
+model: openai/gpt-6.2-sol
 variant: high
 permission:
   '*': deny

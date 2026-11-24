@@ -3,8 +3,8 @@
 name: eng-security
 description: AgentBlender Security & Privacy change reviewer. REQUIRED for any change touching the network bind, the code-execution path (scene_exec/replay), secret handling, telemetry emission, or filesystem paths derived from caller input.
 mode: all
-model: openai/gpt-6.1-sol
-variant: xhigh
+model: openai/gpt-6.2-astra
+variant: high
 permission:
   '*': deny
   read: { '*': allow, '*.env': deny, '*.env.*': deny, '*.env.example': allow }

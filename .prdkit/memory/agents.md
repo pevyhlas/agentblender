@@ -28,7 +28,7 @@ it through their model/effort fields, resolved from the tier map below.
 | Testing | generic (session subagents) | standard | Golden-file + protocol integration tests |
 | Acceptance / Verification | generic (session subagents) | fast | Non-user-facing: automated verification per constitution principles; judgment lives in the change record |
 | Spec Writing | driving planning session | frontier | Spec quality compounds downstream |
-| Implementation | build / workflow agents | high | Routine implementation uses Sol; frontier is reserved for deliberate planning |
+| Implementation | build / workflow agents | high | Routine implementation runs at `high`; frontier is reserved for deliberate planning |
 
 ## Capability tiers
 
@@ -47,17 +47,24 @@ reasoning effort is a tier lever; deterministic gates stay bash scripts, never d
 
 ## Tier → model / effort map
 
-The tier map is a literal table (no shared baseline); `render-agents.sh` stamps these ids
-into the generated projections. Update the table and re-render when models change.
+Models resolve through the shared agent-library tier baseline: `render-agents.sh` reads the
+vendored snapshot `.prdkit/agent-library/tiers.json` (provenance in `tiers.json.ref`), maps each
+local tier to a library tier with the table below, and stamps the resolved ids into the generated
+projections. This file restates no model ids. To move to a newer library baseline, run
+`.prdkit/scripts/bash/render-agents.sh --refresh-baseline <agent-library checkout> --library-ref
+<commit>`, then `render-agents.sh` and `render-agents.sh --check`, and review the projection diff.
 
-| Tier | Claude Code model | OpenCode model | OpenCode variant |
-|---|---|---|---|
-| frontier | claude-fable-5-1 | openai/gpt-6-astra | xhigh |
-| high | claude-opus-5-5 | openai/gpt-6.1-sol | xhigh |
-| standard | claude-sonnet-5-5 | openai/gpt-6.1-sol | high |
-| fast | claude-sonnet-5-5 | openai/gpt-6.1-sol | medium |
+Tier baseline: agent-library tiers.json@9c1aea7b0bf92ed2d4aee1faabb4d07f9ac37031
 
-`frontier` is used for planning only.
+| Local tier | Library tier |
+|------------|--------------|
+| frontier | verydeep |
+| high | deep |
+| standard | standard |
+| fast | light |
+
+`frontier` is used for planning only. Claude effort is not pinned in agent frontmatter and
+remains the native/session default; OpenCode effort comes from the library `variant`.
 
 **Local tier choices** (recorded deviations from the reviewer's default tier):
 
@@ -75,9 +82,9 @@ after config/agent changes. Session model-picker overrides still take precedence
 
 - Body: the neutral body verbatim (canonical region + marker + overlay). Header: a YAML
   comment naming the neutral source.
-- Claude keeps `tools: Read, Grep, Glob, LS, Bash`; `model` from the tier map row.
+- Claude keeps `tools: Read, Grep, Glob, LS, Bash`; `model` resolved from the tier baseline.
 - OpenCode keeps `mode: all` and the bounded read-only `permission` block; `model` /
-  `variant` from the tier map row.
+  `variant` resolved from the tier baseline.
 - Refresh: edit the neutral definition, run `.prdkit/scripts/bash/render-agents.sh`, then
   `render-agents.sh --check` (fails on body drift or model/variant drift).
 
