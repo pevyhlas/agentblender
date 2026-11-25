@@ -54,7 +54,7 @@ projections. This file restates no model ids. To move to a newer library baselin
 `.prdkit/scripts/bash/render-agents.sh --refresh-baseline <agent-library checkout> --library-ref
 <commit>`, then `render-agents.sh` and `render-agents.sh --check`, and review the projection diff.
 
-Tier baseline: agent-library tiers.json@9c1aea7b0bf92ed2d4aee1faabb4d07f9ac37031
+Tier baseline: agent-library tiers.json@675b6fbecf6629c4274ccbf6c447f330e01f66c3 (release v1.0.0@cf00338365e5ad1e06c830195d8190991e7dd1cd)
 
 | Local tier | Library tier |
 |------------|--------------|
