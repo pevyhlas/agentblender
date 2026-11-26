@@ -1,7 +1,7 @@
 # Contract: Public Surface (MCP tools ≡ CLI verbs)
 
 Owner part: P1 ([spec](../specs/parts/p1-host.md)). `FR-`/`SC-` references cite the 0.x feature
-specs (feature 001 unless prefixed 002/003), summarized in [the archive](../specs/archive.md);
+specs (feature 001 unless prefixed 002/003), summarized in [the archive](../.prdkit/history/archive.md);
 their full text is kept in the private development history.
 
 One shared core (`Abl.Core`); MCP (streamable HTTP at `/mcp`) and CLI (`abl …` → REST

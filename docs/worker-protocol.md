@@ -2,7 +2,7 @@
 
 Owner parts: P1 (sessions) and P3 ([architecture](../specs/architecture.md)). `FR-` references cite
 the 0.x feature specs (feature 001 unless stated), summarized in
-[the archive](../specs/archive.md); their full text is kept in the private development history.
+[the archive](../.prdkit/history/archive.md); their full text is kept in the private development history.
 
 Transport: Unix domain socket at `$XDG_RUNTIME_DIR/agentblender/w-<id>.sock` (AF_UNIX
 ~108-byte path limit — never under deep paths). Framing: 4-byte big-endian length +

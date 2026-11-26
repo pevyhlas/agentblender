@@ -12,7 +12,7 @@ Agents that need 3D-rendered assets (hero models, prop families, icon sets) cann
 | Pain today | Evidence | Solved by |
 |------------|----------|-----------|
 | Every call pays a Blender cold start, so iteration is slow | measured: about 1.4 s cold start against a 0.3 ms warm round trip ([observed](observed.md)) | J-01 |
-| No state model for branching exploration; programmatic undo is unreliable | desk research: prior-art survey ([archive](archive.md#prior-art-survey), [observed](observed.md)) | J-01 |
+| No state model for branching exploration; programmatic undo is unreliable | desk research: prior-art survey ([observed](observed.md)) | J-01 |
 | Scene dumps and one image per item flood model context | assumed, sized in the spike: a 512 px preview is about 350 tokens | J-01, J-02 |
 | A rendered result cannot be reproduced or shared through git | measured: `.blend` bytes differ across processes ([observed](observed.md)) | J-03 |
 | Consumer projects receive hand-copied files without provenance | assumed | J-04 |

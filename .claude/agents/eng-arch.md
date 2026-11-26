@@ -81,7 +81,7 @@ and Release / Operations domains (`.prdkit/memory/agents.md`).
 `specs/architecture.md` and `specs/architecture/` (shape, parts, decisions, why it works),
 `specs/product.md` and `specs/product/`, the touched `specs/parts/` files, the open change
 record, `docs/worker-protocol.md` and `docs/public-surface.md`,
-`.prdkit/memory/constitution.md`. History questions only: `specs/archive.md`.
+`.prdkit/memory/constitution.md`. History questions only: `.prdkit/history/archive.md`.
 
 ## Output
 Findings ranked most-severe-first: **severity**, file/line, the structural consequence if

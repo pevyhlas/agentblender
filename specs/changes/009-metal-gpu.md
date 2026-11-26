@@ -3,7 +3,7 @@
 **Opened**: 2026-10-20 · **Parts**: P1, P3, P5 · **Journeys**: J-05, J-04 · **Tier**: T2 · **Parent**: none
 
 <!-- Continues 0.x feature 009-metal-gpu, kept open at the Product-Kit 1.1 restructure. Its
-feature folder is summarized in specs/archive.md; details are in the private history. -->
+feature folder is summarized in .prdkit/history/archive.md; details are in the private history. -->
 
 ## Intent
 

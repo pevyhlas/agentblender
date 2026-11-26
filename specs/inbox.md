@@ -26,7 +26,7 @@ deferrals belong at their canonical destination with a revisit trigger. -->
 The spec now follows the Product-Kit 1.1 layout: [product](product.md) with journeys and detail
 files, the [architecture](architecture.md) overview with topics, parts as boxes (P1 Host absorbs
 the former P2, P6, P7 and P8 as components), [changes](changes/) for 008 and 009, and a condensed
-[archive](archive.md). Maturity marks: validated where an owner-ratified need and passing
+archive (now `.prdkit/history/archive.md`). Maturity marks: validated where an owner-ratified need and passing
 real-Blender checks exist, hypothesis otherwise; the six journeys start as hypothesis. A
 review pass added delivery and inspection behaviors (P1.B-24 to P1.B-28, each with its tests)
 and split P4 and P5 into components.

@@ -20,7 +20,7 @@ maintainer's confirmation in `specs/inbox.md`.
 - **Branch push and pull request**: agents may push non-default branches and open pull requests
   (maintainer decision).
 - **Merge**: an agent may merge a pull request once the exact head's required CI is green and
-  `check-review.sh --head <sha>` passes for its change (maintainer decision). Never
+  `check-review.sh --pr <url> --head <sha>` passes for its change (maintainer decision). Never
   push `main` directly.
 - **Release and tag**: only with an explicit maintainer go; whether an earlier authorization
   for the first (then private) packaged release covers a public release is an open inbox item.

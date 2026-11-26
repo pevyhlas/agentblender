@@ -40,8 +40,6 @@ assignments live in `.prdkit/memory/agents.md`. Start OpenCode in the intended
 checkout/worktree and restart after config or agent changes.
 
 Before an authorized delegated assignment, include the actual project and change
-scope (the change id) and, where the ledger is configured, record boundaries with
-`.prdkit/scripts/bash/ledger-emit.sh` per `.prdkit/memory/task-ledger.md`; omit the
-change for project-wide maintenance. Apply the constitution and `specs/product/`
+scope (the change id); omit the change for project-wide maintenance. Apply the constitution and `specs/product/`
 before generic Product-Kit wording: daemon authentication beyond the network boundary is deferred
 (when it is due is an inbox question), while the desktop launcher token (P5.I-02) is already required.
