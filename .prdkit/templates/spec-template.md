@@ -17,6 +17,6 @@ when it passes its reading budget: move everything in one change and delete this
 
 ## Shape and parts
 
-## Why it works
+## Decisions and why it works
 
 ## Left open

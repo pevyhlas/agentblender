@@ -2,7 +2,7 @@
 
 <One sentence: what it is, for whom, and what changes for them.>
 
-**Stage**: <now> · next: <stage> ([lifecycle](product/lifecycle.md))
+**Stage**: <now> · next: <stage> ([lifecycle](product/lifecycle.md)) · [waiting on the owner](inbox.md)
 
 <!-- The executive page, read at a glance: one screen. Detail lives in specs/product/. Name
 roles, never people. Past the budget, keep the main pains and personas here and move all of
@@ -10,7 +10,7 @@ them to specs/product/users.md, linked. -->
 
 ## Problem
 
-<One sentence: who struggles with what today.>
+\<One sentence: who struggles with what today.>
 
 | Pain today | Evidence | Solved by |
 |------------|----------|-----------|
@@ -58,7 +58,3 @@ change; `bounds.sh` lists those in its scope.
 ## The bet
 
 <The thesis, and the signal that would prove it wrong.>
-
-## Waiting on the owner
-
-- <The few open decisions that matter most, linked to the [inbox](inbox.md).>

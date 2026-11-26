@@ -8,5 +8,6 @@ Edit `.prdkit/memory/constitution.md` as the owner directs, explaining a materia
 on open changes first; a configuration edit never grants itself authority. `agents.md` maps
 capabilities to agents or humans. Optional neutral definitions
 (`.prdkit/templates/agent-definition-template.md`) name a tier, never a model; render projections
-with `.prdkit/scripts/bash/render-agents.sh` and `--check`, never by hand. `config.md` holds
-optional settings and `task-ledger.md` the event ledger. Run doctor afterward.
+with `.prdkit/scripts/bash/render-agents.sh` and `--check`, never by hand. Both install with
+`init.sh --upgrade --with agent-tiers`; propose that to the owner first when they are missing. `config.md` holds
+optional settings. Run doctor afterward.

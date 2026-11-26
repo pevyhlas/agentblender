@@ -28,14 +28,61 @@ Already-ready work goes straight to [implementation.md](implementation.md): do n
    no product/design justification? Explain omissions, shared work and safe intermediate states.
    Coverage is a reasoned assessment, not proof the product definition is complete.
 
-Keep a compact table in the programme's Tasks (or the bounded change for a single outcome):
+Keep a compact discovery table in the programme's Tasks:
 
 | Work | Outcome / canonical IDs | Design / parts | Stage / disposition | Depends on + required outcome | Completion checks |
 |------|-------------------------|----------------|---------------------|-------------------------------|-------------------|
 
-Use stable local keys while discovering work; link child change IDs when opened. Separate required
-now, later, optional and unresolved work. Detail only near-ready work; do not open ten worktrees
-just to describe ten candidates. No separate feature-spec hierarchy or global task-ID scheme.
+Link child change IDs when opened. Separate required now, later, optional and unresolved work.
+Detail only near-ready work; do not open ten worktrees just to describe ten candidates. In a bounded
+change, use outcome-level task lines per [implementation.md](implementation.md).
+No separate feature-spec hierarchy or global task-ID scheme.
+
+## Programmes
+
+A programme is a parent change: Intent names outcomes; Tasks map coverage, dependency outcomes and
+owner gates with one row per child (id, outcome, status, PR, carry-forward of at most three lines);
+State tracks them. A child names its parent in its **Parent** header; status and the
+merged-without-closing check read that field. Child plans and execution live in the child record
+and its PR. A closed child does not prove the parent's integrated outcome. Edit the parent in
+place; no amendment journals. Children and the parent close per [review.md](review.md).
+
+## Protect the outcome
+
+For a programme or a sequence of follow-ups, keep an **outcome checkpoint** in the existing
+parent's State, using the format in `.prdkit/scripts/bash/outcome-checkpoint.md`.
+Children link it rather than copying a second tracker; a standalone small change can keep its
+outcome and selection in prose. Define the check for each enabling step in Tasks before starting
+it: a reviewed interface, working source path or deployed service can be a real intermediate
+advance without claiming the final user outcome.
+
+Scope linked progress evidence to what it proves: source, deployed or user-validated. Record
+`none` only if the history shows no advance. Count integrated children since the latest evidenced
+advance as a nonnegative integer. Keep the scaffold's positive progress limit unless the
+owner/project sets another (cite its source in Allocation). Reassess at that count or an existing
+timebox/investment boundary, whichever comes first.
+
+On adoption/resume, reconstruct missing fields from actual records and owner direction before
+selecting more work. If history or consumption cannot be reconciled, record `unknown`, not zero;
+do not invent a new baseline. Ordinary State prose such as an `**Outcome**:`
+result is not a programme goal. Record programme checkpoint fields only under
+`### Outcome checkpoint` in State. Count/reset/reassessment rules are in
+[implementation.md](implementation.md). These fields report recorded claims, not machine-verified
+progress or action permission: the helper's count comparison cannot evaluate prose deadlines,
+effort, lane drift, evidence validity or criticality, so the operational lead checks those too.
+Keep scope, limits and original failures through splitting or closing child changes; a new
+record is not a fresh investment allowance.
+
+Preserve each lane's purpose as well as the concurrency cap. A spare slot does not authorize
+diverting the value or foundation lane to an adjacent cleanup queue.
+
+Before investing in an implementation scheduled for replacement, identify the affected supported
+path, present defect and minimal safe remedy; compare repair with permitted containment, disabling
+the affected path, or advancing the replacement. Say what code/contracts/tests carry forward and
+what will be discarded, with a removal trigger for temporary work. Existing hard bounds and
+supported behavior still bind: containment or disabling needs the same applicable authority as any
+behavior change. Completeness of a retiring implementation is not automatically a prerequisite for
+its replacement. A new omission is a candidate to assess, not an automatic extension of the queue.
 
 ## Resolve upstream gaps
 
@@ -69,7 +116,3 @@ cycle blocks that dependency, not independent ready work. Resolve it before impl
 For several PRs, give each a bounded outcome and its own change; use a programme only when useful
 for integrated outcomes or coordination, not as a cleanup vehicle. Changes can ship intermediate
 behavior only when it preserves all applicable hard bounds and states remaining intent honestly.
-
-Use the change template's five-column Acceptance table even for programmes: Item, Proves, Check,
-Attempts, Result. Put coverage/dependency detail in Tasks; status helpers read the Acceptance columns.
-Keep Result a bare status token as in [change.md](change.md), with evidence outside that cell.

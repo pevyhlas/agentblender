@@ -14,11 +14,20 @@ CONTEXT_AGENT_FILES="CLAUDE.md AGENTS.md GEMINI.md QWEN.md CODEBUDDY.md QODER.md
 # Section-scoped lookup: only the ## Configuration section is configuration, so
 # documented examples elsewhere in the file never shadow the real values.
 prdkit_config_value() { # root key
-    local config="$1/.prdkit/memory/config.md" key="$2"
+    local config="$1/.prdkit/memory/config.md" key="$2" expected
     [ -f "$config" ] || return 0
-    sed -n '/^##[[:space:]]*Configuration/,/^##[[:space:]]/p' "$config" 2>/dev/null \
-        | grep -E "^-?[[:space:]]*${key}:" | head -1 \
-        | sed -E 's/^-?[[:space:]]*'"$key"':[[:space:]]*//; s/[[:space:]]*$//' | tr -d '\r' || true
+    verify_lf_file "$config" || { printf 'Invalid configuration text: %s (expected non-empty LF-terminated text)\n' "$config" >&2; return 1; }
+    expected="$(wc -l < "$config")" || return 1
+    awk -v key="$key" -v expected="$expected" '
+        /^##[[:space:]]*Configuration/ { section=1; next }
+        /^##[[:space:]]/ { section=0; next }
+        section && !found {
+            sub(/^-?[[:space:]]*/, "")
+            if (index($0,key ":") == 1) {
+                sub(/^[^:]*:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); print; found=1
+            }
+        }
+        END { if (NR != expected) exit 1 }' "$config"
 }
 
 context_file_bytes() { wc -c < "$1" | tr -d '[:space:]'; }
@@ -27,7 +36,7 @@ context_file_bytes() { wc -c < "$1" | tr -d '[:space:]'; }
 # anything; an empty output means within budget.
 context_budget_advisories() { # root
     local root="$1" raw budget name file size
-    raw="$(prdkit_config_value "$root" context-budget-bytes)"
+    raw="$(prdkit_config_value "$root" context-budget-bytes)" || return 1
     budget="$CONTEXT_DEFAULT_BUDGET_BYTES"
     if [ -n "$raw" ]; then
         if [[ "$raw" =~ ^[0-9]{1,9}$ ]]; then
@@ -40,7 +49,8 @@ context_budget_advisories() { # root
     for name in $CONTEXT_AGENT_FILES; do
         file="$root/$name"
         [ -f "$file" ] || continue
-        size="$(context_file_bytes "$file")"
+        size="$(context_file_bytes "$file")" || return 1
+        [[ "$size" =~ ^[0-9]+$ ]] || return 1
         if [ "$size" -gt "$budget" ]; then
             printf 'Context budget: %s is %s bytes, over context-budget-bytes %s; keep stable orientation and pointers, move change narrative to the spec or git\n' \
                 "$name" "$size" "$budget"

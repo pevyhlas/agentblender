@@ -19,9 +19,11 @@ path="${path:-.}"
 [ -d "$path" ] || { echo 'Expected a directory inside the checkout to inspect' >&2; exit 2; }
 [[ "$remote" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*$ ]] || { echo 'Expected a configured remote name' >&2; exit 2; }
 root="$(git -C "$path" rev-parse --show-toplevel)" || { echo "Not inside a Git checkout: $path" >&2; exit 2; }
-branch="$(git -C "$root" symbolic-ref --quiet --short HEAD || true)"
-head="$(git -C "$root" rev-parse HEAD)"
-changes="$(git --no-optional-locks -C "$root" status --porcelain=v1 --untracked-files=normal --ignore-submodules=none)"
+branch="$(git -C "$root" symbolic-ref --quiet --short HEAD)" ||
+    { [ "$?" -eq 1 ] || exit 1; }
+head="$(verify_lines git -C "$root" rev-parse --verify HEAD)"
+[[ "$head" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]] || { echo 'Invalid local HEAD revision' >&2; exit 1; }
+changes="$(verify_lines git --no-optional-locks -C "$root" status --porcelain=v1 --untracked-files=normal --ignore-submodules=none)"
 remote_head=""; transport=BLOCKED; reasons=()
 [ -n "$branch" ] || reasons+=("Detached HEAD has no handover branch")
 [ -z "$changes" ] || reasons+=("Uncommitted paths remain; checkpoint intended work and identify unrelated owners")
@@ -29,11 +31,14 @@ if $local_only; then
     transport=LOCAL_ONLY
 else
     if [ -n "$branch" ]; then
-        if refs="$(git -C "$root" ls-remote --exit-code --heads "$remote" "refs/heads/$branch" 2>/dev/null)"; then
-            while IFS=$'\t' read -r sha ref; do
-                [ "$ref" != "refs/heads/$branch" ] || remote_head="$sha"
-            done <<< "$refs"
-            [ "$remote_head" = "$head" ] || reasons+=("Remote branch revision does not match local HEAD")
+        if refs="$(verify_lines git -C "$root" ls-remote --exit-code --heads "$remote" "refs/heads/$branch" 2>/dev/null && printf x)"; then
+            sha="${refs%%$'\t'*}"
+            if [[ "$sha" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]] && [ "$refs" = "$sha"$'\t'"refs/heads/$branch"$'\nx' ]; then
+                remote_head="$sha"
+                [ "$remote_head" = "$head" ] || reasons+=("Remote branch revision does not match local HEAD")
+            else
+                reasons+=("Remote branch inventory is incomplete or malformed: expected exactly one ref")
+            fi
         else
             reasons+=("Remote branch is absent or could not be queried")
         fi

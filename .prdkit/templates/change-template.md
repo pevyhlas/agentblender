@@ -1,12 +1,20 @@
 # Change: <short name>
 
-**Opened**: <date> · **Parts**: <P-ids> · **Journeys**: <J-ids> · **Tier**: <T0–T3> · **Parent**: none
+**Opened**: <date>
 
-<!-- Past its budget, a change splits into changes that each ship on their own (Parent: <id>). -->
+**Parts**: <P-ids>
+
+**Journeys**: <J-ids>
+
+**Tags**:
+
+**Tier**: <T0–T3>
+
+**Parent**: none
 
 ## Intent
 
-<Why now, for whom. Inbox lines addressed, one sentence of disposition each.>
+<Why now, for whom?>
 
 ## Spec edits
 
@@ -15,34 +23,21 @@
 
 ## Bounds
 
-<!-- From `.prdkit/scripts/bash/bounds.sh <id>`: each constraint, non-goal or quality this change
-could break, with how it holds; then "Others in scope: hold". A conflict goes to the owner inbox
-with both sides, never resolved here. -->
-
 - <C-01>: holds: <how>.
+- Others in scope: hold.
 
 ## Approach
 
-<Approved design/contract references and spec/code baseline. Only real execution choices:
-options, pick, why. Unsettled material product/design choices return to Product-Kit.>
-
 ## Tasks
 
-- [ ] T001 <contribution/acceptance; paths; dependency outcome; check>
-
-<!-- Tiny fixes stay inline. Optional detail: .prdkit/cache/implementation/<id>.md;
-useful context/progress on the same PR. Product/programme discovery uses workflows/planning.md. -->
+<!-- Example (optional part ID): - [ ] (P2.1) T003 <outcome; dependency; check name>
+Delete the line in the PR that delivers it; do not check it off. -->
 
 ## Checks
 
-<Line test, consistency with L0/L1, enforcement for new Q/I. A few lines.>
-
 ## Acceptance
 
-<!-- Required PR obligations. Distinguish later non-gating runtime observations on the PR before
-execution; existing required checks cannot be demoted to finish. Live-only claims need live proof.
-Keep these five columns for status helpers, including on a parent programme. Result is exactly
-NOT_RUN/PASS/FAIL/BLOCKED/NOT_APPLICABLE; evidence/revision/environment go in Check or below the table. -->
+<!-- Result: NOT_RUN, PASS, FAIL, BLOCKED or NOT_APPLICABLE; evidence in Check or below. -->
 
 | Item | Proves | Check | Attempts | Result |
 |------|--------|-------|----------|--------|
@@ -53,5 +48,5 @@ NOT_RUN/PASS/FAIL/BLOCKED/NOT_APPLICABLE; evidence/revision/environment go in Ch
 **Step**: intent
 **Waiting on**: nothing
 **Next**: <next action>
-<!-- One line per verdict (workflows/change.md, Review):
-**Review**: round <n> · <base sha>..<reviewed head sha> · <reviewer> · PASS|FAIL · <n> critical, <n> high, <n> medium, <n> low · <link> -->
+<!-- Outcome checkpoint format: .prdkit/scripts/bash/outcome-checkpoint.md -->
+<!-- Verdicts live in publisher-authored PR reviews, never in this record (workflows/review.md). -->
