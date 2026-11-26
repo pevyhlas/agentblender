@@ -64,7 +64,7 @@
 - **Public-workflow direction**: the owner selected public-repository work, concise READMEs,
   public Product-Kit, reviewed fixes/roadmap continuation and original artwork through the native
   workflows on2026-10-24 (`379be625:specs/inbox.md`, Public projects, fixes and logos). The existing
-  README, notices, [change log](../log.md) PRs6–8 and constitution enact this; artwork adoption and
+  README, notices, PRs6–8 and constitution enact this; artwork adoption and
   release/deploy authority are not inferred. PR7 closed the baseline specific-bind, child-environment
   and tracked-packaging findings (P5.I-01/P5.I-05 and Delivery above); the release/deploy owner gates
   remain. The2026-10-25 hosted macOS CI choice is implemented

@@ -8,37 +8,46 @@
 #   1. Shared baseline — `Tier baseline: agent-library tiers.json@<commit>` plus the vendored
 #      snapshot (default .prdkit/agent-library/tiers.json). A tier resolves through an explicit
 #      `| Local tier | Library tier |` row, else by its own name when it is a library tier
-#      (verydeep/deep/standard/light), else through the compatibility aliases
-#      frontier->verydeep, high->deep, fast->light. Without a baseline line, a legacy literal
-#      `| Tier | <Harness> model | ... |` table is used instead.
+#      (verydeep/deep/standard/light).
 #   2. Overrides `| Scope | Harness | Model | Variant | Reason |`: `tier:<tier>` rows, then
 #      `agent:<name>` rows; a specific harness beats `*`. Every override needs a Reason.
 #
-# The renderer owns only `model` (both harnesses), `variant` (OpenCode), `description` (copied
-# from the neutral definition when that is a single-line value; a block scalar is copied whole
-# into a new projection, then stays project-owned) and the prompt body. Every other frontmatter
+# By default the renderer owns only `model` (both harnesses), `variant` (OpenCode),
+# `description` (copied from the neutral definition when a single-line value; a block scalar
+# is copied whole into a new projection, then stays project-owned) and the prompt body. Every other frontmatter
 # key of an existing projection (tools, permissions, mode, colour, memory, generated-header
 # comments) is project-owned native metadata and is preserved, as are leading generated-marker
-# comment lines in the body.
+# comment lines in the body. The optional `Projection tier` table opts in per field:
+#   - `Claude effort` owns `effort:`.
+#   - `Claude tools` owns `tools:` and restores the prior field on opt-out.
+#   - `OpenCode permissions` owns `permissions:` (OpenCode V2, deny all plus ordered rules),
+#     replaces legacy `permission:`, and writes variants as `model: provider/model#variant`
+#     instead of a separate `variant:`. Without this opt-in the model/variant format is unchanged.
+#     Migrate other V1-only keys manually. Opted-in frontmatter replacements refuse YAML anchors/aliases.
+#   - `OpenCode preamble` prepends a line to the neutral body (local tier takes precedence
+#     over the optional `*` row). Undeclared metadata stays project-owned.
+# A neutral `skills: [example-skill]` opts that agent into vendored skill references. Configure
+# `Skill roots:` and `Claude skill prefix:` in agents.md; SKILL.md may declare metadata
+# `prdkit/needs`. Claude gets plugin-qualified skills and the Skill tool on restricted lists.
+# OpenCode requires renderer-owned V2 permissions and only allows declared skills it can run;
+# shell-dependent skills on a shell-less agent get review-evidence notes instead.
 # A neutral definition may limit its harnesses with a bracketed `harnesses: [claude, opencode]`
 # list; any other form is a finding. Once a Tier baseline is declared, a projection with no
 # neutral definition (or excluded by its harnesses: list) is a finding unless agents.md lists
-# it under `Hand-owned agents:`. A missing projection is created
-# with name, description, model (and `mode: subagent` + variant for OpenCode); add native
-# extras by hand afterwards and they survive later renders. Files are rewritten only when
-# their content changes. Claude effort is not projected (session/native default). Neutral or
-# provenance keys (tier, domain, harnesses, source, library-ref, library-agent) are removed
-# from OpenCode frontmatter, which would otherwise pass them to the model as options.
+# it under `Hand-owned agents:`. A fresh projection includes name (except for native OpenCode
+# V2), description, model, and `mode: subagent` for OpenCode. Files are rewritten only when
+# their content changes. Undeclared Claude effort uses the project-owned value or the native
+# default. Neutral or provenance keys (tier, domain, harnesses, source, library-ref,
+# library-agent) are removed from OpenCode frontmatter.
 #
 # Usage:
 #   render-agents.sh                      write/refresh projections (fails closed: nothing is
-#                                         written while the tier map, overrides or snapshot
-#                                         have findings; projections that use a banned id are
+#                                         written while inputs or opted-in frontmatter have
+#                                         blocking findings; projections that use a banned id are
 #                                         rewritten, not a blocker; a failed write exits 1)
 #   render-agents.sh --check [--json]     drift = exit 1: tier-map findings, unresolvable
 #                                         tiers, malformed harnesses: lists, missing or
-#                                         unowned projections, model/variant/description/
-#                                         body drift
+#                                         unowned projections or owned-field/body drift
 #   render-agents.sh --resolve [--json]   print agent, harness, tier, model, variant, source
 #   render-agents.sh --refresh-baseline <agent-library checkout> [--library-ref <git-ref>]
 #                                         vendor tiers.json + provenance and update the
@@ -108,8 +117,13 @@ emit_findings() { # json-flag finding...
 
 collect() { # args to agent_tier_findings -> FINDINGS array
     FINDINGS=()
-    local f
-    while IFS= read -r f; do [ -z "$f" ] || FINDINGS+=("$f"); done < <(agent_tier_findings "$root" "$@")
+    local f output
+    if ! output="$(agent_tier_findings "$root" "$@")"; then
+        FINDINGS+=("Agent tier check did not complete")
+    fi
+    while IFS= read -r f; do [ -z "$f" ] || FINDINGS+=("$f"); done <<EOF
+$output
+EOF
 }
 
 # --- writing ---------------------------------------------------------------------------
@@ -136,7 +150,7 @@ refresh_baseline() {
     [ -d "$lib" ] || { echo "render-agents.sh: not a directory: $lib" >&2; exit 2; }
     git -C "$lib" rev-parse --git-dir >/dev/null 2>&1 ||
         { echo "render-agents.sh: $lib is not a git checkout; the baseline must name a library commit" >&2; exit 1; }
-    at_load "$root"
+    at_load_checked "$root" || { echo "render-agents.sh: ${AT_LOAD_ERR:-cannot load the tier map}" >&2; exit 1; }
     [ -z "$AT_SNAPSHOT_BAD" ] ||
         { echo "render-agents.sh: refusing to vendor: 'Baseline snapshot:' path '$AT_SNAPSHOT_REL' $AT_SNAPSHOT_BAD; it must be a relative path inside the repository" >&2; exit 1; }
     ra_tmpdir; staged="$RA_TMP/tiers.json"
@@ -215,6 +229,15 @@ updated_frontmatter() { # proj harness model variant desc_line desc
     ' "$1"
 }
 
+# Canonicalize opted-in frontmatter before applying the original field updates.
+projection_frontmatter() { # proj harness model variant desc_line desc
+    if [ -n "$AT_P_EFFORT$AT_P_PERMISSIONS$AS_CLAUDE$AS_CLAUDE_STATE" ]; then
+        at_native_frontmatter "$1" "$AT_P_EFFORT" "$AT_P_PERMISSIONS" "$3" | updated_frontmatter - "${@:2}"
+    else
+        updated_frontmatter "$@"
+    fi
+}
+
 # A frontmatter key's whole entry: its line plus the indented lines of a block or folded value
 # (blank lines inside it included), so a new projection copies a multiline description whole.
 fm_entry() { # file key
@@ -228,44 +251,59 @@ fm_entry() { # file key
     ' "$1"
 }
 
-new_projection() { # def harness name model variant
-    local def="$1" harness="$2" name="$3" model="$4" variant="$5" line
+new_projection() { # def harness name model variant body
+    local def="$1" harness="$2" name="$3" model="$4" variant="$5" body="$6" line
     printf -- '---\n'
     printf '# Generated from .prdkit/agents/%s.md by render-agents.sh; model/variant resolve from .prdkit/memory/agents.md. Edit the neutral definition, then re-render.\n' "$name"
-    line="$(at_fm_line "$def" name)"; printf '%s\n' "${line:-name: $name}"
+    # Native OpenCode takes its agent ID from the path; name: is a legacy key.
+    if [ -z "$AT_P_PERMISSIONS" ]; then
+        line="$(at_fm_line "$def" name)"; printf '%s\n' "${line:-name: $name}"
+    fi
     line="$(fm_entry "$def" description)"; [ -z "$line" ] || printf '%s\n' "$line"
     [ "$harness" != opencode ] || printf 'mode: subagent\n'
     printf 'model: %s\n' "$model"
     [ "$harness" != opencode ] || [ -z "$variant" ] || printf 'variant: %s\n' "$variant"
+    at_native_fields "$AT_P_EFFORT" "$AT_P_PERMISSIONS" "$AS_OC"
+    [ -z "$AS_TOOL_EDIT" ] || printf '%s\n' "$AS_TOOL_EDIT"
+    printf '%s' "$AS_CLAUDE"
     printf -- '---\n\n'
-    at_body_norm "$def"
+    [ -z "$body" ] || printf '%s\n' "$body"
 }
 
 # Sets RP_OUTCOME to created|updated|unchanged; returns 1 (outcome empty) on a failed write.
 # Called directly, never inside $(...), so a write failure reaches the caller.
-render_projection() { # def harness name model variant
-    local def="$1" harness="$2" name="$3" model="$4" variant="$5"
+render_projection() { # def harness name model variant tier
+    local def="$1" harness="$2" name="$3" model="$4" variant="$5" tier="$6" body delimiter
     local proj="$root/.$harness/agents/$name.md" tmp="$RA_TMP/projection" markers desc dline=""
     RP_OUTCOME=""
+    at_projection_options "$tier" "$harness" || return 1
+    model="$(at_projected_model "$model" "$variant" "$AT_P_PERMISSIONS")"
+    [ -z "$AT_P_PERMISSIONS" ] || variant=""
     desc="$(at_owned_description "$def")"
+    body="$(at_projected_body "$def" "$AT_P_PREAMBLE" "$AS_NOTES")" || return 1
     [ -z "$desc" ] || dline="$(at_fm_line "$def" description)"
     if [ ! -f "$proj" ]; then
-        new_projection "$def" "$harness" "$name" "$model" "$variant" > "$tmp" || return 1
+        new_projection "$def" "$harness" "$name" "$model" "$variant" "$body" > "$tmp" || return 1
         ra_install "$tmp" "$proj" || return 1
         RP_OUTCOME=created; return 0
     fi
-    if [ "$(head -n1 "$proj")" != '---' ]; then
-        new_projection "$def" "$harness" "$name" "$model" "$variant" > "$tmp" || return 1
-    elif [ "$(at_body_norm "$proj")" = "$(at_body_norm "$def")" ]; then
+    delimiter="$(at_projection_delimiter "$proj")" || return 1
+    case "$delimiter" in
+        canonical|absent) ;;
+        *) at_projection_delimiter_finding "$proj" "$delimiter" >&2; return 1 ;;
+    esac
+    if [ "$delimiter" = absent ]; then
+        new_projection "$def" "$harness" "$name" "$model" "$variant" "$body" > "$tmp" || return 1
+    elif [ "$(at_body_norm "$proj")" = "$body" ]; then
         # Body already current: change only frontmatter lines, keep body bytes exactly.
-        { updated_frontmatter "$proj" "$harness" "$model" "$variant" "$dline" "$desc" &&
+        { projection_frontmatter "$proj" "$harness" "$model" "$variant" "$dline" "$desc" &&
           awk 'NR == 1 { next } f { print; next } $0 == "---" { f = 1 }' "$proj"; } > "$tmp" || return 1
     else
         markers="$(at_body_markers "$proj")"
-        { updated_frontmatter "$proj" "$harness" "$model" "$variant" "$dline" "$desc" &&
+        { projection_frontmatter "$proj" "$harness" "$model" "$variant" "$dline" "$desc" &&
           printf '\n' &&
           { [ -z "$markers" ] || printf '%s\n\n' "$markers"; } &&
-          at_body_norm "$def"; } > "$tmp" || return 1
+          { [ -z "$body" ] || printf '%s\n' "$body"; }; } > "$tmp" || return 1
     fi
     if cmp -s "$tmp" "$proj"; then RP_OUTCOME=unchanged; return 0; fi
     ra_install "$tmp" "$proj" || return 1
@@ -285,30 +323,96 @@ esac
 # that use a banned id are not linted here: the render rewrites their model, and --check
 # keeps failing until it has (any the render cannot reach are reported after it).
 FINDINGS=()
-at_load "$root"
+if ! at_load_checked "$root"; then
+    emit_findings "$json" "${AT_LOAD_ERR:-Tier map could not be read}" >&2
+    exit 1
+fi
 while IFS= read -r f; do [ -z "$f" ] || FINDINGS+=("$f"); done < <(at_lint_map; at_lint_definitions)
 if [ -n "$AT_BASELINE" ] && [ -z "$AT_SNAP" ] && [ "${#FINDINGS[@]}" -eq 0 ]; then
     FINDINGS+=("Tier map: baseline snapshot $AT_SNAPSHOT_REL is unusable")
 fi
-plan=()
+# Delimiter variants and unverifiable models are not drift the renderer can repair.
+if [ "$mode" = write ]; then
+    if blockers="$(at_lint_projection_delimiters && at_lint_projection_bans --unverifiable-only)"; then
+        while IFS= read -r f; do [ -z "$f" ] || FINDINGS+=("$f"); done <<EOF
+$blockers
+EOF
+    else
+        FINDINGS+=("Could not verify projection frontmatter delimiters or model references")
+    fi
+fi
+plan=() as_oc=() as_notes=() as_claude=() as_claude_state=() as_tool_action=() as_tool_line=() as_tool_edit=()
+has_managed_extras=false
 for def in "$root"/.prdkit/agents/*.md; do
     [ -f "$def" ] || continue
     name="$(basename "$def" .md)"
     tier="$(at_fm_value "$def" tier)"
+    AS_LINE=""
+    if [ "$mode" = write ]; then
+        if ! as_definition "$def"; then
+            FINDINGS+=("Agent '$name': could not inspect its skills: declaration")
+            continue
+        fi
+        if [ -n "$AS_FINDINGS" ]; then
+            while IFS= read -r f; do [ -z "$f" ] || FINDINGS+=("$f"); done <<< "$AS_FINDINGS"
+            continue
+        fi
+        [ -z "$AS_LINE" ] || has_managed_extras=true
+    fi
     for harness in $(at_targets "$root" "$def"); do
+        proj="$root/.$harness/agents/$name.md"
+        at_projection_options "$tier" "$harness"
+        if [ "$mode" = write ]; then
+            if ! as_projection "$harness" "$proj" "$AT_P_PERMISSIONS" "$AT_P_TOOLS"; then
+                FINDINGS+=("Agent '$name': $harness skill projection inspection failed")
+                continue
+            fi
+            if [ -n "$AS_FINDINGS" ]; then
+                while IFS= read -r f; do [ -z "$f" ] || FINDINGS+=("$f"); done <<< "$AS_FINDINGS"
+                continue
+            fi
+            if [ -n "$AS_CLAUDE_STATE$AT_P_TOOLS" ] || [[ "$AT_P_PERMISSIONS" == @* ]]; then has_managed_extras=true; fi
+        fi
         if at_resolve "$name" "$tier" "$harness"; then
+            if [ -n "$AT_P_PERMISSIONS" ] && ! at_native_model_valid "$AT_R_MODEL" "$AT_R_VARIANT"; then
+                FINDINGS+=("Agent '$name': OpenCode V2 projection requires a provider/model id and an optional separate variant token")
+                continue
+            fi
+            if [ "$mode" = write ] && ! "$AS_REVIEWED_NATIVE" && [ -n "$AT_P_EFFORT$AT_P_PERMISSIONS" ] && [ -f "$proj" ]; then
+                if blockers="$(at_native_projection_findings "$proj" "$AT_P_PERMISSIONS")"; then
+                    while IFS= read -r f; do [ -z "$f" ] || FINDINGS+=("$f"); done <<EOF
+$blockers
+EOF
+                else
+                    FINDINGS+=("Agent projection ${proj#"$root"/}: frontmatter inspection failed")
+                fi
+            fi
+            if [ "$mode" = write ]; then
+                as_oc+=("$AS_OC"); as_notes+=("$AS_NOTES"); as_claude+=("$AS_CLAUDE")
+                as_claude_state+=("$AS_CLAUDE_STATE")
+                as_tool_action+=("$AS_TOOL_ACTION"); as_tool_line+=("$AS_TOOL_LINE"); as_tool_edit+=("$AS_TOOL_EDIT")
+            fi
             plan+=("$name"$'\037'"$harness"$'\037'"$tier"$'\037'"$AT_R_MODEL"$'\037'"$AT_R_VARIANT"$'\037'"$AT_R_SOURCE")
         else
             FINDINGS+=("Agent '$name': no $harness model resolves ($AT_R_ERR)")
         fi
     done
 done
+# With skills or least-privilege extras, also block on findings that no render
+# can repair. Keep legacy post-render reporting otherwise.
+if $has_managed_extras; then
+    if blockers="$(at_ownership_findings && at_lint_projection_bans --unmanaged-only)"; then
+        while IFS= read -r f; do [ -z "$f" ] || FINDINGS+=("$f"); done <<< "$blockers"
+    else
+        FINDINGS+=("Could not verify unmanaged agent projections")
+    fi
+fi
 if [ "${#FINDINGS[@]}" -gt 0 ]; then
     emit_findings "$json" "${FINDINGS[@]}" >&2
     if [ "$mode" = resolve ]; then
         echo 'render-agents.sh: cannot resolve; fix the tier map, override, snapshot, definition or tier findings above.' >&2
     else
-        echo 'render-agents.sh: nothing written; fix the tier map, override, snapshot, definition or tier findings above first.' >&2
+        echo 'render-agents.sh: nothing written; fix the findings above first.' >&2
     fi
     exit 1
 fi
@@ -338,11 +442,16 @@ fi
 
 ra_tmpdir
 created=0 updated=0 unchanged=0
+i=0
 for entry in ${plan[@]+"${plan[@]}"}; do
     IFS=$'\037' read -r name harness tier model variant source <<EOF
 $entry
 EOF
-    if ! render_projection "$root/.prdkit/agents/$name.md" "$harness" "$name" "$model" "$variant"; then
+    AS_OC="${as_oc[$i]}" AS_NOTES="${as_notes[$i]}" AS_CLAUDE="${as_claude[$i]}"
+    AS_CLAUDE_STATE="${as_claude_state[$i]}"
+    AS_TOOL_ACTION="${as_tool_action[$i]}" AS_TOOL_LINE="${as_tool_line[$i]}" AS_TOOL_EDIT="${as_tool_edit[$i]}"
+    i=$((i + 1))
+    if ! render_projection "$root/.prdkit/agents/$name.md" "$harness" "$name" "$model" "$variant" "$tier"; then
         echo "✗ .$harness/agents/$name.md: write failed" >&2
         echo "render-agents.sh: stopped at the first write failure; $((created + updated)) projection file(s) were written before it. Fix the permissions and re-run." >&2
         exit 1
@@ -354,7 +463,13 @@ EOF
     esac
 done
 banned=()
-while IFS= read -r f; do [ -z "$f" ] || banned+=("$f"); done < <(at_lint_projection_bans)
+if ! model_findings="$(at_lint_projection_bans)"; then
+    echo 'render-agents.sh: could not finish checking projection model references' >&2
+    exit 1
+fi
+while IFS= read -r f; do [ -z "$f" ] || banned+=("$f"); done <<EOF
+$model_findings
+EOF
 if [ "${#banned[@]}" -gt 0 ]; then
     echo "  Agent projections: $created created, $updated updated, $unchanged unchanged"
     emit_findings "$json" "${banned[@]}" >&2

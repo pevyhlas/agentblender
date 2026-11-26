@@ -3,7 +3,7 @@
 **Opened**: 2026-10-20 · **Parts**: P1, P3, P5 · **Journeys**: J-06, J-05 · **Tier**: T2 · **Parent**: none
 
 <!-- Continues 0.x feature 008-agent-operability, kept open at the Product-Kit 1.1 restructure.
-Its feature folder is summarized in specs/archive.md; details are in the private history. -->
+Its feature folder is summarized in .prdkit/history/archive.md; details are in the private history. -->
 
 ## Intent
 

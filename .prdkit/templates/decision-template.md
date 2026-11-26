@@ -4,17 +4,17 @@
 D-NN-<part>.md headed `# <title> — <part> (D-NN)`, linked from here). Otherwise it is a section of
 specs/architecture/decisions.md, crisp:
 ## D-NN <title>
-**Decided by**: <role> · **Date**: <date> · **Cited by**: <IDs>
+**Source**: <owner, date: "<words>"; or agent, date>
 - **Decision**: <the choice and its evidence>.
 - **Alternatives**: <each option and why it was rejected>.
 - **Revisit when**: <condition>.
--->
+Design detail lives in the part or topic it shapes. -->
 
-**Decided by**: <role> · **Date**: <date> · **Cited by**: <IDs>
+**Source**: <owner, date: "<words>"; or agent, date>
 
 ## Decision
 
-<The choice, its context and the evidence.>
+\<The choice and its evidence.>
 
 ## Alternatives
 
@@ -22,4 +22,4 @@ specs/architecture/decisions.md, crisp:
 
 ## Revisit when
 
-<Conditions that reopen it.>
+\<Conditions that reopen it.>

@@ -21,9 +21,9 @@ it through their model/effort fields, resolved from the tier map below.
 | Domain / Role | Agent | Tier | Notes |
 |---------------|-------|------|-------|
 | Code Review | `eng-code` | standard | Risk-area diffs also get their named reviewer (constitution Review and checks) |
-| Security Review | `eng-security` | high | Network boundary + code-exec trust boundary + secret handling; required before merge; never below `high` |
-| Architecture | `eng-arch` | high | Worker protocol, checkpoint model, tiering; ADR review — runs rarely, consequences last |
-| License / Provenance | `eng-license` | high | MIT inbound rules (C-01, D-10), bpy boundary, CC0-only assets, provenance manifests — legal risk sits at `high` (local override, see below) |
+| Security Review | `eng-security` | deep | Network boundary + code-exec trust boundary + secret handling; required before merge; never below `deep` |
+| Architecture | `eng-arch` | deep | Worker protocol, checkpoint model, tiering; ADR review — runs rarely, consequences last |
+| License / Provenance | `eng-license` | deep | MIT inbound rules (C-01, D-10), bpy boundary, CC0-only assets, provenance manifests — legal risk sits at `deep` (local override, see below) |
 | Agent Ergonomics / Token Economy | `eng-ergonomics` | standard | Tool surface fitness for agents: deltas, contact sheets, preview sizing, MCP/CLI parity |
 | Testing | generic (session subagents) | standard | Golden-file + protocol integration tests |
 | Acceptance / Verification | generic (session subagents) | fast | Non-user-facing: automated verification per constitution principles; judgment lives in the change record |
@@ -47,6 +47,28 @@ reasoning effort is a tier lever; deterministic gates stay bash scripts, never d
 
 ## Tier → model / effort map
 
+<!-- BEGIN agent-library managed section: ci/sync.py rewrites it, edit outside it -->
+Claude skill prefix: agentlib
+
+| Local tier | Library tier |
+|------------|--------------|
+| verydeep-maker | verydeep |
+| deep-maker | deep |
+| standard-maker | standard |
+| light-maker | light |
+
+| Projection tier | Claude effort | OpenCode permissions | OpenCode preamble | Claude tools |
+|-----------------|---------------|----------------------|-------------------|--------------|
+| verydeep | high | [{action: read, resource: "*", effect: allow}, {action: read, resource: "*.env", effect: deny}, {action: read, resource: "*.env.*", effect: deny}, {action: read, resource: "*.env.example", effect: allow}, {action: glob, resource: "*", effect: allow}, {action: grep, resource: "*", effect: allow}] | Working in this harness: make independent tool calls in parallel, such as several reads or searches at once; run dependent steps in order. Finish the task you were given before you stop; if something blocks you, say what it is and what you tried. Load a skill only when its description fits the task, not because a word in the request matches its name. End with a self-contained final answer: the caller sees only that message, not your tool output. | Read, Grep, Glob, Bash |
+| verydeep-maker | high | [{action: read, resource: "*", effect: allow}, {action: read, resource: "*.env", effect: deny}, {action: read, resource: "*.env.*", effect: deny}, {action: read, resource: "*.env.example", effect: allow}, {action: glob, resource: "*", effect: allow}, {action: grep, resource: "*", effect: allow}, {action: edit, resource: "*", effect: allow}, {action: shell, resource: "*", effect: allow}] | Working in this harness: make independent tool calls in parallel, such as several reads or searches at once; run dependent steps in order. Finish the task you were given before you stop; if something blocks you, say what it is and what you tried. Load a skill only when its description fits the task, not because a word in the request matches its name. End with a self-contained final answer: the caller sees only that message, not your tool output. | Read, Grep, Glob, Bash, Edit, Write |
+| deep | high | [{action: read, resource: "*", effect: allow}, {action: read, resource: "*.env", effect: deny}, {action: read, resource: "*.env.*", effect: deny}, {action: read, resource: "*.env.example", effect: allow}, {action: glob, resource: "*", effect: allow}, {action: grep, resource: "*", effect: allow}] | Working in this harness: make independent tool calls in parallel, such as several reads or searches at once; run dependent steps in order. Finish the task you were given before you stop; if something blocks you, say what it is and what you tried. Load a skill only when its description fits the task, not because a word in the request matches its name. End with a self-contained final answer: the caller sees only that message, not your tool output. | Read, Grep, Glob, Bash |
+| deep-maker | high | [{action: read, resource: "*", effect: allow}, {action: read, resource: "*.env", effect: deny}, {action: read, resource: "*.env.*", effect: deny}, {action: read, resource: "*.env.example", effect: allow}, {action: glob, resource: "*", effect: allow}, {action: grep, resource: "*", effect: allow}, {action: edit, resource: "*", effect: allow}, {action: shell, resource: "*", effect: allow}] | Working in this harness: make independent tool calls in parallel, such as several reads or searches at once; run dependent steps in order. Finish the task you were given before you stop; if something blocks you, say what it is and what you tried. Load a skill only when its description fits the task, not because a word in the request matches its name. End with a self-contained final answer: the caller sees only that message, not your tool output. | Read, Grep, Glob, Bash, Edit, Write |
+| standard | high | [{action: read, resource: "*", effect: allow}, {action: read, resource: "*.env", effect: deny}, {action: read, resource: "*.env.*", effect: deny}, {action: read, resource: "*.env.example", effect: allow}, {action: glob, resource: "*", effect: allow}, {action: grep, resource: "*", effect: allow}] | Working in this harness: make independent tool calls in parallel, such as several reads or searches at once; run dependent steps in order. Finish the task you were given before you stop; if something blocks you, say what it is and what you tried. Load a skill only when its description fits the task, not because a word in the request matches its name. End with a self-contained final answer: the caller sees only that message, not your tool output. | Read, Grep, Glob, Bash |
+| standard-maker | high | [{action: read, resource: "*", effect: allow}, {action: read, resource: "*.env", effect: deny}, {action: read, resource: "*.env.*", effect: deny}, {action: read, resource: "*.env.example", effect: allow}, {action: glob, resource: "*", effect: allow}, {action: grep, resource: "*", effect: allow}, {action: edit, resource: "*", effect: allow}, {action: shell, resource: "*", effect: allow}] | Working in this harness: make independent tool calls in parallel, such as several reads or searches at once; run dependent steps in order. Finish the task you were given before you stop; if something blocks you, say what it is and what you tried. Load a skill only when its description fits the task, not because a word in the request matches its name. End with a self-contained final answer: the caller sees only that message, not your tool output. | Read, Grep, Glob, Bash, Edit, Write |
+| light | medium | [{action: read, resource: "*", effect: allow}, {action: read, resource: "*.env", effect: deny}, {action: read, resource: "*.env.*", effect: deny}, {action: read, resource: "*.env.example", effect: allow}, {action: glob, resource: "*", effect: allow}, {action: grep, resource: "*", effect: allow}] | Working in this harness: make independent tool calls in parallel, such as several reads or searches at once; run dependent steps in order. Finish the task you were given before you stop; if something blocks you, say what it is and what you tried. Load a skill only when its description fits the task, not because a word in the request matches its name. End with a self-contained final answer: the caller sees only that message, not your tool output. | Read, Grep, Glob, Bash |
+| light-maker | medium | [{action: read, resource: "*", effect: allow}, {action: read, resource: "*.env", effect: deny}, {action: read, resource: "*.env.*", effect: deny}, {action: read, resource: "*.env.example", effect: allow}, {action: glob, resource: "*", effect: allow}, {action: grep, resource: "*", effect: allow}, {action: edit, resource: "*", effect: allow}, {action: shell, resource: "*", effect: allow}] | Working in this harness: make independent tool calls in parallel, such as several reads or searches at once; run dependent steps in order. Finish the task you were given before you stop; if something blocks you, say what it is and what you tried. Load a skill only when its description fits the task, not because a word in the request matches its name. End with a self-contained final answer: the caller sees only that message, not your tool output. | Read, Grep, Glob, Bash, Edit, Write |
+<!-- END agent-library managed section -->
+
 Models resolve through the shared agent-library tier baseline: `render-agents.sh` reads the
 vendored snapshot `.prdkit/agent-library/tiers.json` (provenance in `tiers.json.ref`), maps each
 local tier to a library tier with the table below, and stamps the resolved ids into the generated
@@ -54,7 +76,7 @@ projections. This file restates no model ids. To move to a newer library baselin
 `.prdkit/scripts/bash/render-agents.sh --refresh-baseline <agent-library checkout> --library-ref
 <commit>`, then `render-agents.sh` and `render-agents.sh --check`, and review the projection diff.
 
-Tier baseline: agent-library tiers.json@675b6fbecf6629c4274ccbf6c447f330e01f66c3 (release v1.0.0@cf00338365e5ad1e06c830195d8190991e7dd1cd)
+Tier baseline: agent-library tiers.json@675b6fbecf6629c4274ccbf6c447f330e01f66c3 (release v1.1.0@d9898076853b4095a0ea4142c33eccdbce04787b)
 
 | Local tier | Library tier |
 |------------|--------------|
@@ -63,18 +85,21 @@ Tier baseline: agent-library tiers.json@675b6fbecf6629c4274ccbf6c447f330e01f66c3
 | standard | standard |
 | fast | light |
 
-`frontier` is used for planning only. Claude effort is not pinned in agent frontmatter and
-remains the native/session default; OpenCode effort comes from the library `variant`.
+`frontier` is used for planning only. The five library reviewers carry library tier names
+(`deep`, `standard`) in their `tier:` field, because the managed section's settings (Claude
+effort and tools, OpenCode rules and preamble) apply only to library tier names; the local names
+above remain for the generic roles.
 
 **Local tier choices** (recorded deviations from the reviewer's default tier):
 
 | Agent / row | Choice | Reason |
 |---|---|---|
-| `eng-license` | `tier: high` (default `standard`) | MIT open source (C-01, D-10): an inbound-license miss is legal exposure, not a style finding |
+| `eng-license` | `tier: deep` (library default `standard`) | MIT open source (C-01, D-10): an inbound-license miss is legal exposure, not a style finding |
 
-Reviewer projections use `mode: all` (named primary or subagent), deny edits and
-delegation, and permit only read/search/web/tagging plus bounded Git/GitHub inspection
-commands. Build/test gates run in the driving session or CI. Start OpenCode in this checkout/worktree;
+Reviewer projections are read-only: Claude reviewers get `Read, Grep, Glob, Bash` (plus
+`Skill` when they declare lens skills); OpenCode reviewers are subagents with deny-by-default
+rules allowing only read (`.env` files denied), glob and grep, so they read the diff and lens
+facts from the review package. Build/test gates run in the driving session or CI. Start OpenCode in this checkout/worktree;
 home-directory sessions do not discover these project-local definitions. Restart
 after config/agent changes. Session model-picker overrides still take precedence.
 
@@ -82,11 +107,15 @@ after config/agent changes. Session model-picker overrides still take precedence
 
 - Body: the neutral body verbatim (canonical region + marker + overlay). Header: a YAML
   comment naming the neutral source.
-- Claude keeps `tools: Read, Grep, Glob, LS, Bash`; `model` resolved from the tier baseline.
-- OpenCode keeps `mode: all` and the bounded read-only `permission` block; `model` /
-  `variant` resolved from the tier baseline.
-- Refresh: edit the neutral definition, run `.prdkit/scripts/bash/render-agents.sh`, then
-  `render-agents.sh --check` (fails on body drift or model/variant drift).
+- Claude: `model` from the tier baseline; `effort` and `tools:` from the managed section;
+  declared lens skills preload as `agentlib:<name>` from `.claude/skills/agentlib/`.
+- OpenCode: V2 frontmatter (`mode: subagent`, `model: <id>#<variant>`, ordered `permissions:`
+  from the managed section, skills denied since reviewers have no shell) and the library preamble.
+- Lens skills are vendored whole by agent-library `ci/sync.py` into `.claude/skills/agentlib/`
+  and `.agents/skills/`; each copy's `references/local.md` is ours (secrets-scan quiets reviewed
+  kit-variable and test-token fingerprints).
+- Refresh: `python3 <agent-library at a release tag>/ci/sync.py --consumer . --write`, then
+  `.prdkit/scripts/bash/render-agents.sh` and `render-agents.sh --check`.
 
 ### Review concern routing
 

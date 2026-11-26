@@ -3,16 +3,20 @@
 <!-- Past tense, condensed: directions tried, why they stopped, lessons and notable outcomes.
 What still binds lives in the spec, never here. Agents read this file on demand (a history
 question, before re-trying a direction), never by default. Past the budget, condense older
-entries harder. new-change.sh reads the Base and Last lines to never reuse an old feature
-number. -->
+entries harder. new-change.sh reads the Log condensed through and Allocated through lines to
+never reuse a number. -->
 
 **Base**: the last commit of the private development history before the public release; this
 repository starts from fresh history, so that commit is not here. The detailed records (the 0.x
 product spec, the target, feature folders 001 to 009, reviews and results) are kept in the
 private history.
 
-**Last 0.x feature**: 009; new changes number above it. Features 008 and 009 continue as
-change records under `specs/changes/`.
+**Log condensed through**: none
+
+**Allocated through**: 023
+
+The 0.x features 001 to 009 are summarized below; features 008 and 009 continue as change
+records under `specs/changes/`.
 
 ## Founding design and spike
 
@@ -32,11 +36,11 @@ change records under `specs/changes/`.
 - **Outcome**: GUI add-on servers dispatch through `bpy.app.timers`, need a running GUI and share
   one scene, so none offered headless per-agent sessions, branching state or reliable
   programmatic undo (the J-01 pain, D-02). Each project's licence is mapped in
-  [observed](observed.md) with public upstream links; they inform ideas only, and code reuse
+  [observed](../../specs/observed.md) with public upstream links; they inform ideas only, and code reuse
   follows C-01 (D-13).
 - **Lesson**: read the licence file, not the README; an unlicensed repository is all rights
   reserved. The survey notes stay in the private history; the facts that bind are in
-  [observed](observed.md).
+  [observed](../../specs/observed.md).
 
 ## Core warm-worker pipeline (001)
 

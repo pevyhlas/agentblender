@@ -12,6 +12,6 @@ and State. Publish useful approach, task/check mapping and progress on the same 
 |------|---------------------------|---------------------|-------------------------------|-------|
 | T001 | <outcome; canonical ID; A1> | <paths> | none | <project check> |
 
-<!-- Preserve task keys on replan. Keep hard bounds throughout. Analysis checks coverage,
+<!-- Never reuse or renumber task keys. Keep hard bounds throughout. Analysis checks coverage,
 dependencies, shared touches and negative/cross-part behavior. Durable design findings return
 to Product-Kit; do not turn implementation detail into requirements. -->

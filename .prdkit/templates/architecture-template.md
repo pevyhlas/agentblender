@@ -2,7 +2,7 @@
 
 **Inherits**: <platform document (`org/repo`, path) and the rules used> or none
 
-<One sentence: the shape of the system and why it fits the core loop.>
+\<One sentence: the shape of the system and why it fits the core loop.>
 
 <!-- The overview, read at a glance: one screen. Detail lives in specs/architecture/<topic>.md
 (architecture-topics-template.md) and specs/parts/. A topic with little to say stays a short
@@ -17,7 +17,7 @@ flowchart LR
   P2 --> X[(<external system>)]
 ```
 
-<A few lines: where data lives and where the trust boundaries are.>
+\<A few lines: where data lives and where the trust boundaries are.>
 
 ## Parts
 
@@ -37,9 +37,9 @@ sequenceDiagram
 
 ## Key decisions
 
-- **<title>** (D-01): <the choice in a line, and what it rules out>.
+- **<title>** (D-01): <the choice, in a line>.
 
-<!-- The five to seven that shape everything; all of them: [decisions](architecture/decisions.md). -->
+<!-- The five to seven that shape everything; each is a D- in [decisions](architecture/decisions.md). -->
 
 ## Key areas
 
@@ -48,13 +48,13 @@ sequenceDiagram
 | Security and privacy | <trust boundaries, identity, encryption, personal data> | [security](architecture/security.md) |
 | Observability and live site | <what is watched, who is alerted, how incidents run> | [observability](architecture/observability.md) |
 | Data | <what is stored where, kept how long> | [data](architecture/data.md) |
-| Interfaces | <the promises between parts and to external systems> | [interfaces](architecture/interfaces.md) |
+| Interfaces | <which part owns which interface; external systems> | [interfaces](architecture/interfaces.md) |
 | Environments | <each environment, what it is for, where it is provisioned> | [environments](architecture/environments.md) |
 | Operations | <delivery, tooling> | [operations](architecture/operations.md) |
 
 ## Risks
 
-- <The riskiest assumption, what breaks if it is wrong, and the check:
+- <The riskiest assumption and what breaks if it is wrong, in a line:
   [why it works](architecture/why-it-works.md).>
 
 ## Left open

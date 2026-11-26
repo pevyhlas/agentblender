@@ -15,7 +15,7 @@ architecture/<topic>/<area>.md, one line and a link each. Decisions use decision
 ## observability.md
 
 - **Signals**: <what is measured per part, and the Q- it watches>.
-- **Alerts**: <what wakes whom, and the threshold band>.
+- **Alerts**: <what wakes whom, citing the Q- whose band it guards>.
 - **Live site**: <how an incident is noticed, handled and closed; where its record lives>.
 
 ## data.md
@@ -25,11 +25,13 @@ architecture/<topic>/<area>.md, one line and a link each. Decisions use decision
 
 ## interfaces.md
 
-| Interface | Owner part | Consumers | Promise | Schema in code |
-|-----------|------------|-----------|---------|----------------|
+<!-- An index: each promise lives in its owner part's Interfaces, linked. -->
 
-| External system | Used for | By | When it fails |
-|-----------------|----------|----|---------------|
+| Interface | Owner part | Consumers |
+|-----------|------------|-----------|
+
+| External system | Used for | By |
+|-----------------|----------|----|
 
 ## why-it-works.md
 
@@ -37,8 +39,7 @@ architecture/<topic>/<area>.md, one line and a link each. Decisions use decision
 
 - **Mechanism**: <how the parts achieve it>
 - **Assumptions**: <what must hold; link observed facts>
-- **Alternatives**: <option — why rejected>; include a managed or off-the-shelf option
-- **Revisit when**: <condition>
+- **Decided in**: <D-NN, which holds the alternatives and when to revisit>
 
 ## environments.md
 

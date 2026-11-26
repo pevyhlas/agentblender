@@ -9,37 +9,41 @@
 # non-goal; a live constraint whose Scope field names a part or journey in scope, makes an
 # exception, says all or every of something unnamed, or names none; a live quality that cites one in scope, or cites none. A
 # record naming no parts or journeys gets everything, as does --all. Items marked for a stage
-# after the current one (`from: ga`; lifecycle.md, Now) are listed apart: not built yet unless
-# the change targets them. Over-inclusion is the safe side: the agent marks each item in the
+# after the current one (`from: ga`; lifecycle.md, Now) are listed apart: built only on the
+# owner's direction (spec.md, Lifecycle). Over-inclusion is the safe side: the agent marks each item in the
 # record's Bounds section and the reviewer checks the diff against this list.
-set -euo pipefail
 SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 source "$SCRIPT_DIR/spec-lib.sh"
+bounds_for_root() { # materialized immutable inputs; same computation as the installed command
+local root="$1"; shift
 usage='Usage: bounds.sh <change-id> | bounds.sh --all'
 case "${1:-}" in
     -h|--help) echo "$usage"; exit 0 ;;
     '') echo "$usage" >&2; exit 2 ;;
 esac
-root="$(get_repo_root)"
-require_consumer_root "$root" bounds.sh
-
 scope=""
 if [ "$1" != "--all" ]; then
     record="$root/specs/changes/$1.md"
     [ -f "$record" ] || { echo "No change record at specs/changes/$1.md" >&2; exit 2; }
     # The header's Parts and Journeys fields, before the first section; their IDs are read below.
-    scope="$(awk '/^## /{exit} {
+    spec_change_metadata "$record" tags >/dev/null || return 1
+    scope="$(set -o pipefail; awk "$SPEC_CHANGE_TAG_AWK"'
+        { $0 = change_without_tags($0) }
+        /^## /{exit} {
         s = $0; while (match(s, /\*\*(Parts|Journeys)\*\*:[^*]*/)) { print substr(s, RSTART, RLENGTH); s = substr(s, RSTART + RLENGTH) }
-    }' "$record" | tr '\n' ' ')"
+    }' "$record" | tr '\n' ' ')" || return 1
 fi
-now="$(spec_stage_now "$root")"; now="${now%%"$SPEC_SEP"*}"
+spec_lifecycle_require "$root" || return
+now="$SPEC_STAGE_NOW"
 
 files=()
-while IFS= read -r file; do files+=("$file"); done < <(spec_files "$root")
+listed="$(verify_lines spec_files "$root")" || return 1
+while IFS= read -r file; do [ -z "$file" ] || files+=("$file"); done <<< "$listed"
 [ "${#files[@]}" -gt 0 ] || { echo "No spec files under specs/" >&2; exit 2; }
 
-(cd "$root" && awk -v header="$scope" -v now="$now" -v what="${1/--all/every change}" "$SPEC_SKIP_AWK $SPEC_STAGE_AWK"'
+(cd "$root" && awk -v header="$scope" -v now="$now" -v what="${1/--all/every change}" \
+    -v stage_order="$SPEC_STAGE_ORDER" -v stage_custom="$SPEC_STAGE_CUSTOM" "$SPEC_SKIP_AWK $SPEC_STAGE_AWK"'
     # IDs in text, with word boundaries: a part counts only when the parts table defines it (so
     # P95 or HTTP2 never does), and a part behavior (P2.B-07) cites its part. A range
     # (`J-01 to J-05`, `P1–P3`) cites every ID in it.
@@ -48,16 +52,16 @@ while IFS= read -r file; do files+=("$file"); done < <(spec_files "$root")
     function wordch(c) { return c != "" && index("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_", c) > 0 }
     function ids(text,   out, tok, pre, post, end, k, lo, hi, id, rng, pad) {
         out = " "
-        while (match(text, /P[0-9]+|J-[0-9][0-9]+/)) {
+        while (match(text, /P[0-9]+(\.[0-9]+)*|J-[0-9][0-9]+/)) {
             tok = substr(text, RSTART, RLENGTH)
             pre = RSTART > 1 ? substr(text, RSTART - 1, 1) : ""
             post = substr(text, RSTART + RLENGTH, 1)
             text = substr(text, RSTART + RLENGTH)
             if (wordch(pre) || wordch(post)) continue
             rng = ""
-            if (match(text, /^[[:space:]]*(to|through|-|–|—|\.\.)[[:space:]]*(P[0-9]+|J-[0-9][0-9]+)/)) {
-                end = substr(text, RSTART, RLENGTH); match(end, /(P[0-9]+|J-[0-9][0-9]+)$/); end = substr(end, RSTART)
-                if (substr(end, 1, 1) == substr(tok, 1, 1)) {
+            if (match(text, /^[[:space:]]*(to|through|-|–|—|\.\.)[[:space:]]*(P[0-9]+(\.[0-9]+)*|J-[0-9][0-9]+)/)) {
+                end = substr(text, RSTART, RLENGTH); match(end, /(P[0-9]+(\.[0-9]+)*|J-[0-9][0-9]+)$/); end = substr(end, RSTART)
+                if (!index(tok, ".") && !index(end, ".") && substr(end, 1, 1) == substr(tok, 1, 1)) {
                     lo = tok; sub(/^[^0-9]*/, "", lo); hi = end; sub(/^[^0-9]*/, "", hi)
                     pad = length(lo); if (lo + 0 > hi + 0) { k = lo; lo = hi; hi = k }
                     for (k = lo + 1; k < hi + 0 && k <= lo + 99; k++) {
@@ -80,15 +84,16 @@ while IFS= read -r file; do files+=("$file"); done < <(spec_files "$root")
     }
     # A Scope binds everywhere when it makes an exception (`all parts but P3`) or uses all, every
     # or any without an ID right after it (`P4 and all journeys`, not `every P2 endpoint`).
-    function everywhere(s,   t, w, n, i, j) {
+    function everywhere(s,   t, w, n, i, j, part_token) {
         t = tolower(s)
         if (t ~ /(^|[^a-z])(except|excluding|other than|outside|but|apart from|besides)([^a-z]|$)/) return 1
-        gsub(/[^a-z0-9-]+/, " ", t); n = split(t, w, " ")
+        gsub(/\.+([[:space:]]|$)/, " ", t); gsub(/[^a-z0-9.-]+/, " ", t); n = split(t, w, " ")
         for (i = 1; i <= n; i++) {
             if (w[i] != "all" && w[i] != "every" && w[i] != "any") continue
             j = i + 1; if (w[j] == "of") j++; if (w[j] == "the") j++
             if ((w[j] == "it" || w[j] == "them") && i > 1 && (w[i-1] ~ /^j-[0-9][0-9]+$/ || (toupper(w[i-1]) in part))) continue
-            if (!(w[j] ~ /^j-[0-9][0-9]+$/ || (toupper(w[j]) in part))) return 1
+            part_token = toupper(w[j]); sub(/\.[BI]-[0-9]+$/, "", part_token)
+            if (!(w[j] ~ /^j-[0-9][0-9]+$/ || (part_token in part))) return 1
         }
         return 0
     }
@@ -102,7 +107,7 @@ while IFS= read -r file; do files+=("$file"); done < <(spec_files "$root")
     }
     FNR == 1 { fence = 0; comment = 0; cur = 0; gap = 0 }
     { if (spec_skip($0)) next }
-    /^\|[[:space:]]*P[0-9]+[[:space:]]/ { id = $0; sub(/^\|[[:space:]]*/, "", id); sub(/[[:space:]].*/, "", id); part[id] = 1; row[id] = $0 }
+    /^\|[[:space:]]*P[0-9]+(\.[0-9]+)?[[:space:]]/ { id = $0; sub(/^\|[[:space:]]*/, "", id); sub(/[[:space:]].*/, "", id); part[id] = 1; row[id] = $0 }
     # An item runs from its bullet to the next heading, table row, or bullet no deeper than its
     # own; after a blank line, a paragraph no deeper than its bullet ends it too.
     /^[[:space:]]*$/ { gap = 1; next }
@@ -127,7 +132,7 @@ while IFS= read -r file; do files+=("$file"); done < <(spec_files "$root")
         n = split(ids(header), t, " "); named = " "
         for (i = 1; i <= n; i++) if (!index(named, " " t[i] " ")) named = named t[i] " "
         h = header; unknown = ""
-        while (match(h, /P[0-9]+/)) {
+        while (match(h, /P[0-9]+(\.[0-9]+)*/)) {
             tok = substr(h, RSTART, RLENGTH); pre = RSTART > 1 ? substr(h, RSTART - 1, 1) : ""
             post = substr(h, RSTART + RLENGTH, 1); h = substr(h, RSTART + RLENGTH)
             if (!wordch(pre) && !wordch(post) && !(tok in part) && !index(unknown " ", " " tok " ")) unknown = unknown " " tok
@@ -158,7 +163,24 @@ while IFS= read -r file; do files+=("$file"); done < <(spec_files "$root")
         printf "Constraints:\n%s", (out["C"] != "" ? out["C"] : "- none\n")
         printf "Non-goals:\n%s", (out["N"] != "" ? out["N"] : "- none\n")
         printf "Qualities:\n%s", (out["Q"] != "" ? out["Q"] : "- none\n")
-        if (later != "") printf "Later stages (not built yet unless this change targets them):\n%s", later
+        if (later != "") printf "Later stages (built only on owner direction; spec.md, Lifecycle):\n%s", later
     }
-' "${files[@]}")
+' "${files[@]}") || return 1
 echo "Mark each in the record's Bounds: holds (how), or conflict (to the owner inbox; never resolved by the agent)."
+}
+
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+    set -euo pipefail
+    root="$(get_repo_root)"
+    require_consumer_root "$root" bounds.sh
+    # The CLI scopes live changes. Review packaging calls bounds_for_root directly and
+    # can intentionally use a historical record to reconstruct its bounds.
+    if is_change_id "${1:-}"; then
+        archive_index="$(spec_archive_log_index "$root")" || exit "$?"
+        if spec_archive_log_covers "$archive_index" "$1"; then
+            printf '%s is closed: its number is condensed in .prdkit/history/archive.md\n' "$1" >&2
+            exit 2
+        fi
+    fi
+    bounds_for_root "$root" "$@"
+fi

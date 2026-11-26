@@ -15,7 +15,7 @@ may change in any 0.x release (`specs/product/lifecycle.md`). Read first:
 2. `specs/product.md` and `specs/product/` (L0: journeys, requirements, constraints,
    lifecycle) and `specs/architecture.md` with `specs/architecture/` (L1, decisions D-01…);
    `specs/parts/` for the parts a change touches; `specs/changes/` for open changes.
-3. `specs/inbox.md` — open owner questions. `specs/archive.md` is condensed history; read it
+3. `specs/inbox.md` — open owner questions. `.prdkit/history/archive.md` is condensed history; read it
    only for a history question.
 
 ## Hard rules

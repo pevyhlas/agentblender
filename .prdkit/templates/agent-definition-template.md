@@ -4,6 +4,7 @@ domain: Domain / Role
 tier: standard
 description: One line — when this agent should be dispatched.
 # harnesses: [claude, opencode]   # optional; default = every configured harness
+# skills: [example-skill]         # optional; see skill projection settings in agents.md
 # source: agent-library           # optional provenance, never projected
 ---
 
@@ -21,8 +22,9 @@ it. Keep the body harness-neutral. -->
 ## Method
 
 <What it reads, in what order, and what it must not do. A reviewer reads the package, the change
-record and the spec sections it is given by name, never a glob over `specs/`.>
+record and the spec sections it is given by name, and only searches a readable `specs/` for the
+touched IDs and terms.>
 
 ## Output
 
-<The exact shape of what it returns.>
+\<The exact shape of what it returns.>
