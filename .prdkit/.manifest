@@ -1,6 +1,7 @@
 version: 1.2.1
 harnesses: claude opencode agents
 mode: copy
+options: agent-tiers
 agents-section: 3dffde39bf3544d2c558bd3726d385b6b6af84d4ef2c913cf56426a781225544
 80a1d5072b318f9285423748dbd4a7c8237d80887c7f7d599b2259ab52909f1d  .claude/commands/prdkit-configure.md
 80a1d5072b318f9285423748dbd4a7c8237d80887c7f7d599b2259ab52909f1d  .opencode/commands/prdkit-configure.md
